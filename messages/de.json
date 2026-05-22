@@ -1,0 +1,516 @@
+{
+  "HomePage": {
+    "title": "Zum Starten bearbeite die Datei page.tsx.",
+    "descriptionPrefix": "Du suchst einen Einstieg oder weitere Anleitungen? Schau dir",
+    "templates": "Vorlagen",
+    "descriptionMiddle": "oder das",
+    "learningCenter": "Lernzentrum",
+    "descriptionSuffix": "an.",
+    "deployNow": "Jetzt bereitstellen",
+    "documentation": "Dokumentation",
+    "switchToEnglish": "Englisch",
+    "switchToArabic": "Arabisch",
+    "switchToGerman": "Deutsch",
+    "metaTitle": "Talent Seeker",
+    "metaDescription": "Talent Seeker Plattform fuer Jobs, Relocation-Support und Karrierechancen in Deutschland."
+  },
+  "Auth": {
+    "signIn": {
+      "title": "Willkommen bei Talent Seeker",
+      "description": "Melde dich an, um deine Karriere- oder Recruiting-Reise zu verwalten",
+      "logoAlt": "Talent Seeker Logo",
+      "submit": "Anmelden",
+      "loading": "Anmeldung läuft...",
+      "forgotPassword": "Passwort vergessen",
+      "back": "Zurück",
+      "userTab": "Nutzer",
+      "companyTab": "Unternehmen",
+      "accountTypeTabs": "Kontotyp",
+      "noAccount": "Noch kein Konto?",
+      "signUp": "Registrieren",
+      "alternateAction": "Noch kein Konto? Jetzt erstellen",
+      "fields": {
+        "emailLabel": "E-Mail",
+        "emailPlaceholder": "Deine E-Mail",
+        "passwordLabel": "Passwort",
+        "passwordPlaceholder": "Passwort"
+      }
+    },
+    "signUp": {
+      "title": "Konto erstellen",
+      "description": "Registriere dich und starte deine berufliche Reise mit Talent Seeker.",
+      "logoAlt": "Talent Seeker Logo",
+      "submit": "Registrieren",
+      "back": "Zurück",
+      "userTab": "Nutzer",
+      "companyTab": "Unternehmen",
+      "accountTypeTabs": "Kontotyp",
+      "hasAccount": "Hast du bereits ein Konto?",
+      "signIn": "Anmelden",
+      "alternateAction": "Du hast bereits ein Konto? Anmelden",
+      "fields": {
+        "fullNameLabel": "Vollständiger Name",
+        "fullNamePlaceholder": "Vollständiger Name",
+        "emailLabel": "E-Mail",
+        "emailPlaceholder": "Deine E-Mail",
+        "passwordLabel": "Passwort",
+        "passwordPlaceholder": "Passwort",
+        "showPassword": "Passwort anzeigen",
+        "hidePassword": "Passwort ausblenden"
+      }
+    },
+    "forgotPassword": {
+      "title": "Passwort zurücksetzen",
+      "description": "Gib deine E-Mail ein und wir senden dir einen Link zum Zurücksetzen.",
+      "logoAlt": "Talent Seeker Logo",
+      "submit": "Link senden",
+      "back": "Zurück",
+      "rememberPassword": "Passwort wieder eingefallen?",
+      "signIn": "Anmelden",
+      "alternateAction": "Zurück zur Anmeldung",
+      "fields": {
+        "emailLabel": "E-Mail",
+        "emailPlaceholder": "Deine E-Mail"
+      }
+    }
+  },
+  "Landing": {
+    "hero": {
+      "brand": "Talent Seeker",
+      "eyebrow": "Dein Tor zu einem neuen Leben",
+      "title": "Dein kompletter Weg zur Karriere in Deutschland",
+      "description": "Wir finden nicht nur einen Job für dich, wir bauen deine Zukunft auf. Von der Vermittlung an Top-Arbeitgeber in Deutschland bis zu Visa und Wohnung begleiten wir dich bei jedem Schritt.",
+      "cta": "Chancen entdecken",
+      "login": "Anmelden",
+      "nav": {
+        "home": "Start",
+        "about": "Über uns",
+        "services": "Services",
+        "jobs": "Jobs",
+        "news": "News",
+        "contact": "Kontakt"
+      },
+      "languageAria": "Sprache wechseln",
+      "locale": {
+        "en": "Englisch",
+        "ar": "Arabisch",
+        "de": "Deutsch"
+      },
+      "card": {
+        "caption": "Bereits veröffentlichte Jobs",
+        "metric": "13k+",
+        "description": "Kontinuierlich neue Chancen"
+      }
+    },
+    "categories": {
+      "eyebrow": "Unsere Kategorien",
+      "title": "Finde die perfekte Rolle für deine Expertise",
+      "description": "Wir vernetzen dich mit führenden deutschen Unternehmen aus wichtigen Branchen. Wähle dein Fachgebiet und entdecke passende Chancen.",
+      "metricLabel": "Bereits veröffentlichte Jobs",
+      "showMore": "Mehr anzeigen",
+      "items": {
+        "business": {
+          "label": "Business & Marketing",
+          "vacancy": "250 Stellen"
+        },
+        "design": {
+          "label": "Design",
+          "vacancy": "250 Stellen"
+        },
+        "development": {
+          "label": "Entwicklung",
+          "vacancy": "250 Stellen"
+        },
+        "medical": {
+          "label": "Medizin",
+          "vacancy": "250 Stellen"
+        },
+        "sales": {
+          "label": "Vertrieb",
+          "vacancy": "250 Stellen"
+        },
+        "hr": {
+          "label": "HR",
+          "vacancy": "250 Stellen"
+        },
+        "finance": {
+          "label": "Finanzen",
+          "vacancy": "250 Stellen"
+        }
+      }
+    },
+    "process": {
+      "eyebrow": "Nahtloser Prozess",
+      "title": "Deine Reise nach Deutschland, vereinfacht",
+      "description": "Von der ersten Bewerbung bis zur Ankunft übernehmen wir die Komplexität, damit du dich auf deine neue Karriere konzentrieren kannst.",
+      "steps": {
+        "createAccount": {
+          "title": "Konto erstellen",
+          "description": "Ein Konto zu eröffnen und zu starten ist ganz einfach."
+        },
+        "completeProfile": {
+          "title": "Profil vervollständigen",
+          "description": "Vervollständige dein Profil, damit passende Arbeitgeber auf dich aufmerksam werden."
+        },
+        "apply": {
+          "title": "Auf Jobs bewerben",
+          "description": "Bewirb dich auf bevorzugte Jobs mit allen Anforderungen an einem Ort."
+        }
+      }
+    },
+    "jobs": {
+      "eyebrow": "Premium-Chancen",
+      "title": "Dein nächster Karriereschritt wartet",
+      "description": "Entdecke aktuelle Chancen in allen Bereichen und finde die passende Stelle für deine Expertise im deutschen Markt.",
+      "filters": {
+        "all": "Alle Kategorien",
+        "design": "Design",
+        "development": "Entwicklung",
+        "marketing": "Marketing",
+        "medical": "Medizin"
+      },
+      "moreDetails": "Mehr Details",
+      "showAll": "Alle Jobs anzeigen",
+      "items": {
+        "frontend": {
+          "department": "IT",
+          "title": "Frontend-Entwickler",
+          "company": "TechNova - Softwareunternehmen",
+          "type": "Vollzeit"
+        },
+        "marketing": {
+          "department": "Marketing",
+          "title": "Digital Marketer",
+          "company": "Marketify - Marketingagentur",
+          "type": "Teilzeit"
+        },
+        "uiux": {
+          "department": "Design",
+          "title": "UI/UX-Designer",
+          "company": "Creative Lab - Designstudio",
+          "type": "Remote"
+        },
+        "sales": {
+          "department": "Vertrieb",
+          "title": "Sales Executive",
+          "company": "SalesPro - Vertriebsunternehmen",
+          "type": "Vollzeit"
+        },
+        "hr": {
+          "department": "HR",
+          "title": "HR-Spezialist",
+          "company": "PeopleHub - HR Services",
+          "type": "Teilzeit"
+        },
+        "accounting": {
+          "department": "Finanzen",
+          "title": "Buchhalter",
+          "company": "FinCore - Finanzdienstleistungen",
+          "type": "Remote"
+        }
+      }
+    },
+    "jobsPage": {
+      "languageAria": "Sprache wechseln",
+      "searchPlaceholder": "Nach Jobtitel oder Standort suchen",
+      "search": "Suchen",
+      "allJobs": "Alle Jobs",
+      "allJobsCount": "190",
+      "filter": "Filter",
+      "department": "Abteilung",
+      "postedAgo": "vor 14 Stunden",
+      "salaryPeriod": "/Monat",
+      "time": "Zeit",
+      "companyName": "Firmenname",
+      "companySubLabel": "Titel",
+      "filterPanel": {
+        "title": "Filter",
+        "clearAll": "Alles löschen",
+        "state": "Bundesland",
+        "categories": "Kategorien",
+        "salary": "Gehalt",
+        "salaryMin": "$1",
+        "salaryMax": "$10k",
+        "from": "$ von",
+        "to": "$ bis",
+        "stateOptions": {
+          "hassan": "Hassan",
+          "alle": "Alle"
+        },
+        "categoryOptions": {
+          "marketing": "Marketing",
+          "design": "Design",
+          "it": "IT",
+          "medical": "Medizin"
+        }
+      }
+    },
+    "testimonials": {
+      "eyebrow": "Echter Impact",
+      "title": "Erfolgsgeschichten aus unserer Community",
+      "description": "Entdecke, wie wir Talente und Arbeitgeber beim Wachstum im deutschen Arbeitsmarkt unterstützt haben.",
+      "items": {
+        "jacob": {
+          "initials": "JJ",
+          "name": "Jacob Jones",
+          "role": "Medizinischer Assistent, 29, Marokko",
+          "quote": "Talent SC hat nicht nur einen Job gefunden, sondern meinen gesamten Umzug nach Deutschland begleitet."
+        },
+        "ronald": {
+          "initials": "RR",
+          "name": "Ronald Richards",
+          "role": "Marketing Coordinator, 32, Jemen",
+          "quote": "Der Prozess war von Anfang an klar und das Team hat jedes Detail professionell übernommen."
+        },
+        "albert": {
+          "initials": "AF",
+          "name": "Albert Flores",
+          "role": "Web Designer, 25, Ägypten",
+          "quote": "Ich habe eine Stelle gefunden, die perfekt zu meinen Fähigkeiten passt."
+        },
+        "lina": {
+          "initials": "LH",
+          "name": "Lina Hassan",
+          "role": "Pflegekraft, 27, Jordanien",
+          "quote": "Von den Unterlagen bis zum Onboarding war jeder Schritt klar und unterstützend."
+        },
+        "youssef": {
+          "initials": "YE",
+          "name": "Youssef El Amrani",
+          "role": "Elektriker, 31, Marokko",
+          "quote": "Ich bekam praxisnahe Unterstützung und fand eine Stelle, die zu meiner Erfahrung passt."
+        },
+        "nora": {
+          "initials": "NA",
+          "name": "Nora Ali",
+          "role": "HR-Spezialistin, 30, Ägypten",
+          "quote": "Der gesamte Umzugsprozess war reibungslos und die Kommunikation stets professionell."
+        }
+      }
+    },
+    "news": {
+      "eyebrow": "Bleib informiert",
+      "title": "Einblicke in den deutschen Arbeitsmarkt",
+      "description": "Aktuelle News zu Visa-Regeln, Karrieretipps und Branchentrends, damit du in Deutschland erfolgreich bist.",
+      "readMore": "Mehr lesen",
+      "items": {
+        "first": {
+          "title": "CBS Evening News",
+          "description": "Nützliche Updates und praktische Hinweise für Jobsuchende vor dem Umzug.",
+          "date": "28. Juni 2026"
+        },
+        "second": {
+          "title": "CBS This Morning: Saturday",
+          "description": "Ein genauer Blick auf Einstellungsentwicklungen und gefragte Rollen.",
+          "date": "28. Juni 2026"
+        },
+        "third": {
+          "title": "Visa- und Arbeitserlaubnis-Updates",
+          "description": "Wichtige Verfahrensänderungen und ihre Bedeutung für Bewerber.",
+          "date": "28. Juni 2026"
+        },
+        "fourth": {
+          "title": "Karrierewachstum in Deutschland",
+          "description": "So positionierst du dein Profil für langfristigen Erfolg nach der Einstellung.",
+          "date": "28. Juni 2026"
+        }
+      }
+    },
+    "newsPage": {
+      "languageAria": "Sprache wechseln",
+      "relatedTitle": "Verwandte News",
+      "shareWith": "Teilen mit",
+      "featured": {
+        "title": "CBS Evening News",
+        "date": "28. Juni 2026",
+        "imageAlt": "Deutsche Flagge vor einem historischen Gebäude"
+      },
+      "content": {
+        "opening": "Arbeiten im deutschen Gesundheitssystem bietet starke Chancen für internationale Fachkräfte. Deutschland hat eines der am besten entwickelten Gesundheitssysteme Europas mit stabiler Nachfrage nach qualifiziertem Personal.",
+        "sectionOneTitle": "1. Vielfältige Karrierechancen",
+        "sectionOneBody": "Pflegekräfte werden in der Altenpflege, in Krankenhäusern und in der pädiatrischen Versorgung weiterhin stark gesucht. Auch medizinische Spezialisten, Therapeuten und technische Fachkräfte sind gefragt.",
+        "sectionTwoTitle": "2. Gefragte Rollen",
+        "sectionTwoBody": "Häufig gesuchte Positionen sind Assistenzärzte, klinische Forscher, Physiotherapeuten, Ergotherapeuten, Psychologen, Laborspezialisten und Radiologie-Fachkräfte.",
+        "sectionThreeTitle": "3. Anforderungen für internationale Bewerber",
+        "sectionThreeBody": "Die meisten Arbeitgeber erwarten eine formale medizinische Qualifikation sowie eine anerkannte Gleichwertigkeitsprüfung vor dem Arbeitsbeginn.",
+        "sectionFourTitle": "4. Sprache und Integration",
+        "sectionFourBody": "Für die direkte Patientenkommunikation und die tägliche Zusammenarbeit im Team wird in der Regel ein Deutschniveau um B2 vorausgesetzt."
+      },
+      "items": {
+        "first": {
+          "title": "CBS This Morning: Saturday",
+          "description": "Die Nachfrage im deutschen Gesundheitsbereich bleibt hoch, vor allem in Kliniken und regionalen Krankenhäusern.",
+          "date": "28. Juni 2026",
+          "imageAlt": "Feuerwehrkräfte in Schutzkleidung"
+        },
+        "second": {
+          "title": "CBS This Morning: Saturday",
+          "description": "Praktische Anforderungen für Relocation, berufliche Anerkennung und das Onboarding im ersten Monat.",
+          "date": "28. Juni 2026",
+          "imageAlt": "Bauarbeiter mit gelben Helmen"
+        },
+        "third": {
+          "title": "CBS This Morning: Saturday",
+          "description": "Wie internationale Fachkräfte ihre Profile auf die Erwartungen deutscher Arbeitgeber abstimmen.",
+          "date": "28. Juni 2026",
+          "imageAlt": "Porträt eines Arbeiters in Schutzkleidung"
+        },
+        "fourth": {
+          "title": "CBS This Morning: Saturday",
+          "description": "Die Nachfrage im deutschen Gesundheitsbereich bleibt hoch, vor allem in Kliniken und regionalen Krankenhäusern.",
+          "date": "28. Juni 2026",
+          "imageAlt": "Feuerwehrkräfte in Schutzkleidung"
+        },
+        "fifth": {
+          "title": "CBS This Morning: Saturday",
+          "description": "Praktische Anforderungen für Relocation, berufliche Anerkennung und das Onboarding im ersten Monat.",
+          "date": "28. Juni 2026",
+          "imageAlt": "Bauarbeiter mit gelben Helmen"
+        },
+        "sixth": {
+          "title": "CBS This Morning: Saturday",
+          "description": "Wie internationale Fachkräfte ihre Profile auf die Erwartungen deutscher Arbeitgeber abstimmen.",
+          "date": "28. Juni 2026",
+          "imageAlt": "Porträt eines Arbeiters in Schutzkleidung"
+        }
+      }
+    },
+    "support": {
+      "eyebrow": "Immer an deiner Seite",
+      "title": "Brauchst du Hilfe? Wir sind für dich da",
+      "description": "Egal ob konkrete Frage oder technische Unterstützung, unser Support-Team hilft dir gerne weiter.",
+      "actions": {
+        "faqs": "FAQs",
+        "contact": "Kontakt"
+      }
+    },
+    "about": {
+      "intro": {
+        "eyebrow": "Unsere Identitaet",
+        "title": "Die Bruecke zwischen Talenten und Deutschland",
+        "descriptionOne": "Willkommen bei Talent Seeker, deiner vertrauten Plattform, um talentierte Fachkraefte mit starken Chancen auf dem deutschen Arbeitsmarkt zu verbinden.",
+        "descriptionTwo": "Wir unterstuetzen Talente und Unternehmen in jedem Schritt - von der Rollenvermittlung ueber Relocation bis zur nachhaltigen Integration."
+      },
+      "story": {
+        "eyebrow": "Unsere Mission",
+        "title": "Die Bruecke zwischen Talenten und Exzellenz",
+        "tabs": {
+          "mission": "Unsere Mission",
+          "vision": "Unsere Vision",
+          "development": "Entwicklung"
+        },
+        "descriptionOne": "Wir handeln als Partner, der internationale Kandidaten mit den Anforderungen moderner deutscher Unternehmen zusammenbringt.",
+        "descriptionTwo": "Durch persoenliche Begleitung und intelligente Matching-Prozesse helfen wir Kandidaten und Unternehmen, langfristig die richtige Verbindung zu finden."
+      }
+    },
+    "footer": {
+      "brand": "Talent Seeker",
+      "description": "Dein verlässlicher Partner für Relocation und erfolgreiche Einstellungen in Deutschland.",
+      "quickLinks": {
+        "title": "Schnellzugriffe",
+        "items": {
+          "about": "Über uns",
+          "jobs": "Jobs",
+          "services": "Services",
+          "contact": "Kontakt"
+        }
+      },
+      "contact": {
+        "title": "Kontakt",
+        "phone": "+49 (0) 15156350852",
+        "email": "info@talent-sc.com",
+        "address": "Stein Str. 81-83, 35390 Gießen"
+      },
+      "copyright": "2026 Jobs-Tsc. Alle Rechte vorbehalten.",
+      "terms": "Nutzungsbedingungen",
+      "faqs": "FAQs",
+      "privacy": "Datenschutz"
+    },
+    "contact": {
+      "eyebrow": "Kontakt",
+      "title": "Lassen Sie uns ein Gespraech starten",
+      "description": "Haben Sie Fragen zu unseren Leistungen oder brauchen Sie technische Unterstuetzung? Unser Team begleitet Sie auf dem Weg zu Ihren Zielen im deutschen Markt.",
+      "mapAlt": "Karte des Buerostandorts",
+      "form": {
+        "title": "Senden Sie uns eine Nachricht",
+        "nameLabel": "Name",
+        "namePlaceholder": "Geben Sie Ihren Namen ein",
+        "emailLabel": "E-Mail",
+        "emailPlaceholder": "Geben Sie Ihre E-Mail ein",
+        "phoneLabel": "Telefon",
+        "phonePlaceholder": "Geben Sie Ihre Telefonnummer ein",
+        "subjectLabel": "Betreff",
+        "subjectPlaceholder": "Betreff eingeben",
+        "messageLabel": "Nachricht",
+        "messagePlaceholder": "Schreiben Sie Ihre Nachricht",
+        "send": "Senden"
+      },
+      "info": {
+        "phoneLabel": "Telefonnummer",
+        "emailLabel": "E-Mail-Adresse",
+        "addressLabel": "Bueroadresse"
+      },
+      "faq": {
+        "eyebrow": "Schnelle Antworten",
+        "title": "Alles, was Sie wissen muessen",
+        "description": "Nicht gefunden, wonach Sie suchen? Hier sind die haeufigsten Fragen zum Karrierestart in Deutschland.",
+        "items": {
+          "fees": {
+            "question": "Gibt es versteckte Gebuehren fuer Jobsuchende?",
+            "answer": "Nein, unsere Leistungen fuer Kandidaten sind vollstaendig kostenlos. Wir werden von unseren Partnerunternehmen verguetet."
+          },
+          "language": {
+            "question": "Muss ich vor der Bewerbung Deutsch sprechen?",
+            "answer": "Nicht immer. Das haengt von der Stelle ab. Wir beraten Sie zu den Sprachanforderungen und dem passenden Vorbereitungsweg."
+          },
+          "timeline": {
+            "question": "Wie lange dauert der gesamte Relocation-Prozess?",
+            "answer": "Die Dauer variiert je nach Stelle und Visumtyp. Mit vollstaendigen Unterlagen schaffen es die meisten Kandidaten in wenigen Monaten."
+          },
+          "documents": {
+            "question": "Welche Unterlagen sollte ich zuerst vorbereiten?",
+            "answer": "Bereiten Sie Ihren aktuellen Lebenslauf, Reisepass, Zeugnisse und Referenzen vor. Unser Team prueft alles und gibt Ihnen eine klare Checkliste."
+          }
+        }
+      },
+      "footerDescription": "Lorem ipsum dolor sit amet consectetur. Curabitur blandit amet morbi montes dui quis. Eget ultrices iaculis in ac porta. Libero nunc fermentum non id etiam volutpat at malesuada nulla.",
+      "legal": {
+        "terms": "Nutzungsbedingungen",
+        "faqs": "FAQs",
+        "privacy": "Datenschutz"
+      }
+    }
+  },
+  "Ui": {
+    "common": {
+      "loading": "Wird geladen"
+    },
+    "dialog": {
+      "close": "Schließen"
+    },
+    "sheet": {
+      "close": "Schließen"
+    },
+    "sidebar": {
+      "title": "Seitenleiste",
+      "mobileDescription": "Zeigt die mobile Seitenleiste an.",
+      "toggle": "Seitenleiste umschalten"
+    },
+    "breadcrumb": {
+      "label": "Brotkrumenpfad",
+      "more": "Mehr"
+    },
+    "carousel": {
+      "previousSlide": "Vorherige Folie",
+      "nextSlide": "Nächste Folie"
+    },
+    "pagination": {
+      "navigation": "Seitennavigation",
+      "previous": "Zurück",
+      "next": "Weiter",
+      "goToPrevious": "Zur vorherigen Seite",
+      "goToNext": "Zur nächsten Seite",
+      "morePages": "Weitere Seiten"
+    }
+  }
+}

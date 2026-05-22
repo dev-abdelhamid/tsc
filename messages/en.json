@@ -1,0 +1,516 @@
+{
+  "HomePage": {
+    "title": "To get started, edit the page.tsx file.",
+    "descriptionPrefix": "Looking for a starting point or more instructions? Head over to",
+    "templates": "Templates",
+    "descriptionMiddle": "or the",
+    "learningCenter": "Learning",
+    "descriptionSuffix": "center.",
+    "deployNow": "Deploy Now",
+    "documentation": "Documentation",
+    "switchToEnglish": "English",
+    "switchToArabic": "Arabic",
+    "switchToGerman": "German",
+    "metaTitle": "Talent Seeker",
+    "metaDescription": "Talent Seeker platform for jobs, relocation support, and career opportunities in Germany."
+  },
+  "Auth": {
+    "signIn": {
+      "title": "Welcome to Talenet Seeker",
+      "description": "Log in to your account to manage your professional journey or recruitment",
+      "logoAlt": "Talent Seeker logo",
+      "submit": "Login",
+      "loading": "Logging in...",
+      "forgotPassword": "Forget Password",
+      "back": "Back",
+      "userTab": "User",
+      "companyTab": "Company",
+      "accountTypeTabs": "Account type",
+      "noAccount": "Don't have account?",
+      "signUp": "Sign Up",
+      "alternateAction": "Don't have an account? Create one",
+      "fields": {
+        "emailLabel": "Email",
+        "emailPlaceholder": "Your Email",
+        "passwordLabel": "Password",
+        "passwordPlaceholder": "Password"
+      }
+    },
+    "signUp": {
+      "title": "Create your account",
+      "description": "Sign up to start your professional journey with Talent Seeker.",
+      "logoAlt": "Talent Seeker logo",
+      "submit": "Sign Up",
+      "back": "Back",
+      "userTab": "User",
+      "companyTab": "Company",
+      "accountTypeTabs": "Account type",
+      "hasAccount": "Already have account?",
+      "signIn": "Sign In",
+      "alternateAction": "Already have an account? Sign in",
+      "fields": {
+        "fullNameLabel": "Full name",
+        "fullNamePlaceholder": "Full Name",
+        "emailLabel": "Email",
+        "emailPlaceholder": "Your Email",
+        "passwordLabel": "Password",
+        "passwordPlaceholder": "Password",
+        "showPassword": "Show password",
+        "hidePassword": "Hide password"
+      }
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "description": "Enter your email and we will send a password reset link.",
+      "logoAlt": "Talent Seeker logo",
+      "submit": "Send Reset Link",
+      "back": "Back",
+      "rememberPassword": "Remember your password?",
+      "signIn": "Sign In",
+      "alternateAction": "Back to sign in",
+      "fields": {
+        "emailLabel": "Email",
+        "emailPlaceholder": "Your Email"
+      }
+    }
+  },
+  "Landing": {
+    "hero": {
+      "brand": "Talent Seeker",
+      "eyebrow": "Your Gateway to a New Life",
+      "title": "Your Complete Path to a Career in Germany",
+      "description": "We don't just find you a job; we build your future. From matching you with top German employers to handling visas and housing, we are with you every step of the way.",
+      "cta": "Explore Opportunities",
+      "login": "Login",
+      "nav": {
+        "home": "Home",
+        "about": "About Us",
+        "services": "Services",
+        "jobs": "Jobs",
+        "news": "News",
+        "contact": "Contact Us"
+      },
+      "languageAria": "Switch language",
+      "locale": {
+        "en": "English",
+        "ar": "Arabic",
+        "de": "German"
+      },
+      "card": {
+        "caption": "Jobs already posted",
+        "metric": "13k+",
+        "description": "New opportunities added continuously"
+      }
+    },
+    "categories": {
+      "eyebrow": "Our Categories",
+      "title": "Find the Perfect Role for Your Expertise",
+      "description": "We connect you with top German companies across vital industries. Select your field to discover opportunities tailored to your skills.",
+      "metricLabel": "Job already posted",
+      "showMore": "Show More",
+      "items": {
+        "business": {
+          "label": "Business & Marketing",
+          "vacancy": "250 Vacancy"
+        },
+        "design": {
+          "label": "Design",
+          "vacancy": "250 Vacancy"
+        },
+        "development": {
+          "label": "Development",
+          "vacancy": "250 Vacancy"
+        },
+        "medical": {
+          "label": "Medical",
+          "vacancy": "250 Vacancy"
+        },
+        "sales": {
+          "label": "Sales",
+          "vacancy": "250 Vacancy"
+        },
+        "hr": {
+          "label": "HR",
+          "vacancy": "250 Vacancy"
+        },
+        "finance": {
+          "label": "Finance",
+          "vacancy": "250 Vacancy"
+        }
+      }
+    },
+    "process": {
+      "eyebrow": "Seamless Process",
+      "title": "Your Journey to Germany, Simplified",
+      "description": "From your first application to your final arrival, we handle the complexity so you can focus on your new career.",
+      "steps": {
+        "createAccount": {
+          "title": "Create Account",
+          "description": "It is very easy to open an account and start your journey."
+        },
+        "completeProfile": {
+          "title": "Complete your profile",
+          "description": "Complete your profile with all the info to get attention of employers."
+        },
+        "apply": {
+          "title": "Apply job or hire",
+          "description": "Apply and get your preferred jobs with all requirements in one place."
+        }
+      }
+    },
+    "jobs": {
+      "eyebrow": "Premium Opportunities",
+      "title": "Your Next Career Move Awaits",
+      "description": "Explore the latest opportunities across all sectors and find the perfect match for your expertise in the German market.",
+      "filters": {
+        "all": "All Categories",
+        "design": "Design",
+        "development": "Development",
+        "marketing": "Marketing",
+        "medical": "Medical"
+      },
+      "moreDetails": "More Details",
+      "showAll": "Show All Jobs",
+      "items": {
+        "frontend": {
+          "department": "IT",
+          "title": "Frontend Developer",
+          "company": "TechNova - Software Company",
+          "type": "Full Time"
+        },
+        "marketing": {
+          "department": "Marketing",
+          "title": "Digital Marketer",
+          "company": "Marketify - Marketing Agency",
+          "type": "Part Time"
+        },
+        "uiux": {
+          "department": "Design",
+          "title": "UI/UX Designer",
+          "company": "Creative Lab - Design Studio",
+          "type": "Remote"
+        },
+        "sales": {
+          "department": "Sales",
+          "title": "Sales Executive",
+          "company": "SalesPro - Sales Company",
+          "type": "Full Time"
+        },
+        "hr": {
+          "department": "HR",
+          "title": "HR Specialist",
+          "company": "PeopleHub - HR Services",
+          "type": "Part Time"
+        },
+        "accounting": {
+          "department": "Finance",
+          "title": "Accountant",
+          "company": "FinCore - Financial Services",
+          "type": "Remote"
+        }
+      }
+    },
+    "jobsPage": {
+      "languageAria": "Switch language",
+      "searchPlaceholder": "Search by job title or location",
+      "search": "Search",
+      "allJobs": "All Jobs",
+      "allJobsCount": "190",
+      "filter": "Filter",
+      "department": "Department",
+      "postedAgo": "14 hours ago",
+      "salaryPeriod": "/month",
+      "time": "Time",
+      "companyName": "Company name",
+      "companySubLabel": "Title",
+      "filterPanel": {
+        "title": "Filter",
+        "clearAll": "Clear all",
+        "state": "State",
+        "categories": "Categories",
+        "salary": "Salary",
+        "salaryMin": "$1",
+        "salaryMax": "$10k",
+        "from": "$ from",
+        "to": "$ to",
+        "stateOptions": {
+          "hassan": "Hassan",
+          "alle": "Alle"
+        },
+        "categoryOptions": {
+          "marketing": "Marketing",
+          "design": "Design",
+          "it": "IT",
+          "medical": "Medical"
+        }
+      }
+    },
+    "testimonials": {
+      "eyebrow": "Real Impact",
+      "title": "Success Stories from Our Community",
+      "description": "Discover how we have empowered both talents and employers to thrive and grow within the German job market.",
+      "items": {
+        "jacob": {
+          "initials": "JJ",
+          "name": "Jacob Jones",
+          "role": "Medical Assistant, 29, Morocco",
+          "quote": "Talent SC did not just find me a job. They managed my entire transition to Germany."
+        },
+        "ronald": {
+          "initials": "RR",
+          "name": "Ronald Richards",
+          "role": "Marketing Coordinator, 32, Yemen",
+          "quote": "The process was clear from day one and the team handled every detail professionally."
+        },
+        "albert": {
+          "initials": "AF",
+          "name": "Albert Flores",
+          "role": "Web Designer, 25, Egypt",
+          "quote": "I found a role that matches my skills and moved with confidence."
+        },
+        "lina": {
+          "initials": "LH",
+          "name": "Lina Hassan",
+          "role": "Nurse, 27, Jordan",
+          "quote": "From paperwork to onboarding, every step was clear and supportive."
+        },
+        "youssef": {
+          "initials": "YE",
+          "name": "Youssef El Amrani",
+          "role": "Electrician, 31, Morocco",
+          "quote": "I received practical guidance and secured a role that fits my experience."
+        },
+        "nora": {
+          "initials": "NA",
+          "name": "Nora Ali",
+          "role": "HR Specialist, 30, Egypt",
+          "quote": "The transition process was smooth and the communication was always professional."
+        }
+      }
+    },
+    "news": {
+      "eyebrow": "Stay Informed",
+      "title": "Insights into the German Job Market",
+      "description": "The latest news on visa regulations, career tips, and industry trends to help you succeed in Germany.",
+      "readMore": "Read More",
+      "items": {
+        "first": {
+          "title": "CBS Evening News",
+          "description": "Useful updates and practical guidance for job seekers preparing for relocation.",
+          "date": "28 June 2026"
+        },
+        "second": {
+          "title": "CBS This Morning: Saturday",
+          "description": "A closer look at hiring trends and role demand across German industries.",
+          "date": "28 June 2026"
+        },
+        "third": {
+          "title": "Visa & Work Permit Updates",
+          "description": "Important procedural updates and what they mean for applicants.",
+          "date": "28 June 2026"
+        },
+        "fourth": {
+          "title": "Career Growth in Germany",
+          "description": "How to position your profile for long-term growth after hiring.",
+          "date": "28 June 2026"
+        }
+      }
+    },
+    "newsPage": {
+      "languageAria": "Switch language",
+      "relatedTitle": "Related News",
+      "shareWith": "Share With",
+      "featured": {
+        "title": "CBS Evening News",
+        "date": "28 June 2026",
+        "imageAlt": "German flag in front of a historic building"
+      },
+      "content": {
+        "opening": "Working in the German healthcare system offers strong opportunities for international professionals. Germany has one of Europe's most developed healthcare ecosystems with stable demand for skilled workers.",
+        "sectionOneTitle": "1. Diverse Career Opportunities",
+        "sectionOneBody": "Nursing professionals are needed across elderly care, hospitals, and pediatric services. Medical specialists, therapists, and technical healthcare staff also remain in high demand.",
+        "sectionTwoTitle": "2. Key Roles in Demand",
+        "sectionTwoBody": "Common roles include assistant doctors, clinical researchers, physiotherapists, occupational therapists, psychologists, medical laboratory specialists, and radiology staff.",
+        "sectionThreeTitle": "3. Requirements for International Candidates",
+        "sectionThreeBody": "Most employers require formal healthcare education and verified qualification recognition before onboarding.",
+        "sectionFourTitle": "4. Language and Integration",
+        "sectionFourBody": "A German language level around B2 is generally expected for direct patient communication and daily team collaboration."
+      },
+      "items": {
+        "first": {
+          "title": "CBS This Morning: Saturday",
+          "description": "Healthcare hiring in Germany remains active, led by clinics and regional hospitals.",
+          "date": "28 June 2026",
+          "imageAlt": "Firefighters in safety uniforms"
+        },
+        "second": {
+          "title": "CBS This Morning: Saturday",
+          "description": "Practical requirements for relocation, licensing, and first-month onboarding.",
+          "date": "28 June 2026",
+          "imageAlt": "Construction workers wearing yellow helmets"
+        },
+        "third": {
+          "title": "CBS This Morning: Saturday",
+          "description": "How foreign professionals can align their profiles with employer expectations.",
+          "date": "28 June 2026",
+          "imageAlt": "Worker portrait in protective clothing"
+        },
+        "fourth": {
+          "title": "CBS This Morning: Saturday",
+          "description": "Healthcare hiring in Germany remains active, led by clinics and regional hospitals.",
+          "date": "28 June 2026",
+          "imageAlt": "Firefighters in safety uniforms"
+        },
+        "fifth": {
+          "title": "CBS This Morning: Saturday",
+          "description": "Practical requirements for relocation, licensing, and first-month onboarding.",
+          "date": "28 June 2026",
+          "imageAlt": "Construction workers wearing yellow helmets"
+        },
+        "sixth": {
+          "title": "CBS This Morning: Saturday",
+          "description": "How foreign professionals can align their profiles with employer expectations.",
+          "date": "28 June 2026",
+          "imageAlt": "Worker portrait in protective clothing"
+        }
+      }
+    },
+    "support": {
+      "eyebrow": "Always by your side",
+      "title": "Need Help? We Have You Covered",
+      "description": "Whether you have a specific question or need technical guidance, our support team is ready to assist you.",
+      "actions": {
+        "faqs": "FAQs",
+        "contact": "Contact Us"
+      }
+    },
+    "about": {
+      "intro": {
+        "eyebrow": "Our Identity",
+        "title": "The Bridge Between Talent and Germany",
+        "descriptionOne": "Welcome to Talent Seeker, your trusted platform for connecting talented professionals with opportunities in the German job market.",
+        "descriptionTwo": "We support both candidates and employers from first match to long-term success through relocation support and guided onboarding."
+      },
+      "story": {
+        "eyebrow": "Our Mission",
+        "title": "The Bridge Between Talent And Excellence",
+        "tabs": {
+          "mission": "Our Mission",
+          "vision": "Our Vision",
+          "development": "Development"
+        },
+        "descriptionOne": "We combine human support with practical hiring workflows to create strong matches between global professionals and German companies.",
+        "descriptionTwo": "By aligning goals, skills, and market needs, we help both sides move forward with confidence and build lasting outcomes."
+      }
+    },
+    "footer": {
+      "brand": "Talent Seeker",
+      "description": "Your trusted partner for talent relocation and hiring success in Germany.",
+      "quickLinks": {
+        "title": "Quick links",
+        "items": {
+          "about": "About Us",
+          "jobs": "Jobs",
+          "services": "Services",
+          "contact": "Contact Us"
+        }
+      },
+      "contact": {
+        "title": "Contact Us",
+        "phone": "+49 (0) 15156350852",
+        "email": "info@talent-sc.com",
+        "address": "Stein Str. 81-83, 35390 Gießen"
+      },
+      "copyright": "2026 Jobs-Tsc. All rights reserved.",
+      "terms": "Terms of service",
+      "faqs": "FAQs",
+      "privacy": "Privacy policy"
+    },
+    "contact": {
+      "eyebrow": "Contact Us",
+      "title": "Let's Start a Conversation",
+      "description": "Have questions about our services or need technical support? Our team is ready to guide you towards your goals in the German market.",
+      "mapAlt": "Office location map",
+      "form": {
+        "title": "Send Us a message",
+        "nameLabel": "Name",
+        "namePlaceholder": "Enter your name",
+        "emailLabel": "Email",
+        "emailPlaceholder": "Enter your email",
+        "phoneLabel": "Phone",
+        "phonePlaceholder": "Enter your phone",
+        "subjectLabel": "Subject",
+        "subjectPlaceholder": "Enter the subject",
+        "messageLabel": "Message",
+        "messagePlaceholder": "Write your message",
+        "send": "Send"
+      },
+      "info": {
+        "phoneLabel": "Phone Number",
+        "emailLabel": "Email Address",
+        "addressLabel": "Office Address"
+      },
+      "faq": {
+        "eyebrow": "Quick Answers",
+        "title": "Everything You Need to Know",
+        "description": "Can't find what you're looking for? Here are the most common questions about starting your career in Germany.",
+        "items": {
+          "fees": {
+            "question": "Are there any hidden fees I need to pay as a job seeker ?",
+            "answer": "No, our services for candidates are completely free. We are compensated by our partner employers, not the talents."
+          },
+          "language": {
+            "question": "Do I need to speak German before applying?",
+            "answer": "Not always. It depends on the role. We guide you on language expectations and the right preparation path for each opportunity."
+          },
+          "timeline": {
+            "question": "How long does the full relocation process usually take?",
+            "answer": "Processing times vary by role and visa type, but most successful candidates complete the process in a few months with proper documents."
+          },
+          "documents": {
+            "question": "Which documents should I prepare first?",
+            "answer": "Prepare your updated CV, passport, certificates, and work references. Our team reviews everything and gives you a clear checklist."
+          }
+        }
+      },
+      "footerDescription": "Lorem ipsum dolor sit amet consectetur. Curabitur blandit amet morbi montes dui quis. Eget ultrices iaculis in ac porta. Libero nunc fermentum non id etiam volutpat at malesuada nulla.",
+      "legal": {
+        "terms": "Terms Of Service",
+        "faqs": "FAQs",
+        "privacy": "Privacy Policy"
+      }
+    }
+  },
+  "Ui": {
+    "common": {
+      "loading": "Loading"
+    },
+    "dialog": {
+      "close": "Close"
+    },
+    "sheet": {
+      "close": "Close"
+    },
+    "sidebar": {
+      "title": "Sidebar",
+      "mobileDescription": "Displays the mobile sidebar.",
+      "toggle": "Toggle Sidebar"
+    },
+    "breadcrumb": {
+      "label": "breadcrumb",
+      "more": "More"
+    },
+    "carousel": {
+      "previousSlide": "Previous slide",
+      "nextSlide": "Next slide"
+    },
+    "pagination": {
+      "navigation": "pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "goToPrevious": "Go to previous page",
+      "goToNext": "Go to next page",
+      "morePages": "More pages"
+    }
+  }
+}
