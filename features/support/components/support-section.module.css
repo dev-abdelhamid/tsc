@@ -1,32 +1,37 @@
-.rotatedOverlay {
-  pointer-events: none;
-  position: absolute;
-  mix-blend-mode: overlay;
-  width: 1600px;
-  height: 2000px;
-  left: 50%;
-  top: -362px;
-  transform: translateX(-50%) rotate(90deg);
-  opacity: 0.15;
-  z-index: 0;
-}
-
 .ctaWrapper {
+  box-sizing: border-box;
   display: flex;
+  flex-direction: row;
   justify-content: center;
+  align-items: center;
   padding: 82px 0;
-  position: relative;
-  z-index: 2;
+  isolation: isolate;
+  width: 100%;
 }
 
 .ctaCard {
+  position: relative;
   width: 1312px;
   height: 393px;
   background: linear-gradient(180deg, #398DB3 0%, #2D7494 100%);
   box-shadow: 0px 42px 107px rgba(123, 190, 255, 0.34), 0px 24.7206px 32.2574px rgba(75, 183, 231, 0.1867), 0px 10.2677px 13.3981px rgba(75, 183, 231, 0.22), 0px 3.71362px 4.84582px rgba(75, 183, 231, 0.1533), 0px 0px 0px 4px #C2E3FA, 0px 0px 0px 5px #FFFFFF, inset 0px 1px 18px 2px #E5F3FD, inset 0px 1px 4px 2px #C2E3FA;
   border-radius: 32px;
-  position: relative;
   overflow: hidden;
+}
+
+.textureOverlay {
+  position: absolute;
+  width: 1600px;
+  height: 2000px;
+  left: 50%;
+  top: -362px;
+  transform: translateX(-50%) rotate(90deg);
+  mix-blend-mode: overlay;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url('/contact/button-noise.png');
+  background-size: cover;
 }
 
 .ctaInner {
@@ -72,45 +77,43 @@
   margin-top: 12px;
 }
 
-.ctaBtnFaq {
+.btnFaq {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 12px;
+  padding: 10px 28px;
   background: #FFFFFF;
   color: #006EA8;
   border-radius: 12px;
   font-weight: 500;
   box-shadow: inset 0px 1px 4px 2px #C2DDFF;
+  text-decoration: none;
 }
 
-.ctaBtnContact {
+.btnContact {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 12px;
+  padding: 10px 28px;
   background: linear-gradient(180deg, #006EA8 0%, #005685 100%);
   color: #FFFFFF;
   border-radius: 12px;
   font-weight: 500;
   box-shadow: 0px 42px 107px rgba(123, 190, 255, 0.34), 0px 24.7206px 32.2574px rgba(0, 86, 133, 0.1867), 0px 10.2677px 13.3981px rgba(0, 86, 133, 0.22), 0px 3.71362px 4.84582px rgba(0, 86, 133, 0.1533), 0px 0px 0px 4px #E8F2FF, 0px 0px 0px 5px #FFFFFF, inset 0px 1px 18px 2px #E8F2FF, inset 0px 1px 4px 2px #C2DDFF;
+  text-decoration: none;
 }
 
-.ctaIcon {
-  width: 20px;
-  height: 20px;
+.btnIconWrap {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.9);
+  border-radius: 8px;
 }
 
-.bgLinear {
-  background: linear-gradient(180deg, #041B2D 0%, #001A2E 52%, #001525 100%);
-}
-
-.bgRadial {
-  background: radial-gradient(44% 80% at 88% 26%, rgba(64, 160, 202, 0.34) 0%, rgba(64, 160, 202, 0) 72%), radial-gradient(58% 92% at 0% 100%, rgba(0, 86, 133, 0.2) 0%, rgba(0, 86, 133, 0) 72%);
-}
-
-.noiseBg {
-  background-image: url('/footer/noise-bg.png');
-  background-size: 420px 420px;
-  background-repeat: repeat;
+.btnIcon {
+  width: 18px;
+  height: 18px;
 }
