@@ -264,11 +264,10 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
 
             className={cn(
 
-              "flex w-full flex-col items-center gap-6 text-center sm:gap-8",
-
+              "flex w-full  mb-8 flex-col items-center gap-6 text-center sm:gap-8",
+ 
               "lg:flex-row lg:items-end lg:justify-between lg:text-start",
 
-              isRtl ? "lg:flex-row-reverse" : ""
 
             )}
 
@@ -280,11 +279,10 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
 
               className={cn(
 
-                "flex w-full max-w-[1096px] flex-col items-center gap-6",
+                "flex w-full max-w-[1096px] flex-col  items-center  gap-6",
 
                 "lg:items-start lg:text-start",
 
-                isRtl ? "lg:items-end lg:text-end" : ""
 
               )}
 

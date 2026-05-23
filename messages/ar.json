@@ -773,6 +773,26 @@
       "error": "تعذر الحفظ",
       "locationRequired": "حقل الموقع مطلوب"
     },
+    "about": {
+      "title": "محتوى صفحة من نحن",
+      "description": "أدر محتوى الهيدر وقسم القصة المعروض في صفحة من نحن العامة.",
+      "summary": "النموذج يزامن صفحة من نحن مع endpoint العام /about ويحفظ الصور المرفوعة.",
+      "fields": {
+        "title": "عنوان الهيدر",
+        "descriptionLeft": "وصف المقدمة الأيسر",
+        "descriptionRight": "وصف المقدمة الأيمن",
+        "secondTitle": "عنوان القصة",
+        "secondDescription": "وصف القصة",
+        "image": "صورة الهيدر",
+        "secondImage": "الصورة الثانوية"
+      },
+      "currentImage": "صورة الهيدر الحالية",
+      "currentSecondaryImage": "الصورة الثانوية الحالية",
+      "save": "حفظ",
+      "saving": "جاري الحفظ…",
+      "loadError": "تعذر تحميل محتوى صفحة من نحن من الخادم",
+      "error": "تعذر الحفظ"
+    },
     "settings": {
       "title": "الإعدادات والمحتوى",
       "description": "إعدادات الموقع، الأخبار، والإشعارات",

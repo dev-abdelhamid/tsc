@@ -156,6 +156,11 @@ function SidebarNav({
             label: isRTL ? "قصص النجاح" : "Success Stories",
             href: `/${locale}/dashboard/admin/success-stories`,
           },
+          {
+            icon: "/dashboard/profile.svg",
+            label: isRTL ? "صفحة من نحن" : "About Page",
+            href: `/${locale}/dashboard/admin/about`,
+          },
           { icon: "/dashboard/favourites.svg", label: isRTL ? "الإعدادات" : "Settings", href: `/${locale}/dashboard/admin/settings` },
         ]
       default:

@@ -31,13 +31,12 @@ export function SiteFooter() {
               className="object-cover opacity-40 mix-blend-overlay pointer-events-none"
             />
           </div>
-          <div className={styles.rotatedOverlay} aria-hidden>
-            <Image src="/home/hero/hero-bg-image.png" alt="" width={1119} height={1991} className="object-cover" />
-          </div>
+    
         </div>
       </div>
 
       <div className="relative z-10 mx-auto max-w-[1512px] px-6 py-14 lg:px-[100px] lg:pt-14 lg:pb-8">
+     
         {/* Top Section */}
         <div className="flex flex-col justify-between gap-10 border-b border-[#003F64] pb-10 lg:flex-row lg:gap-20">
           {/* Column 1: Brand & Desc */}

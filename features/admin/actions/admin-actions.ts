@@ -13,6 +13,7 @@ import {
   updateNewsItem,
 } from "@/lib/api/services/news.service"
 import { updateSetting } from "@/lib/api/services/settings.service"
+import { updateAbout } from "../../../lib/api/services/about.service"
 import {
   deleteNotification,
   markAllAsRead,
@@ -153,13 +154,26 @@ export async function saveSettingAction(key: string, formData: FormData, locale:
   }
 }
 
+export async function saveAboutAction(formData: FormData, locale: string) {
+  try {
+    const { token } = await requireAdmin(locale)
+    await updateAbout(formData, token, locale)
+    revalidatePath(`/${locale}/about`)
+    revalidatePath(`/${locale}/dashboard/admin/about`)
+    return { ok: true as const }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to save about page"
+    return { ok: false as const, message }
+  }
+}
+
 export async function markNotificationReadAction(id: number, locale: string) {
   try {
     const { token } = await requireAdmin(locale)
     await markAsRead(id, token, locale)
     revalidatePath(`/${locale}/dashboard/admin/settings`)
     return { ok: true as const }
-  } catch (err) {
+  } catch {
     return { ok: false as const, message: "Failed" }
   }
 }
@@ -170,7 +184,7 @@ export async function markAllNotificationsReadAction(locale: string) {
     await markAllAsRead(token, locale)
     revalidatePath(`/${locale}/dashboard/admin/settings`)
     return { ok: true as const }
-  } catch (err) {
+  } catch {
     return { ok: false as const, message: "Failed" }
   }
 }
@@ -181,7 +195,7 @@ export async function deleteNotificationAction(id: number, locale: string) {
     await deleteNotification(id, token, locale)
     revalidatePath(`/${locale}/dashboard/admin/settings`)
     return { ok: true as const }
-  } catch (err) {
+  } catch {
     return { ok: false as const, message: "Failed" }
   }
 }

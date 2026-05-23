@@ -773,6 +773,26 @@
       "error": "Save failed",
       "locationRequired": "Location is required"
     },
+    "about": {
+      "title": "About page content",
+      "description": "Manage the hero and story content shown on the public About page.",
+      "summary": "The form syncs the About page with the public /about endpoint and keeps your uploaded images.",
+      "fields": {
+        "title": "Hero title",
+        "descriptionLeft": "Intro description left",
+        "descriptionRight": "Intro description right",
+        "secondTitle": "Story title",
+        "secondDescription": "Story description",
+        "image": "Hero image",
+        "secondImage": "Secondary image"
+      },
+      "currentImage": "Current hero image",
+      "currentSecondaryImage": "Current secondary image",
+      "save": "Save",
+      "saving": "Saving…",
+      "loadError": "Could not load About content from the API",
+      "error": "Save failed"
+    },
     "settings": {
       "title": "Settings & content",
       "description": "Site settings, news, and notifications",

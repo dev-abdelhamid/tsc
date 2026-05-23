@@ -1,34 +1,53 @@
-import { getTranslations } from "next-intl/server"
+import { getLocale, getTranslations } from "next-intl/server"
 import { ProcessSection } from "@/features/process"
 import { SupportSection } from "@/features/support"
+import { getAbout } from "@/lib/api/services/about.service"
 import { AboutIntroSection } from "./about-intro-section"
 import { AboutStorySection } from "./about-story-section"
 
-
-
 export async function AboutPage() {
-  const aboutT = await getTranslations("Landing.about")
+  const locale = await getLocale()
+  const [aboutT, aboutContent] = await Promise.all([getTranslations("Landing.about"), getAbout(locale)])
+
+  const introEyebrow = aboutT("intro.eyebrow")
+  const introTitle = aboutContent?.title || aboutT("intro.title")
+  const introDescriptionOne = aboutContent?.descriptionLeft || aboutT("intro.descriptionOne")
+  const introDescriptionTwo = aboutContent?.descriptionRight || aboutT("intro.descriptionTwo")
+
+  const storyEyebrow = aboutT("story.eyebrow")
+  const storyTitle = aboutContent?.secondTitle || aboutT("story.title")
+  const storyDescriptionOne = aboutContent?.secondDescription || aboutT("story.descriptionOne")
+  const storyDescriptionTwo = aboutT("story.descriptionTwo")
+
+  const primaryImage = aboutContent?.image || "/home/content/news-2.png"
+  const secondaryImage = aboutContent?.secondImage || "/home/content/testimonial-right-2.png"
+  const storyImage = aboutContent?.secondImage || "/home/content/news-feature.png"
 
   return (
     <main className="flex-1 bg-[#f8fbff]">
-
       <AboutIntroSection
-        eyebrow={aboutT("intro.eyebrow")}
-        title={aboutT("intro.title")}
-        descriptionOne={aboutT("intro.descriptionOne")}
-        descriptionTwo={aboutT("intro.descriptionTwo")}
+        eyebrow={introEyebrow}
+        title={introTitle}
+        descriptionOne={introDescriptionOne}
+        descriptionTwo={introDescriptionTwo}
+        featuredImageSrc={primaryImage}
+        secondaryImageSrc={secondaryImage}
+        featuredImageAlt={locale === "ar" ? "تصوير نبذة عن Talent Seeker" : "Talent Seeker about image"}
+        secondaryImageAlt={locale === "ar" ? "مشهد توضيحي عن الدعم المهني" : "Professional support visual"}
       />
 
       <ProcessSection />
 
       <AboutStorySection
-        eyebrow={aboutT("story.eyebrow")}
-        title={aboutT("story.title")}
+        eyebrow={storyEyebrow}
+        title={storyTitle}
         missionTabLabel={aboutT("story.tabs.mission")}
         visionTabLabel={aboutT("story.tabs.vision")}
         developmentTabLabel={aboutT("story.tabs.development")}
-        descriptionOne={aboutT("story.descriptionOne")}
-        descriptionTwo={aboutT("story.descriptionTwo")}
+        descriptionOne={storyDescriptionOne}
+        descriptionTwo={storyDescriptionTwo}
+        storyImageSrc={storyImage}
+        storyImageAlt={locale === "ar" ? "قسم قصتنا وفريق العمل" : "Our story and team image"}
       />
 
       <SupportSection />

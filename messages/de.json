@@ -773,6 +773,26 @@
       "error": "Speichern fehlgeschlagen",
       "locationRequired": "Ort ist erforderlich"
     },
+    "about": {
+      "title": "Inhalte der About-Seite",
+      "description": "Verwalten Sie den Hero- und Story-Inhalt auf der öffentlichen About-Seite.",
+      "summary": "Das Formular synchronisiert die About-Seite mit dem öffentlichen /about-Endpunkt und behält Ihre hochgeladenen Bilder bei.",
+      "fields": {
+        "title": "Hero-Titel",
+        "descriptionLeft": "Einführungsbeschreibung links",
+        "descriptionRight": "Einführungsbeschreibung rechts",
+        "secondTitle": "Story-Titel",
+        "secondDescription": "Story-Beschreibung",
+        "image": "Hero-Bild",
+        "secondImage": "Sekundäres Bild"
+      },
+      "currentImage": "Aktuelles Hero-Bild",
+      "currentSecondaryImage": "Aktuelles sekundäres Bild",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "loadError": "Die About-Inhalte konnten nicht vom API geladen werden",
+      "error": "Speichern fehlgeschlagen"
+    },
     "settings": {
       "title": "Einstellungen & Inhalte",
       "description": "Website-Einstellungen, News und Benachrichtigungen",

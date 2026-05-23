@@ -1,17 +1,12 @@
 import { getLocale, getTranslations } from "next-intl/server"
 import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home"
 import { getProcessSteps } from "@/features/process/services/process.service"
-import { Globe } from "lucide-react"
-import {
-  CategoryIconFrame,
-  CategoryIconGraduation,
-  CategoryIconUser,
-} from "@/features/categories/components/category-icons"
+import Image from "next/image"
 
-const icons: Record<string, React.ElementType> = {
-  createAccount: CategoryIconUser,
-  completeProfile: CategoryIconFrame,
-  apply: CategoryIconGraduation,
+const icons: Record<string, string> = {
+  createAccount: "/process/profile.svg",
+  completeProfile: "/process/info.svg",
+  apply: "/process/job.svg",
 }
 
 function CurvedArrow({ className, rtl }: { className?: string; rtl?: boolean }) {
@@ -83,7 +78,7 @@ export async function ProcessSection() {
       <StaggerInView className="relative space-y-6 text-center">
         <StaggerItem>
           <div className="mx-auto flex w-fit items-center gap-2 rounded-[8px] bg-[#04324F] px-4 py-2">
-            <Globe className="h-[14px] w-[14px] text-[#40A0CA]" />
+            <Image src="/footer/icon-link.svg" alt="" width={16} height={16} />
             <span className="text-[12px] leading-[1.16] font-normal text-[#40A0CA]">{t("eyebrow")}</span>
           </div>
         </StaggerItem>
@@ -105,12 +100,12 @@ export async function ProcessSection() {
           <StepConnector index={1} rtl={isRtl} />
 
           {steps.map((step) => {
-            const IconComponent = icons[step] || CategoryIconUser
+            const src = icons[step]
             return (
               <StaggerItem key={step}>
                 <div className="relative z-[1] flex flex-col items-center text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#144A69] shadow-[0_0_24px_rgba(65,160,202,0.2)]">
-                    <IconComponent className="h-6 w-6 text-[#40A0CA]" />
+                  <div className="flex h-12 w-12 items-center justify-center">
+                    <Image src={src} alt={t(`steps.${step}.title`)} width={48} height={48} className="object-contain" />
                   </div>
                   <h3 className="mt-6 text-[20px] leading-[1.16] font-bold text-[#F5F5F5]">{t(`steps.${step}.title`)}</h3>
                   <p className="mt-3 max-w-[280px] text-[16px] leading-normal text-[#D4D4D4]">{t(`steps.${step}.description`)}</p>
