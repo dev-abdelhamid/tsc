@@ -1,7 +1,7 @@
 import { Link } from "@/i18n/navigation"
 import { getTranslations } from "next-intl/server"
 import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home"
-import { NewsEyebrowGlobe } from "@/features/news/components/news-icons"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 function SupportChatIcon({ className }: { className?: string }) {
@@ -42,7 +42,7 @@ export async function SupportSection() {
           <div className="space-y-6">
             <StaggerItem>
               <div className="mx-auto inline-flex items-center gap-2 rounded-lg bg-[rgba(64,160,202,0.5)] px-4 py-2 text-[12px] capitalize leading-[1.16] text-white">
-                <NewsEyebrowGlobe className="text-white" />
+                <Image src="/footer/icon-link.svg" alt="" width={16} height={16} />
                 {t("eyebrow")}
               </div>
             </StaggerItem>
@@ -64,14 +64,14 @@ export async function SupportSection() {
                 href="/contact#faq"
                 className="inline-flex h-11 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-white px-4 text-[16px] font-medium text-[#006EA8] shadow-[inset_0_1px_4px_2px_#C2DDFF] transition-colors hover:bg-[#eef7ff]"
               >
-                <SupportChatIcon className="text-[#006EA8]" />
+                <Image src="/faqs.svg" alt="faqs" width={20} height={20} />
                 {t("actions.faqs")}
               </Link>
               <Link
                 href="/contact"
                 className="inline-flex h-11 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] bg-size-[120px_120px,auto] bg-blend-[plus-lighter,normal] px-4 text-[16px] font-medium text-white shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#E8F2FF,0_4px_5px_rgba(0,86,133,0.15),0_10px_13px_rgba(0,86,133,0.22),0_24px_32px_rgba(0,86,133,0.19)] transition-[filter] hover:brightness-105"
               >
-                <SupportChatIcon />
+                <Image src="/contact.svg" alt="contact" width={20} height={20} />
                 {t("actions.contact")}
               </Link>
             </div>
