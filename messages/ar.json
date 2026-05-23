@@ -56,21 +56,44 @@
         "passwordLabel": "كلمة المرور",
         "passwordPlaceholder": "كلمة المرور",
         "showPassword": "إظهار كلمة المرور",
-        "hidePassword": "إخفاء كلمة المرور"
+        "hidePassword": "إخفاء كلمة المرور",
+        "phonePlaceholder": "رقم الهاتف",
+        "confirmPasswordPlaceholder": "تأكيد كلمة المرور",
+        "companyNamePlaceholder": "اسم الشركة",
+        "termsLabel": "أوافق على الشروط وسياسة الخصوصية"
       }
     },
     "forgotPassword": {
       "title": "إعادة تعيين كلمة المرور",
-      "description": "أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين.",
+      "description": "أدخل بريدك الإلكتروني وسنرسل لك رمز التحقق.",
       "logoAlt": "شعار تالنت سيكر",
       "submit": "إرسال رابط الاستعادة",
+      "step1": "إرسال الرمز",
+      "step2": "تأكيد الرمز",
+      "step3": "كلمة مرور جديدة",
       "back": "رجوع",
       "rememberPassword": "تتذكر كلمة المرور؟",
       "signIn": "تسجيل الدخول",
       "alternateAction": "العودة لتسجيل الدخول",
       "fields": {
         "emailLabel": "البريد الإلكتروني",
-        "emailPlaceholder": "البريد الإلكتروني"
+        "emailPlaceholder": "البريد الإلكتروني",
+        "codePlaceholder": "رمز من 6 أرقام",
+        "passwordPlaceholder": "كلمة المرور الجديدة",
+        "confirmPlaceholder": "تأكيد كلمة المرور"
+      }
+    },
+    "verifyEmail": {
+      "title": "تأكيد البريد الإلكتروني",
+      "description": "أدخل الرمز المرسل إلى بريدك الإلكتروني.",
+      "logoAlt": "شعار تالنت سيكر",
+      "submit": "تأكيد",
+      "resend": "إعادة إرسال الرمز",
+      "back": "رجوع",
+      "hasAccount": "لديك حساب؟",
+      "signIn": "تسجيل الدخول",
+      "fields": {
+        "codePlaceholder": "رمز التحقق"
       }
     }
   },
@@ -171,6 +194,7 @@
       },
       "moreDetails": "المزيد من التفاصيل",
       "showAll": "عرض كل الوظائف",
+      "salaryPeriod": "/شهرياً",
       "items": {
         "frontend": {
           "department": "تقنية المعلومات",
@@ -219,10 +243,34 @@
       "filter": "تصفية",
       "department": "القسم",
       "postedAgo": "منذ 14 ساعة",
-      "salaryPeriod": "/شهريا",
-      "time": "الوقت",
+      "salaryPeriod": " /شهريا",
+      "employmentFullTime": "دوام كامل",
       "companyName": "اسم الشركة",
       "companySubLabel": "المسمى",
+      "noResults": "لا توجد وظائف مطابقة. جرّب تعديل البحث أو مسح الفلاتر.",
+      "closeFilters": "إغلاق",
+      "description": "وصف الوظيفة",
+      "requirements": "المتطلبات",
+      "responsibilities": "المسؤوليات",
+      "applyNow": "قدّم الآن",
+      "vacancies": "شواغر",
+      "detail": {
+        "lookingFor": "نبحث عن...",
+        "shareWith": "شارك عبر:",
+        "monthly": "شهرياً",
+        "details": "التفاصيل",
+        "industry": "المجال",
+        "employmentType": "نوع التوظيف",
+        "vacancy": "الشواغر",
+        "gender": "الجنس",
+        "age": "العمر",
+        "applicationDeadline": "آخر موعد للتقديم",
+        "applyForJob": "قدّم على الوظيفة",
+        "relatedJobs": "وظائف مشابهة",
+        "placeholderOne": "نبحث عن محترف متحمس ينضم إلى فريقنا المتنامي ويساهم في تحقيق أهدافنا.",
+        "placeholderTwo": "ستعمل عن كثب مع فرق متعددة لضمان جودة التسليم والتواصل الواضح مع أصحاب المصلحة.",
+        "placeholderThree": "نوفر بيئة عمل داعمة مع فرص للتطور المهني والتعلم المستمر."
+      },
       "filterPanel": {
         "title": "تصفية",
         "clearAll": "مسح الكل",
@@ -293,6 +341,7 @@
       "title": "رؤى حول سوق العمل الألماني",
       "description": "آخر الأخبار حول أنظمة التأشيرة ونصائح المسار المهني واتجاهات القطاعات لمساعدتك على النجاح في ألمانيا.",
       "readMore": "اقرأ المزيد",
+      "viewAll": "عرض كل الأخبار",
       "items": {
         "first": {
           "title": "CBS Evening News",
@@ -318,6 +367,8 @@
     },
     "newsPage": {
       "languageAria": "تغيير اللغة",
+      "backToNews": "العودة إلى الأخبار",
+      "empty": "لا توجد مقالات متاحة حالياً. يرجى المحاولة لاحقاً.",
       "relatedTitle": "أخبار ذات صلة",
       "shareWith": "شارك عبر",
       "featured": {
@@ -481,6 +532,276 @@
       }
     }
   },
+  "CompanyJobs": {
+    "title": "إنشاء وظيفة",
+    "listTitle": "وظائفي",
+    "addJob": "+ إضافة وظيفة",
+    "empty": "لم تنشر أي وظائف بعد",
+    "loadError": "حدث خطأ في تحميل الوظائف",
+    "cancel": "إلغاء",
+    "back": "رجوع",
+    "next": "التالي",
+    "submit": "نشر",
+    "submitting": "جاري النشر...",
+    "compressing": "جاري ضغط الصورة...",
+    "imageSizeHint": "يتم ضغط الصورة قبل الرفع لتسريع النشر. JPG أو PNG أو WebP حتى 12 ميجابايت.",
+    "delete": "حذف",
+    "stop": "إيقاف",
+    "applications": "الطلبات",
+    "confirmDelete": "هل تريد حذف هذه الوظيفة؟",
+    "steps": {
+      "basic": "المعلومات الأساسية",
+      "info": "معلومات الوظيفة",
+      "description": "وصف الوظيفة"
+    },
+    "fields": {
+      "title": "العنوان",
+      "category": "التصنيف",
+      "subCategory": "التصنيف الفرعي",
+      "sameAsCategory": "نفس التصنيف",
+      "state": "الولاية / المنطقة",
+      "vacancy": "عدد الشواغر",
+      "gender": "الجنس",
+      "deadline": "آخر موعد للتقديم",
+      "salary": "الراتب",
+      "age": "العمر",
+      "description": "الوصف",
+      "responsibilities": "المسؤوليات",
+      "requirements": "المتطلبات",
+      "image": "صورة بانر الوظيفة"
+    },
+    "placeholders": {
+      "title": "عنوان الوظيفة",
+      "image": "اضغط لرفع أو تغيير الصورة",
+      "select": "اختر",
+      "salaryFrom": "من €",
+      "salaryTo": "إلى €",
+      "ageFrom": "من",
+      "ageTo": "إلى"
+    },
+    "gender": {
+      "Male": "ذكر",
+      "Female": "أنثى",
+      "All": "الجميع"
+    },
+    "status": {
+      "pending": "قيد المراجعة",
+      "approved": "نشطة",
+      "rejected": "مرفوضة",
+      "stopped": "موقوفة"
+    },
+    "menu": {
+      "applications": "الطلبات",
+      "review": "معاينة",
+      "stop": "إيقاف",
+      "delete": "حذف"
+    },
+    "review": {
+      "title": "معاينة الوظيفة",
+      "backToJobs": "العودة لكل الوظائف",
+      "viewApplications": "عرض الطلبات",
+      "companyFallback": "شركتك",
+      "industryFallback": "المجال"
+    },
+    "applicationsPage": {
+      "title": "طلبات التقديم",
+      "backToJobs": "العودة لكل الوظائف",
+      "candidate": "المتقدم",
+      "statusLabel": "الحالة",
+      "actionsLabel": "الإجراءات",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "details": "التفاصيل",
+      "empty": "لا توجد طلبات على هذه الوظيفة بعد.",
+      "unknownCandidate": "متقدم",
+      "status": {
+        "pending": "قيد الانتظار",
+        "accepted": "مقبول",
+        "rejected": "مرفوض"
+      }
+    },
+    "columns": {
+      "title": "عنوان الوظيفة",
+      "category": "التصنيف",
+      "status": "الحالة",
+      "applications": "المتقدمون",
+      "deadline": "الموعد النهائي",
+      "actions": "الإجراءات"
+    },
+    "errors": {
+      "title": "أدخل عنوان الوظيفة",
+      "category": "اختر التصنيف",
+      "subCategory": "اختر التصنيف الفرعي",
+      "categoriesUnavailable": "تعذّر تحميل التصنيفات من الخادم. تحقق من الاتصال بالـ API ثم أعد تحميل الصفحة.",
+      "state": "اختر الولاية",
+      "vacancy": "أدخل عدد الشواغر",
+      "gender": "اختر الجنس",
+      "deadline": "اختر آخر موعد",
+      "salary": "أدخل نطاق الراتب",
+      "salaryRange": "الراتب «من» يجب أن يكون أقل من «إلى»",
+      "age": "أدخل نطاق العمر",
+      "ageRange": "العمر «من» يجب أن يكون أقل من «إلى»",
+      "description": "أدخل الوصف",
+      "responsibilities": "أدخل المسؤوليات",
+      "requirements": "أدخل المتطلبات",
+      "image": "ارفع صورة بانر للوظيفة",
+      "imageSize": "حجم الصورة يجب ألا يتجاوز 12 ميجابايت",
+      "imageCompress": "تعذّر معالجة الصورة. جرّب ملفًا آخر."
+    },
+    "removeImage": "إزالة"
+  },
+  "Admin": {
+    "dashboard": {
+      "title": "لوحة تحكم الأدمن",
+      "description": "نظرة عامة على المنصة",
+      "kpi": {
+        "users": "المستخدمون",
+        "companies": "الشركات",
+        "jobs": "الوظائف",
+        "pending": "وظائف معلقة"
+      },
+      "pendingTable": "الوظائف المعلقة للمراجعة",
+      "viewAll": "عرض الكل",
+      "noPending": "لا توجد وظائف معلقة",
+      "col": {
+        "job": "الوظيفة",
+        "company": "الشركة",
+        "category": "التصنيف",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "status": {
+        "pending": "قيد المراجعة"
+      }
+    },
+    "jobs": {
+      "title": "إدارة الوظائف",
+      "description": "مراجعة الوظائف وقبولها أو رفضها",
+      "tabs": {
+        "pending": "معلقة",
+        "approved": "منشورة",
+        "rejected": "مرفوضة",
+        "all": "الكل"
+      },
+      "columns": {
+        "title": "الوظيفة",
+        "company": "الشركة",
+        "category": "التصنيف",
+        "salary": "الراتب",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "status": {
+        "pending": "معلقة",
+        "approved": "منشورة",
+        "rejected": "مرفوضة"
+      },
+      "approve": "قبول",
+      "reject": "رفض",
+      "empty": "لا توجد وظائف",
+      "error": "تعذر تنفيذ الإجراء"
+    },
+    "users": {
+      "title": "المستخدمون",
+      "description": "إدارة حسابات المستخدمين والشركات",
+      "filters": {
+        "all": "الكل",
+        "user": "مستخدم",
+        "company": "شركة",
+        "admin": "أدمن"
+      },
+      "columns": {
+        "name": "الاسم",
+        "email": "البريد",
+        "phone": "الهاتف",
+        "role": "الدور",
+        "actions": "الإجراءات"
+      },
+      "roles": {
+        "user": "مستخدم",
+        "company": "شركة",
+        "admin": "أدمن"
+      },
+      "delete": "حذف",
+      "deleteConfirm": "هل تريد حذف هذا المستخدم؟",
+      "empty": "لا يوجد مستخدمون",
+      "error": "تعذر الحذف"
+    },
+    "companies": {
+      "title": "الشركات",
+      "description": "حسابات الشركات المسجلة",
+      "columns": {
+        "name": "الشركة",
+        "email": "البريد",
+        "phone": "الهاتف",
+        "verified": "التحقق"
+      },
+      "verified": "موثّق",
+      "notVerified": "غير موثّق",
+      "empty": "لا توجد شركات"
+    },
+    "successStories": {
+      "title": "قصص النجاح",
+      "description": "إدارة قصص النجاح المعروضة في الصفحة الرئيسية",
+      "hint": "أضف أو عدّل القصص بثلاث لغات (عربي / إنجليزي / ألماني) مع صورة.",
+      "loadError": "تعذر تحميل قصص النجاح من الخادم",
+      "columns": {
+        "image": "الصورة",
+        "name": "الاسم",
+        "role": "الدور",
+        "location": "الموقع",
+        "quote": "الاقتباس",
+        "actions": "الإجراءات"
+      },
+      "fields": {
+        "name": "الاسم",
+        "role": "الدور",
+        "quote": "الاقتباس",
+        "location": "الموقع",
+        "image": "صورة"
+      },
+      "add": "+ إضافة قصة",
+      "createTitle": "قصة جديدة",
+      "editTitle": "تعديل القصة",
+      "save": "حفظ",
+      "saving": "جاري الحفظ…",
+      "cancel": "إلغاء",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "deleteConfirm": "حذف هذه القصة؟",
+      "empty": "لا توجد قصص نجاح",
+      "error": "تعذر الحفظ",
+      "locationRequired": "حقل الموقع مطلوب"
+    },
+    "settings": {
+      "title": "الإعدادات والمحتوى",
+      "description": "إعدادات الموقع، الأخبار، والإشعارات",
+      "tabs": {
+        "settings": "إعدادات الموقع",
+        "news": "الأخبار",
+        "notifications": "الإشعارات"
+      },
+      "settingsEmpty": "لا توجد إعدادات من الخادم",
+      "edit": "تعديل",
+      "save": "حفظ",
+      "addNews": "+ خبر جديد",
+      "newsTitle": "العنوان",
+      "newsDesc": "الوصف",
+      "newsImage": "صورة الخبر",
+      "saveNews": "نشر الخبر",
+      "newsColTitle": "العنوان",
+      "newsColDate": "التاريخ",
+      "newsColActions": "الإجراءات",
+      "newsEmpty": "لا توجد أخبار",
+      "notificationsEmpty": "لا توجد إشعارات",
+      "markAllRead": "تعليم الكل كمقروء",
+      "markRead": "مقروء",
+      "unread": "جديد",
+      "delete": "حذف",
+      "deleteConfirm": "حذف هذا الخبر؟",
+      "error": "حدث خطأ"
+    }
+  },
   "Ui": {
     "common": {
       "loading": "جار التحميل"
@@ -489,6 +810,7 @@
       "close": "إغلاق"
     },
     "sheet": {
+      "title": "درج القائمة الجانبية",
       "close": "إغلاق"
     },
     "sidebar": {

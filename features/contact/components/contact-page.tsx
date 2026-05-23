@@ -117,7 +117,7 @@ export async function ContactPage() {
         </SectionShell>
       </section>
 
-      <SectionShell stagger={false} className="relative bg-white py-[112px]">
+      <SectionShell id="faq" stagger={false} className="relative scroll-mt-24 bg-white py-[112px]">
         <div className="absolute inset-0 opacity-[0.05]">
           <Image src="/contact/noise-bg.png" alt="" fill className="object-cover" />
         </div>

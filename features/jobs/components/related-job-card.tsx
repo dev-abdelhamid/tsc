@@ -1,0 +1,53 @@
+import Image from "next/image"
+import { Link } from "@/i18n/navigation"
+import type { Job } from "@/lib/api/types"
+import { formatPostedLabel, getJobTitle } from "@/features/jobs/lib/job-display"
+
+type RelatedJobCardProps = {
+  job: Job
+  locale: string
+  postedAgoFallback: string
+  companySubLabel: string
+}
+
+export function RelatedJobCard({
+  job,
+  locale,
+  postedAgoFallback,
+  companySubLabel,
+}: RelatedJobCardProps) {
+  const title = getJobTitle(job, locale)
+  const industry =
+    job.company?.company_type?.name || job.category?.name || companySubLabel
+  const posted = formatPostedLabel(job, locale, postedAgoFallback)
+
+  return (
+    <Link
+      href={`/jobs/${job.id}`}
+      className="flex min-h-[117px] flex-col justify-between rounded-[8px] border border-[#e8f2ff] bg-white p-4 transition hover:border-[#78a3be] hover:shadow-[0_4px_16px_rgba(0,43,70,0.06)]"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <h4 className="text-[20px] font-bold leading-[1.16] text-[#262626]">{title}</h4>
+        <span className="shrink-0 text-[16px] leading-[1.16] text-[#525252]">{posted}</span>
+      </div>
+
+      <div className="mt-6 flex items-center gap-2">
+        <div className="relative size-[38px] shrink-0 overflow-hidden rounded-full border border-[#e8f2ff] bg-[#e8f2ff]">
+          {job.company?.logo ? (
+            <Image src={job.company.logo} alt="" fill className="object-cover" sizes="38px" />
+          ) : (
+            <span className="absolute inset-0 grid place-items-center text-[10px] font-bold text-[#006EA8]">
+              {(job.company?.name ?? "?").slice(0, 2).toUpperCase()}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0 text-start">
+          <p className="truncate text-[16px] font-bold leading-[1.16] text-[#262626]">
+            {job.company?.name ?? "—"}
+          </p>
+          <p className="truncate text-[12px] leading-[1.16] text-[#525252]">{industry}</p>
+        </div>
+      </div>
+    </Link>
+  )
+}

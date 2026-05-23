@@ -1,5 +1,5 @@
 // lib/session.ts
-import { getIronSession, IronSessionOptions } from "iron-session"
+import { getIronSession, type SessionOptions } from "iron-session"
 import { cookies } from "next/headers"
 
 export interface SessionData {
@@ -12,10 +12,11 @@ export interface SessionData {
   }
   accessToken?: string
   refreshToken?: string
+  locale?: string
   isLoggedIn: boolean
 }
 
-export const sessionOptions: IronSessionOptions = {
+export const sessionOptions: SessionOptions = {
   password: process.env.AUTH_SECRET || "default-secret-key-min-32-characters-long!!!!",
   cookieName: "talent_seeker_session",
   cookieOptions: {

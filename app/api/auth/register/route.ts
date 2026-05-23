@@ -9,7 +9,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const locale = request.headers.get("accept-language")?.split(",")[0] || "ar"
 
-    const { user, tokens } = await register(body, locale)
+    const { user, tokens } = await register(
+      {
+        name: body.name,
+        email: body.email,
+        phone: body.phone,
+        password: body.password,
+        password_confirmation: body.password_confirmation,
+        type: body.type === "company" ? "company" : "user",
+        company_name: body.company_name,
+        country_id: body.country_id ?? 1,
+        accept_terms_and_privacy: body.accept_terms_and_privacy !== false,
+      },
+      locale
+    )
     console.log("[Register API] User:", JSON.stringify(user, null, 2))
     console.log("[Register API] Tokens:", tokens?.access_token ? "exists" : "missing")
 
@@ -29,7 +42,7 @@ export async function POST(request: NextRequest) {
     await session.save()
 
     return NextResponse.json({ user }, { status: 201 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     const status = error instanceof ApiError ? error.status : 500
     const message = error instanceof ApiError ? error.message : "حدث خطأ في الخادم"
     const errors = error instanceof ApiError ? error.errors : undefined

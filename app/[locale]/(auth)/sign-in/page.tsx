@@ -8,6 +8,7 @@ import { AuthCardWrapper } from "@/features/auth/components/auth-card-wrapper"
 import { AuthFieldGroup } from "@/features/auth/components/auth-field-group"
 import { AuthUserCompanyTabs } from "@/features/auth/components/auth-user-company-tabs"
 import Image from "next/image"
+import { Link } from "@/i18n/navigation"
 
 type FormValues = {
   email: string
@@ -25,8 +26,9 @@ export default function SignInPage() {
     setError(null)
     try {
       await signIn(values.email, values.password, accountType)
-    } catch (err: any) {
-      setError(err?.message || "فشل تسجيل الدخول")
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "فشل تسجيل الدخول"
+      setError(message)
     }
   }
 
@@ -49,7 +51,11 @@ export default function SignInPage() {
           onTabChange={setAccountType}
         />
       }
-      asideSlot={<a href="/forgot-password" className="text-sm text-white/80">{t("forgotPassword")}</a>}
+      asideSlot={
+        <Link href="/forgot-password" className="text-sm text-white/80 hover:text-white">
+          {t("forgotPassword")}
+        </Link>
+      }
     >
       <AuthFieldGroup>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">

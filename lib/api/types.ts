@@ -38,19 +38,35 @@ export interface AuthTokens {
 
 export interface Job {
   id: number
-  title: string
-  description: string
-  requirements: string
-  salary_from: number
-  salary_to: number
-  location: string
-  city: City
-  country: Country
-  category: Category
-  company: CompanyProfile
-  status: "pending" | "approved" | "rejected" | "stopped"
+  title: string | Record<string, string>
+  description?: string | Record<string, string>
+  requirements?: string | Record<string, string>
+  responsibilities?: string | Record<string, string>
+  image?: string
+  salary_from?: number
+  salary_to?: number
+  age_from?: number
+  age_to?: number
+  vacancy?: number
+  gender?: string
+  employment_type?: string
+  state?: string
+  application_deadline?: string
+  location?: string
+  city?: City
+  country?: Country
+  category?: Category
+  sub_category?: SubCategory
+  company?: CompanyProfile
+  status: "pending" | "approved" | "rejected" | "stopped" | "active"
   created_at: string
+  created_at_human?: string
   applications_count?: number
+}
+
+export type PublicJobDetail = {
+  job: Job
+  related: Job[]
 }
 
 export interface JobApplication {
@@ -72,12 +88,19 @@ export interface News {
   published_at: string
 }
 
+export interface SubCategory {
+  id: number
+  name: string
+  slug?: string
+}
+
 export interface Category {
   id: number
   name: string
   slug: string
   icon?: string
   jobs_count?: number
+  sub_categories?: SubCategory[]
 }
 
 export interface Country {
@@ -152,6 +175,20 @@ export interface Testimonial {
   avatar?: string
   content: string
   rating: number
+}
+
+export interface SuccessStory {
+  id: number
+  name: string
+  role: string
+  location?: string
+  quote: string
+  image?: string | null
+  image_url?: string | null
+  is_active?: boolean
+  sort_order?: number
+  created_at?: string
+  updated_at?: string
 }
 
 export interface About {

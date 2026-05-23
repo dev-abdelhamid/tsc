@@ -1,12 +1,5 @@
-import { JobsSection } from "@/features/jobs"
-import { getHomeSurfaceClassName } from "@/features/shared-home"
-import { TestimonialsSection } from "@/features/testimonials"
+import { JobsPage } from "@/features/jobs/components/jobs-page"
 
 export default function JobsRoutePage() {
-  return (
-    <main className={`flex-1 ${getHomeSurfaceClassName()}`}>
-      <JobsSection />
-      <TestimonialsSection />
-    </main>
-  )
+  return <JobsPage />
 }

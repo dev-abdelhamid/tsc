@@ -56,21 +56,44 @@
         "passwordLabel": "Password",
         "passwordPlaceholder": "Password",
         "showPassword": "Show password",
-        "hidePassword": "Hide password"
+        "hidePassword": "Hide password",
+        "phonePlaceholder": "Phone number",
+        "confirmPasswordPlaceholder": "Confirm password",
+        "companyNamePlaceholder": "Company name",
+        "termsLabel": "I accept the terms and privacy policy"
       }
     },
     "forgotPassword": {
       "title": "Reset your password",
-      "description": "Enter your email and we will send a password reset link.",
+      "description": "Enter your email and we will send a verification code.",
       "logoAlt": "Talent Seeker logo",
       "submit": "Send Reset Link",
+      "step1": "Send code",
+      "step2": "Verify code",
+      "step3": "New password",
       "back": "Back",
       "rememberPassword": "Remember your password?",
       "signIn": "Sign In",
       "alternateAction": "Back to sign in",
       "fields": {
         "emailLabel": "Email",
-        "emailPlaceholder": "Your Email"
+        "emailPlaceholder": "Your Email",
+        "codePlaceholder": "6-digit code",
+        "passwordPlaceholder": "New password",
+        "confirmPlaceholder": "Confirm password"
+      }
+    },
+    "verifyEmail": {
+      "title": "Verify your email",
+      "description": "Enter the code sent to your email.",
+      "logoAlt": "Talent Seeker logo",
+      "submit": "Verify",
+      "resend": "Resend code",
+      "back": "Back",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign In",
+      "fields": {
+        "codePlaceholder": "Verification code"
       }
     }
   },
@@ -171,6 +194,7 @@
       },
       "moreDetails": "More Details",
       "showAll": "Show All Jobs",
+      "salaryPeriod": "/month",
       "items": {
         "frontend": {
           "department": "IT",
@@ -219,10 +243,34 @@
       "filter": "Filter",
       "department": "Department",
       "postedAgo": "14 hours ago",
-      "salaryPeriod": "/month",
-      "time": "Time",
+      "salaryPeriod": " /month",
+      "employmentFullTime": "Full-time",
       "companyName": "Company name",
       "companySubLabel": "Title",
+      "noResults": "No jobs match your filters. Try adjusting your search or clearing filters.",
+      "closeFilters": "Close",
+      "description": "Job description",
+      "requirements": "Requirements",
+      "responsibilities": "Responsibilities",
+      "applyNow": "Apply now",
+      "vacancies": "open positions",
+      "detail": {
+        "lookingFor": "We're looking for a...",
+        "shareWith": "Share With:",
+        "monthly": "Monthly",
+        "details": "Details",
+        "industry": "Industry",
+        "employmentType": "Employment Type",
+        "vacancy": "Vacancy",
+        "gender": "Gender",
+        "age": "Age",
+        "applicationDeadline": "Application Deadline",
+        "applyForJob": "Apply for a job",
+        "relatedJobs": "Related Jobs",
+        "placeholderOne": "We are looking for a motivated professional to join our growing team and help us deliver excellent results.",
+        "placeholderTwo": "You will collaborate with cross-functional teams and contribute to planning, execution, and reporting.",
+        "placeholderThree": "Our culture values clarity, ownership, and continuous improvement in a supportive environment."
+      },
       "filterPanel": {
         "title": "Filter",
         "clearAll": "Clear all",
@@ -293,6 +341,7 @@
       "title": "Insights into the German Job Market",
       "description": "The latest news on visa regulations, career tips, and industry trends to help you succeed in Germany.",
       "readMore": "Read More",
+      "viewAll": "View all news",
       "items": {
         "first": {
           "title": "CBS Evening News",
@@ -318,6 +367,8 @@
     },
     "newsPage": {
       "languageAria": "Switch language",
+      "backToNews": "Back to news",
+      "empty": "No articles are available right now. Please check again later.",
       "relatedTitle": "Related News",
       "shareWith": "Share With",
       "featured": {
@@ -481,6 +532,276 @@
       }
     }
   },
+  "CompanyJobs": {
+    "title": "Create Job",
+    "listTitle": "My Jobs",
+    "addJob": "+ Add Job",
+    "empty": "You have not posted any jobs yet",
+    "loadError": "Failed to load jobs",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "submitting": "Publishing...",
+    "compressing": "Optimizing image...",
+    "imageSizeHint": "Images are compressed before upload for faster publishing. JPG, PNG, or WebP up to 12 MB.",
+    "delete": "Delete",
+    "stop": "Stop",
+    "applications": "Applications",
+    "confirmDelete": "Delete this job?",
+    "steps": {
+      "basic": "Basic Information",
+      "info": "Job Information",
+      "description": "Job Description"
+    },
+    "fields": {
+      "title": "Title",
+      "category": "Category",
+      "subCategory": "Sub Category",
+      "sameAsCategory": "Same as category",
+      "state": "State / Region",
+      "vacancy": "Vacancy",
+      "gender": "Gender",
+      "deadline": "Application Deadline",
+      "salary": "Salary",
+      "age": "Age",
+      "description": "Description",
+      "responsibilities": "Responsibilities",
+      "requirements": "Requirements",
+      "image": "Job banner image"
+    },
+    "placeholders": {
+      "title": "Job title",
+      "image": "Click to upload or change image",
+      "select": "Select",
+      "salaryFrom": "$ from",
+      "salaryTo": "$ to",
+      "ageFrom": "from",
+      "ageTo": "to"
+    },
+    "gender": {
+      "Male": "Male",
+      "Female": "Female",
+      "All": "All"
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Active",
+      "rejected": "Rejected",
+      "stopped": "Stopped"
+    },
+    "menu": {
+      "applications": "Applications",
+      "review": "Review",
+      "stop": "Stop",
+      "delete": "Delete"
+    },
+    "review": {
+      "title": "Job preview",
+      "backToJobs": "Back to all jobs",
+      "viewApplications": "View applications",
+      "companyFallback": "Your company",
+      "industryFallback": "Industry"
+    },
+    "applicationsPage": {
+      "title": "Job applications",
+      "backToJobs": "Back to all jobs",
+      "candidate": "Candidate",
+      "statusLabel": "Status",
+      "actionsLabel": "Actions",
+      "approve": "Approved",
+      "reject": "Reject",
+      "details": "Details",
+      "empty": "No applications for this job yet.",
+      "unknownCandidate": "Applicant",
+      "status": {
+        "pending": "Pending",
+        "accepted": "Approved",
+        "rejected": "Rejected"
+      }
+    },
+    "columns": {
+      "title": "Job Title",
+      "category": "Category",
+      "status": "Status",
+      "applications": "Applied Candidate",
+      "deadline": "Deadline",
+      "actions": "Actions"
+    },
+    "errors": {
+      "title": "Enter job title",
+      "category": "Select category",
+      "subCategory": "Select sub category",
+      "categoriesUnavailable": "Could not load categories from the server. Check the API connection and reload the page.",
+      "state": "Select state",
+      "vacancy": "Enter vacancy count",
+      "gender": "Select gender",
+      "deadline": "Select deadline",
+      "salary": "Enter salary range",
+      "salaryRange": "Salary from must be less than to",
+      "age": "Enter age range",
+      "ageRange": "Age from must be less than to",
+      "description": "Enter description",
+      "responsibilities": "Enter responsibilities",
+      "requirements": "Enter requirements",
+      "image": "Upload a job banner image",
+      "imageSize": "Image must be 12MB or smaller",
+      "imageCompress": "Could not process this image. Try another file."
+    },
+    "removeImage": "Remove"
+  },
+  "Admin": {
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "description": "Platform overview",
+      "kpi": {
+        "users": "Users",
+        "companies": "Companies",
+        "jobs": "Jobs",
+        "pending": "Pending Jobs"
+      },
+      "pendingTable": "Pending jobs for review",
+      "viewAll": "View all",
+      "noPending": "No pending jobs",
+      "col": {
+        "job": "Job",
+        "company": "Company",
+        "category": "Category",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending"
+      }
+    },
+    "jobs": {
+      "title": "Jobs management",
+      "description": "Review, approve, or reject job postings",
+      "tabs": {
+        "pending": "Pending",
+        "approved": "Published",
+        "rejected": "Rejected",
+        "all": "All"
+      },
+      "columns": {
+        "title": "Job",
+        "company": "Company",
+        "category": "Category",
+        "salary": "Salary",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending",
+        "approved": "Published",
+        "rejected": "Rejected"
+      },
+      "approve": "Approve",
+      "reject": "Reject",
+      "empty": "No jobs",
+      "error": "Action failed"
+    },
+    "users": {
+      "title": "Users",
+      "description": "Manage user and company accounts",
+      "filters": {
+        "all": "All",
+        "user": "User",
+        "company": "Company",
+        "admin": "Admin"
+      },
+      "columns": {
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "role": "Role",
+        "actions": "Actions"
+      },
+      "roles": {
+        "user": "User",
+        "company": "Company",
+        "admin": "Admin"
+      },
+      "delete": "Delete",
+      "deleteConfirm": "Delete this user?",
+      "empty": "No users",
+      "error": "Delete failed"
+    },
+    "companies": {
+      "title": "Companies",
+      "description": "Registered company accounts",
+      "columns": {
+        "name": "Company",
+        "email": "Email",
+        "phone": "Phone",
+        "verified": "Verification"
+      },
+      "verified": "Verified",
+      "notVerified": "Not verified",
+      "empty": "No companies"
+    },
+    "successStories": {
+      "title": "Success stories",
+      "description": "Manage homepage success stories",
+      "hint": "Add or edit stories in Arabic, English, and German with an image.",
+      "loadError": "Could not load success stories from the API",
+      "columns": {
+        "image": "Image",
+        "name": "Name",
+        "role": "Role",
+        "location": "Location",
+        "quote": "Quote",
+        "actions": "Actions"
+      },
+      "fields": {
+        "name": "Name",
+        "role": "Role",
+        "quote": "Quote",
+        "location": "Location",
+        "image": "Image"
+      },
+      "add": "+ Add story",
+      "createTitle": "New story",
+      "editTitle": "Edit story",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this story?",
+      "empty": "No success stories",
+      "error": "Save failed",
+      "locationRequired": "Location is required"
+    },
+    "settings": {
+      "title": "Settings & content",
+      "description": "Site settings, news, and notifications",
+      "tabs": {
+        "settings": "Site settings",
+        "news": "News",
+        "notifications": "Notifications"
+      },
+      "settingsEmpty": "No settings returned from API",
+      "edit": "Edit",
+      "save": "Save",
+      "addNews": "+ New article",
+      "newsTitle": "Title",
+      "newsDesc": "Description",
+      "newsImage": "Article image",
+      "saveNews": "Publish",
+      "newsColTitle": "Title",
+      "newsColDate": "Date",
+      "newsColActions": "Actions",
+      "newsEmpty": "No news",
+      "notificationsEmpty": "No notifications",
+      "markAllRead": "Mark all as read",
+      "markRead": "Mark read",
+      "unread": "New",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this article?",
+      "error": "Something went wrong"
+    }
+  },
   "Ui": {
     "common": {
       "loading": "Loading"
@@ -489,6 +810,7 @@
       "close": "Close"
     },
     "sheet": {
+      "title": "Sidebar drawer",
       "close": "Close"
     },
     "sidebar": {

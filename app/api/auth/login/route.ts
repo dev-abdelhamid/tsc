@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     await session.save()
 
     return NextResponse.json({ user }, { status: 200 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     const status = error instanceof ApiError ? error.status : 500
     const message = error instanceof ApiError ? error.message : "حدث خطأ في الخادم"
     const errors = error instanceof ApiError ? error.errors : undefined

@@ -1,44 +1,83 @@
-import { PrimaryButton } from "@/components/ui/primary-button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Link } from "@/i18n/navigation"
 import { getTranslations } from "next-intl/server"
 import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home"
-import { CircleHelp, SendHorizonal } from "lucide-react"
+import { NewsEyebrowGlobe } from "@/features/news/components/news-icons"
+import { cn } from "@/lib/utils"
+
+function SupportChatIcon({ className }: { className?: string }) {
+  return (
+    <svg className={cn("h-6 w-6 shrink-0", className)} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        opacity="0.4"
+        d="M8 10.5H16M8 14H13"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M3 11.5C3 7.36 6.36 4 10.5 4H13.5C17.64 4 21 7.36 21 11.5V14.5C21 18.64 17.64 22 13.5 22H12L8 20V22H6.5C4.01 22 2 19.99 2 17.5V11.5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+    </svg>
+  )
+}
 
 export async function SupportSection() {
   const t = await getTranslations("Landing.support")
 
   return (
-    <SectionShell stagger={false} className="bg-white py-[56px] lg:py-[72px]">
-      <Card className="overflow-hidden rounded-[24px] border border-[#75C7EE] bg-[url('/contact/button-noise.png'),radial-gradient(140%_140%_at_50%_0%,#2D9FD5_0%,#0A79B4_45%,#076193_100%)] bg-size-[150px_150px,auto] bg-blend-[plus-lighter,normal] text-white shadow-[0_14px_36px_rgba(0,86,133,0.28),inset_0_0_0_1px_rgba(232,242,255,0.45),inset_0_0_30px_rgba(232,242,255,0.22)]">
-        <CardContent className="px-6 py-10 text-center sm:px-10 lg:px-12 lg:py-14">
-          <StaggerInView className="mx-auto max-w-[760px] space-y-5">
+    <SectionShell stagger={false} className="overflow-visible py-12 sm:py-14 lg:py-[72px]">
+      <div className="relative isolate overflow-hidden rounded-[32px] bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#398DB3_0%,#2D7494_100%)] bg-size-[200px_200px,auto] bg-blend-[plus-lighter,normal] px-6 py-12 text-white shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19),0_42px_107px_rgba(123,190,255,0.34)] sm:px-10 sm:py-16 lg:px-14 lg:py-[82px]">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.15] mix-blend-overlay"
+          style={{
+            backgroundImage: "url('/contact/button-noise.png')",
+            backgroundSize: "420px 420px",
+          }}
+          aria-hidden
+        />
+
+        <StaggerInView className="relative mx-auto flex max-w-[596px] flex-col items-center gap-10 text-center">
+          <div className="space-y-6">
             <StaggerItem>
-              <p className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[12px] leading-none font-medium text-[#e8f2ff]">
-                <span className="inline-block size-1.5 rounded-full bg-[#a9e2ff]" />
+              <div className="mx-auto inline-flex items-center gap-2 rounded-lg bg-[rgba(64,160,202,0.5)] px-4 py-2 text-[12px] capitalize leading-[1.16] text-white">
+                <NewsEyebrowGlobe className="text-white" />
                 {t("eyebrow")}
-              </p>
-            </StaggerItem>
-            <StaggerItem>
-              <h2 className="text-balance text-[34px] leading-[1.2] font-semibold lg:text-[50px]">{t("title")}</h2>
-            </StaggerItem>
-            <StaggerItem>
-              <p className="mx-auto max-w-[700px] text-[18px] leading-[1.35] font-normal text-[#d7e7f1]">{t("description")}</p>
-            </StaggerItem>
-            <StaggerItem>
-              <div className="flex flex-wrap justify-center gap-4 pt-3">
-                <PrimaryButton className="h-[50px] w-auto min-w-[160px] rounded-[14px] bg-white bg-none px-6 text-[20px] font-semibold text-[#006EA8] shadow-none hover:bg-[#eef7ff]">
-                  <CircleHelp className="size-4" />
-                  {t("actions.faqs")}
-                </PrimaryButton>
-                <PrimaryButton className="h-[50px] w-auto min-w-[180px] rounded-[14px] px-6 text-[20px] font-semibold">
-                  <SendHorizonal className="size-4" />
-                  {t("actions.contact")}
-                </PrimaryButton>
               </div>
             </StaggerItem>
-          </StaggerInView>
-        </CardContent>
-      </Card>
+            <StaggerItem>
+              <h2 className="font-heading text-balance text-[28px] font-bold capitalize leading-[1.5] sm:text-[32px] lg:text-[36px]">
+                {t("title")}
+              </h2>
+            </StaggerItem>
+            <StaggerItem>
+              <p className="mx-auto max-w-[500px] text-[14px] leading-[1.16] text-[#F5F5F5] sm:text-[16px]">
+                {t("description")}
+              </p>
+            </StaggerItem>
+          </div>
+
+          <StaggerItem>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <Link
+                href="/contact#faq"
+                className="inline-flex h-11 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-white px-4 text-[16px] font-medium text-[#006EA8] shadow-[inset_0_1px_4px_2px_#C2DDFF] transition-colors hover:bg-[#eef7ff]"
+              >
+                <SupportChatIcon className="text-[#006EA8]" />
+                {t("actions.faqs")}
+              </Link>
+              <Link
+                href="/contact"
+                className="inline-flex h-11 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] bg-size-[120px_120px,auto] bg-blend-[plus-lighter,normal] px-4 text-[16px] font-medium text-white shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#E8F2FF,0_4px_5px_rgba(0,86,133,0.15),0_10px_13px_rgba(0,86,133,0.22),0_24px_32px_rgba(0,86,133,0.19)] transition-[filter] hover:brightness-105"
+              >
+                <SupportChatIcon />
+                {t("actions.contact")}
+              </Link>
+            </div>
+          </StaggerItem>
+        </StaggerInView>
+      </div>
     </SectionShell>
   )
 }

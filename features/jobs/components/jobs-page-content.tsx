@@ -3,7 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react"
 import { CalendarDays, ChevronDown, Filter, MoveUpRight, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 
 import { FilterPanel } from "./filter-panel"
 import { StaggerInView, StaggerItem } from "@/features/shared-home"
@@ -148,6 +148,7 @@ export function JobsPageContent({
 
       <Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
         <SheetContent side="right" className="w-[92vw] max-w-[420px] overflow-y-auto border-l border-[#78a3be] p-0 sm:w-[420px]">
+          <SheetTitle className="sr-only">{filterPanelTitle}</SheetTitle>
           <div className="p-4 sm:p-6">
             <FilterPanel
               filterPanelTitle={filterPanelTitle}

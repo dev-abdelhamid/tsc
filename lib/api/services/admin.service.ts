@@ -21,7 +21,7 @@ export async function approveJob(
   token: string,
   locale = "ar"
 ): Promise<Job> {
-  const response = await api.post<ApiResponse<Job>>(
+  const response = await api.patch<ApiResponse<Job>>(
     `/admin/jobs/${jobId}/approve`,
     {},
     { token, locale }
@@ -31,16 +31,39 @@ export async function approveJob(
 
 export async function rejectJob(
   jobId: number,
-  reason: string,
   token: string,
-  locale = "ar"
+  locale = "ar",
+  reason?: string
 ): Promise<Job> {
-  const response = await api.post<ApiResponse<Job>>(
+  const response = await api.patch<ApiResponse<Job>>(
     `/admin/jobs/${jobId}/reject`,
-    { reason },
+    reason ? { reason } : {},
     { token, locale }
   )
   return response.data
+}
+
+export async function deleteUser(
+  userId: number | string,
+  token: string,
+  locale = "ar"
+): Promise<void> {
+  await api.delete(`/users/${userId}`, { token, locale })
+}
+
+export async function getAdminJobApplicationStats(
+  token: string,
+  locale = "ar"
+): Promise<{ total?: number; pending?: number; approved?: number; rejected?: number }> {
+  try {
+    const response = await api.get<
+      ApiResponse<{ total?: number; pending?: number; approved?: number; rejected?: number }>
+    >("/admin/job-applications/stats", { token, locale })
+    return response.data
+  } catch (err) {
+    console.error(err)
+    return {}
+  }
 }
 
 export async function getAdminUsers(

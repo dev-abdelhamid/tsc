@@ -40,7 +40,7 @@ export async function HeroSection() {
     <SectionShell
       id="home"
       stagger={false}
-      className="relative h-[982px] overflow-hidden bg-[#001222]"
+      className="relative min-h-[640px] overflow-hidden bg-[#001222] pb-16 pt-4 sm:min-h-[760px] lg:h-[982px] lg:pb-[30px] lg:pt-0"
     >
       {/* Background Bars */}
       <div
@@ -75,7 +75,7 @@ export async function HeroSection() {
 
       <StaggerInView
         leadDelay={0.55}
-        className="relative z-10 mt-[48px] flex flex-col items-center gap-[48px] pb-[30px]"
+        className="relative z-10 mt-6 flex flex-col items-center gap-8 px-4 pb-8 sm:mt-10 sm:gap-10 lg:mt-[48px] lg:gap-[48px] lg:px-0 lg:pb-[30px]"
       >
         <StaggerItem>
           <p className="inline-flex items-center gap-2 rounded-[8px] bg-[rgba(64,160,202,0.15)] px-4 py-2 text-[12px] leading-[1.16] font-normal text-white border border-white/10">
@@ -85,13 +85,13 @@ export async function HeroSection() {
         </StaggerItem>
 
         <StaggerItem>
-          <h1 className="font-heading mx-auto mt-4 max-w-[866px] text-center text-balance text-[72px] leading-[1.1] font-bold text-white">
+          <h1 className="font-heading mx-auto mt-2 max-w-[866px] text-balance text-center text-[32px] font-bold leading-relaxed text-white sm:mt-4 sm:text-[44px] md:text-[56px] lg:text-[72px] lg:leading-[1.1]">
             {renderTitle()}
           </h1>
         </StaggerItem>
 
         <StaggerItem>
-          <p className="mx-auto mt-8 max-w-[680px] text-center text-pretty text-[18px] leading-[1.6] font-normal text-white/80">
+          <p className="mx-auto mt-4 max-w-[680px] text-pretty text-center text-[15px] font-normal leading-relaxed text-white/80 sm:mt-6 sm:text-[16px] lg:mt-8 lg:text-[18px] lg:leading-[1.6]">
             {t("description")}
           </p>
         </StaggerItem>

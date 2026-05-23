@@ -1,78 +1,57 @@
-// app/[locale]/dashboard/admin/jobs/page.tsx
+import { redirect } from "next/navigation"
+import { getTranslations } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { getAdminJobs } from "@/lib/api/services/admin.service"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import type { Job } from "@/lib/api/types"
+import { AdminJobsPanel } from "@/features/admin/components/admin-jobs-panel"
+import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
 
-export default async function AdminJobsPage() {
+export default async function AdminJobsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>
+  searchParams: Promise<{ status?: string }>
+}) {
+  const { locale } = await params
+  const { status: statusParam } = await searchParams
   const session = await getSession()
-  const token = session.accessToken
+  const t = await getTranslations("Admin.jobs")
 
-  if (!token || session.user?.role !== "admin") {
-    return <div>غير مخول للوصول</div>
+  if (!session.user || session.user.role !== "admin" || !session.accessToken) {
+    redirect(`/${locale}/dashboard`)
   }
+
+  const token = session.accessToken
+  const statuses = ["pending", "approved", "active", "rejected"] as const
+  let jobs: Job[] = []
 
   try {
-    const { data: pendingJobs } = await getAdminJobs(token, "pending", 1, "ar")
-    const { data: approvedJobs } = await getAdminJobs(token, "approved", 1, "ar")
-    const { data: rejectedJobs } = await getAdminJobs(token, "rejected", 1, "ar")
-
-    const JobsTable = ({ jobs, title }: { jobs: any[]; title: string }) => (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {jobs.length === 0 ? (
-            <p className="text-gray-500">لا توجد وظائف</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b">
-                  <tr>
-                    <th className="text-right py-3 px-4 font-semibold">الوظيفة</th>
-                    <th className="text-right py-3 px-4 font-semibold">الشركة</th>
-                    <th className="text-right py-3 px-4 font-semibold">التصنيف</th>
-                    <th className="text-right py-3 px-4 font-semibold">الراتب</th>
-                    <th className="text-right py-3 px-4 font-semibold">الإجراء</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {jobs.map((job) => (
-                    <tr key={job.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4 font-semibold">{job.title}</td>
-                      <td className="py-3 px-4">{job.company.name}</td>
-                      <td className="py-3 px-4">{job.category.name}</td>
-                      <td className="py-3 px-4">
-                        €{job.salary_from} - €{job.salary_to}
-                      </td>
-                      <td className="py-3 px-4 flex gap-2">
-                        <button className="text-green-600 hover:underline">موافقة</button>
-                        <button className="text-red-600 hover:underline">رفض</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    const batches = await Promise.all(
+      statuses.map((s) => getAdminJobs(token, s, 1, locale).then((r) => r.data).catch(() => []))
     )
-
-    return (
-      <div className="p-6 max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">إدارة الوظائف</h1>
-
-        <JobsTable jobs={pendingJobs} title="الوظائف بانتظار المراجعة" />
-        <JobsTable jobs={approvedJobs} title="الوظائف المنشورة" />
-        <JobsTable jobs={rejectedJobs} title="الوظائف المرفوضة" />
-      </div>
-    )
-  } catch (error) {
-    return (
-      <div className="p-6">
-        <div className="text-red-600">حدث خطأ في تحميل البيانات</div>
-      </div>
-    )
+    const seen = new Set<number>()
+    for (const batch of batches) {
+      for (const job of batch) {
+        if (!seen.has(job.id)) {
+          seen.add(job.id)
+          jobs.push(job)
+        }
+      }
+    }
+  } catch (err) {
+    console.error(err)
+    jobs = []
   }
+
+  const initialTab =
+    statusParam === "pending" || statusParam === "approved" || statusParam === "rejected"
+      ? statusParam
+      : "pending"
+
+  return (
+    <AdminPageLayout title={t("title")} description={t("description")}>
+      <AdminJobsPanel jobs={jobs} locale={locale} initialTab={initialTab} />
+    </AdminPageLayout>
+  )
 }

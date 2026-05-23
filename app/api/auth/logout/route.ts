@@ -1,15 +1,25 @@
 import { NextResponse } from "next/server"
-import { logout } from "@/lib/session"
+import { getSession } from "@/lib/session"
+import { logout as logoutApi } from "@/lib/api/services/auth.service"
 
 export async function POST() {
   try {
-    await logout()
-    return NextResponse.json({ success: true, message: "Logged out successfully" })
+    const session = await getSession()
+    const token = session.accessToken
+
+    if (token) {
+      try {
+        await logoutApi(token)
+      } catch (err) {
+        console.warn(err)
+        // continue local logout even if API fails
+      }
+    }
+
+    session.destroy()
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[Logout API] Error:", error)
-    return NextResponse.json(
-      { success: false, message: "Failed to logout" },
-      { status: 500 }
-    )
+    return NextResponse.json({ message: "Failed to logout" }, { status: 500 })
   }
 }

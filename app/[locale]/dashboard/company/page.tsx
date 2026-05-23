@@ -1,111 +1,120 @@
-"use client"
+import Link from "next/link"
+import { redirect } from "next/navigation"
+import { getSession } from "@/lib/session"
+import { getCompanyJobs, getCompanyStats } from "@/lib/api/services/company.service"
+import { DashboardStatCard } from "@/features/dashboard/components/dashboard-stat-card"
+import { DashboardJobsTable } from "@/features/dashboard/components/dashboard-jobs-table"
+import type { Job } from "@/lib/api/types"
+import { getJobTitle } from "@/features/company-jobs/lib/job-title"
 
-import { useState, useEffect } from "react"
-import { Briefcase, Users, Ticket } from "lucide-react"
-import { StatCard } from "@/features/dashboard/components/stat-card"
-import { LastJobTable } from "@/features/dashboard/components/last-job-table"
-import { useLocale } from "next-intl"
+export default async function CompanyDashboardPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}) {
+  const session = await getSession()
+  const { locale } = await params
 
-interface Job {
-  id: number
-  title: string
-  appliedCandidates: number
-  deadline: string
-  status: "approved" | "rejected" | "pending"
-}
-
-interface Stats {
-  totalJobs: number
-  totalApplicants: number
-  totalTickets: number
-}
-
-export default function CompanyDashboardPage() {
-  const locale = useLocale()
-  const isRTL = locale === "ar"
-  const [stats, setStats] = useState<Stats>({
-    totalJobs: 20,
-    totalApplicants: 20,
-    totalTickets: 20,
-  })
-  const [jobs, setJobs] = useState<Job[]>([
-    { id: 1, title: "Software Engineer", appliedCandidates: 4, deadline: "12/12/2027", status: "approved" },
-    { id: 2, title: "Product Manager", appliedCandidates: 0, deadline: "12/12/2027", status: "rejected" },
-    { id: 3, title: "UX Designer", appliedCandidates: 0, deadline: "12/12/2027", status: "pending" },
-    { id: 4, title: "Data Analyst", appliedCandidates: 12, deadline: "12/12/2027", status: "approved" },
-    { id: 5, title: "DevOps Engineer", appliedCandidates: 0, deadline: "12/12/2027", status: "pending" },
-    { id: 6, title: "Marketing Specialist", appliedCandidates: 0, deadline: "12/12/2027", status: "rejected" },
-    { id: 7, title: "Sales Representative", appliedCandidates: 0, deadline: "12/12/2027", status: "pending" },
-  ])
-
-  const t = {
-    totalJobs: locale === "ar" ? "إجمالي الوظائف" : "Total Jobs",
-    totalApplicants: locale === "ar" ? "إجمالي المتقدمين" : "Total Job Applicants",
-    totalTickets: locale === "ar" ? "إجمالي التذاكر" : "Total Ticket",
-    lastJob: locale === "ar" ? "آخر الوظائف" : "Last Job",
-    job: locale === "ar" ? "وظيفة" : "Job",
-    application: locale === "ar" ? "طلب" : "application",
-    ticket: locale === "ar" ? "تذكرة" : "ticket",
-    viewAll: locale === "ar" ? "عرض الكل" : "View All",
+  if (!session.isLoggedIn || !session.user) {
+    redirect(`/${locale}/sign-in`)
   }
 
-  // Fetch data from API
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // TODO: Replace with actual API calls
-        // const statsData = await getCompanyStats(token, locale)
-        // const jobsData = await getCompanyJobs(token, 1, locale)
-        // setStats(statsData)
-        // setJobs(jobsData.data || [])
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error)
-      }
+  if (session.user.role !== "company") {
+    redirect(`/${locale}/dashboard`)
+  }
+
+  const token = session.accessToken!
+  const isAr = locale === "ar"
+
+  let stats = { total_jobs: 0, total_applications: 0, pending_applications: 0 }
+  let jobs: Job[] = []
+
+  try {
+    const [statsData, jobsData] = await Promise.all([
+      getCompanyStats(token, locale as "ar" | "en" | "de"),
+      getCompanyJobs(token, 1, locale as "ar" | "en" | "de"),
+    ])
+    stats = statsData
+    jobs = jobsData.data ?? []
+    } catch (err) {
+      console.error(err)
+    // graceful fallback
+  }
+
+  const tableRows = jobs.slice(0, 7).map((job) => {
+    const status =
+      job.status === "approved"
+        ? ("approved" as const)
+        : job.status === "rejected"
+          ? ("rejected" as const)
+          : ("pending" as const)
+    const deadline = job.application_deadline
+    return {
+      id: job.id,
+      title: getJobTitle(job, locale),
+      column2: job.applications_count ?? 0,
+      deadline: deadline ? new Date(deadline).toLocaleDateString("en-GB") : "—",
+      status,
+      detailsHref: `/${locale}/dashboard/company/jobs/${job.id}`,
     }
-    fetchData()
-  }, [locale])
+  })
 
   return (
-    <div className="min-h-screen ">
-      {/* Main Content */}
-      <div className="max-w-[1512px] mx-auto  ">
-        {/* Stats Cards */}
-        <div className={`flex gap-6 mb-8`}>
-          <StatCard
-            icon={Briefcase}
-            title={t.totalJobs}
-            value={stats.totalJobs}
-            unit={t.job}
-            href="/dashboard/company/jobs"
-            linkText={t.viewAll}
-            locale={locale}
-          />
-          <StatCard
-            icon={Users}
-            title={t.totalApplicants}
-            value={stats.totalApplicants}
-            unit={t.application}
-            href="/dashboard/company/applicants"
-            linkText={t.viewAll}
-            locale={locale}
-          />
-          <StatCard
-            icon={Ticket}
-            title={t.totalTickets}
-            value={stats.totalTickets}
-            unit={t.ticket}
-            href="/dashboard/company/tickets"
-            linkText={t.viewAll}
-            locale={locale}
-          />
-        </div>
-
-        {/* Last Job Table */}
-        <LastJobTable 
-          jobs={jobs} 
-          title={t.lastJob}
+    <div className="flex w-full flex-col gap-6">
+      <div className="flex flex-col gap-6 md:flex-row">
+        <DashboardStatCard
+          iconSrc="/dashboard/jobs.svg"
+          title={isAr ? "إجمالي الوظائف" : "Total Jobs"}
+          value={stats.total_jobs}
+          unit={isAr ? "Job" : "Job"}
+          viewAllHref={`/${locale}/dashboard/company/jobs`}
+          viewAllLabel={isAr ? "عرض الكل" : "View All"}
+          isRTL={isAr}
+        />
+        <DashboardStatCard
+          iconSrc="/dashboard/education_Info.svg"
+          title={isAr ? "إجمالي المتقدمين" : "Total Job Applicants"}
+          value={stats.total_applications}
+          unit={isAr ? "application" : "application"}
+          viewAllHref={`/${locale}/dashboard/company/applicants`}
+          viewAllLabel={isAr ? "عرض الكل" : "View All"}
+          isRTL={isAr}
+        />
+        <DashboardStatCard
+          iconSrc="/dashboard/tickets.svg"
+          title={isAr ? "إجمالي التذاكر" : "Total Ticket"}
+          value={stats.pending_applications}
+          unit={isAr ? "ticket" : "ticket"}
+          viewAllHref={`/${locale}/dashboard/company/tickets`}
+          viewAllLabel={isAr ? "عرض الكل" : "View All"}
+          isRTL={isAr}
         />
       </div>
+
+      <DashboardJobsTable
+        title={isAr ? "آخر الوظائف" : "Last Job"}
+        rows={tableRows}
+        col2Label={isAr ? "المتقدمون" : "Applied Candidate"}
+        jobTitleLabel={isAr ? "عنوان الوظيفة" : "Job Title"}
+        deadlineLabel={isAr ? "الموعد النهائي" : "Deadline"}
+        statusLabel={isAr ? "الحالة" : "Status"}
+        actionsLabel={isAr ? "الإجراءات" : "Actions"}
+        emptyMessage={isAr ? "لا توجد وظائف" : "No jobs found"}
+        detailsLabel={isAr ? "تفاصيل" : "Details"}
+        isRTL={isAr}
+      />
+
+      {tableRows.length === 0 && (
+        <p className="text-center text-sm text-gray-500">
+          {isAr ? "لا توجد وظائف بعد — " : "No jobs yet — "}
+          <Link
+            href={`/${locale}/dashboard/company/jobs/create`}
+            className="font-semibold text-[#006EA8] hover:underline"
+          >
+            {isAr ? "أنشئ وظيفة" : "Create a job"}
+          </Link>
+        </p>
+      )}
     </div>
   )
 }

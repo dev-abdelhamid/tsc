@@ -2,9 +2,7 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/hooks/lib/utils"
 
-export interface PrimaryButtonProps extends React.ComponentProps<typeof Button> { }
-
-const PrimaryButton = React.forwardRef<HTMLButtonElement, PrimaryButtonProps>(
+const PrimaryButton = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Button>>(
   ({ className, ...props }, ref) => {
     return (
       <Button

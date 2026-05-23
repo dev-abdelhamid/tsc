@@ -1,8 +1,6 @@
 import { getTranslations } from "next-intl/server"
 import { AuthCardWrapper } from "@/features/auth/components/auth-card-wrapper"
-import { AuthFieldGroup } from "@/features/auth/components/auth-field-group"
-import { AuthFieldRow } from "@/features/auth/components/auth-field-row"
-import { AuthPrimaryCta } from "@/features/auth/components/auth-primary-cta"
+import { ForgotPasswordForm } from "@/features/auth/components/forgot-password-form"
 
 export default async function ForgotPasswordPage() {
   const t = await getTranslations("Auth.forgotPassword")
@@ -18,10 +16,15 @@ export default async function ForgotPasswordPage() {
       footerActionLabel={t("signIn")}
       footerActionHref="/sign-in"
     >
-      <AuthFieldGroup>
-        <AuthFieldRow iconSrc="/auth/email.svg" type="email" placeholder={t("fields.emailPlaceholder")} />
-      </AuthFieldGroup>
-      <AuthPrimaryCta label={t("submit")} />
+      <ForgotPasswordForm
+        emailPlaceholder={t("fields.emailPlaceholder")}
+        codePlaceholder={t("fields.codePlaceholder")}
+        passwordPlaceholder={t("fields.passwordPlaceholder")}
+        confirmPlaceholder={t("fields.confirmPlaceholder")}
+        step1Label={t("step1")}
+        step2Label={t("step2")}
+        step3Label={t("step3")}
+      />
     </AuthCardWrapper>
   )
 }

@@ -1,8 +1,13 @@
-import { XCircle } from "lucide-react"
+import Image from "next/image"
 import { FilterSection } from "./filter-section"
 import { FilterChipGrid } from "./filter-chip-grid"
+import {
+  formatFilterSalaryAmount,
+  salaryFromSliderPercent,
+} from "@/features/jobs/lib/job-display"
 
-type FilterPanelProps = {
+export type FilterPanelProps = {
+  variant?: "sidebar" | "drawer"
   filterPanelTitle: string
   clearAllLabel: string
   stateLabel: string
@@ -24,6 +29,7 @@ type FilterPanelProps = {
 }
 
 export function FilterPanel({
+  variant = "sidebar",
   filterPanelTitle,
   clearAllLabel,
   stateLabel,
@@ -43,17 +49,44 @@ export function FilterPanel({
   onToggleCategory,
   onSalaryChange,
 }: FilterPanelProps) {
+  const isDrawer = variant === "drawer"
+
   return (
-    <div className="rounded-[16px] border border-[#78a3be] bg-white p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[36px] leading-[1.16] font-bold text-[#262626]">{filterPanelTitle}</h3>
-        <button type="button" onClick={onClearAll} className="inline-flex items-center gap-1 text-[16px] text-[#262626]">
-          <XCircle className="h-4 w-4 text-[#7db5ce]" />
+    <div
+      className={
+        isDrawer
+          ? "bg-white"
+          : "rounded-[16px] border border-[#78a3be] bg-white p-5 sm:p-6"
+      }
+    >
+      <div className={`flex items-center justify-between ${isDrawer ? "pb-6" : ""}`}>
+        <h3
+          className={
+            isDrawer
+              ? "text-[24px] leading-[1.16] font-bold text-[#262626] sm:text-[28px]"
+              : "text-[28px] leading-[1.16] font-bold text-[#262626] lg:text-[32px]"
+          }
+        >
+          {filterPanelTitle}
+        </h3>
+        <button
+          type="button"
+          onClick={onClearAll}
+          className="inline-flex items-center gap-1.5 text-[16px] text-[#262626] hover:text-[#006EA8]"
+        >
+          <Image
+            src="/jobs/icon-close-circle.svg"
+            alt=""
+            width={16}
+            height={16}
+            className="shrink-0"
+            aria-hidden
+          />
           {clearAllLabel}
         </button>
       </div>
 
-      <div className="mt-8 space-y-6">
+      <div className={`space-y-6 ${isDrawer ? "pt-0" : "mt-8"}`}>
         <FilterSection title={stateLabel}>
           <FilterChipGrid options={stateOptions} activeIndices={activeStates} onToggle={onToggleState} />
         </FilterSection>
@@ -78,8 +111,12 @@ export function FilterPanel({
             />
           </div>
           <div className="mt-4 grid grid-cols-2 gap-4">
-            <div className="border-b border-[#a3a3a3] pb-2 text-[16px] text-[#a3a3a3]">{salaryFromLabel}</div>
-            <div className="border-b border-[#a3a3a3] pb-2 text-[16px] text-[#a3a3a3]">{salaryToLabel}</div>
+            <div className="border-b border-[#a3a3a3] pb-2 text-[16px] text-[#525252]">
+              €{formatFilterSalaryAmount(salaryFromSliderPercent(salaryValue))}
+            </div>
+            <div className="border-b border-[#a3a3a3] pb-2 text-end text-[16px] text-[#a3a3a3]">
+              {salaryToLabel}
+            </div>
           </div>
         </FilterSection>
       </div>

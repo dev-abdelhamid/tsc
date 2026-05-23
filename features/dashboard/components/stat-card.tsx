@@ -3,6 +3,7 @@ import { LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { useLocale } from "next-intl"
+import { cn } from "@/lib/utils"
 
 interface StatCardProps {
   title: string
@@ -57,5 +58,3 @@ export function StatCard({
     </div>
   )
 }
-
-import { cn } from "@/lib/utils"

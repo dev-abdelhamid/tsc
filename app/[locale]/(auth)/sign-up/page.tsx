@@ -27,6 +27,10 @@ export default async function SignUpPage() {
         passwordPlaceholder={t("fields.passwordPlaceholder")}
         showPasswordLabel={t("fields.showPassword")}
         hidePasswordLabel={t("fields.hidePassword")}
+        phonePlaceholder={t("fields.phonePlaceholder")}
+        confirmPasswordPlaceholder={t("fields.confirmPasswordPlaceholder")}
+        companyNamePlaceholder={t("fields.companyNamePlaceholder")}
+        termsLabel={t("fields.termsLabel")}
         submitLabel={t("submit")}
       />
     </AuthCardWrapper>

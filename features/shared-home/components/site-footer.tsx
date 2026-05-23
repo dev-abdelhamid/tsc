@@ -1,42 +1,40 @@
 "use client"
 
-import * as React from "react"
 import Image from "next/image"
-import { useTranslations } from "next-intl"
-import { Camera, SendHorizonal, CirclePlay, Phone, Mail, MapPin, ChevronRight } from "lucide-react"
+import styles from "./site-footer.module.css"
+import { useTranslations, useLocale } from "next-intl"
 import { Link } from "@/i18n/navigation"
-import { cn } from "@/hooks/lib/utils"
 
 export function SiteFooter() {
   const t = useTranslations("Landing.footer")
   const contactT = useTranslations("Landing.contact")
+  const locale = useLocale()
+  const isRTL = locale === "ar"
 
   return (
-    <footer className="relative w-full overflow-hidden bg-[#001222] text-white">
+    <footer dir={isRTL ? "rtl" : "ltr"} className="relative w-full overflow-hidden bg-[#001222] text-white">
+      <div className="pointer-events-none absolute -left-40 bottom-0 z-0 h-[468px] w-[468px] rounded-full bg-[#005685] blur-[200px]" aria-hidden />
+      <div className="pointer-events-none absolute -right-20 top-20 z-0 h-[468px] w-[468px] rounded-full bg-[#005685] blur-[200px]" aria-hidden />
+
       {/* Background Elements */}
       <div className="absolute inset-0 z-0">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(180deg, #041B2D 0%, #001A2E 52%, #001525 100%)",
-          }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(44% 80% at 88% 26%, rgba(64, 160, 202, 0.34) 0%, rgba(64, 160, 202, 0) 72%), radial-gradient(58% 92% at 0% 100%, rgba(0, 86, 133, 0.2) 0%, rgba(0, 86, 133, 0) 72%)",
-          }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.06]"
-          style={{
-            backgroundImage: "url('/footer/noise-bg.png')",
-            backgroundSize: "420px 420px",
-            backgroundRepeat: "repeat",
-          }}
-        />
+        <div className={`absolute inset-0 ${styles.bgLinear}`} />
+        <div className={`absolute inset-0 ${styles.bgRadial}`} />
+        <div className={`absolute inset-0 opacity-[0.06] ${styles.noiseBg}`} />
+        {/* Full-bleed decorative background image */}
+        <div className="absolute inset-0 z-0" aria-hidden>
+          <div className="absolute inset-0 relative">
+            <Image
+              src="/home/hero/hero-bg-image.png"
+              alt=""
+              fill
+              className="object-cover opacity-40 mix-blend-overlay pointer-events-none"
+            />
+          </div>
+          <div className={styles.rotatedOverlay} aria-hidden>
+            <Image src="/home/hero/hero-bg-image.png" alt="" width={1119} height={1991} className="object-cover" />
+          </div>
+        </div>
       </div>
 
       <div className="relative z-10 mx-auto max-w-[1512px] px-6 py-14 lg:px-[100px] lg:pt-14 lg:pb-8">
@@ -56,17 +54,17 @@ export function SiteFooter() {
             <p className="text-[16px] leading-normal font-normal text-[#F5F5F5]">
               {contactT("footerDescription")}
             </p>
-            {/* <div className="flex items-center gap-6">
-              <Link href="#" className="transition-transform hover:scale-110">
-                <Image src="/footer/social-instagram.svg" alt="Instagram" width={24} height={24} />
+            <div className="flex items-center gap-6">
+              <Link href="#" className="flex size-10 items-center justify-center transition-transform hover:scale-110" aria-label="Instagram">
+                <Image src="/footer/social-instagram.svg" alt="" width={40} height={40} className="size-10 object-contain" />
               </Link>
-              <Link href="#" className="transition-transform hover:scale-110">
-                <Image src="/footer/social-telegram.svg" alt="Telegram" width={24} height={24} />
+              <Link href="#" className="flex size-10 items-center justify-center transition-transform hover:scale-110" aria-label="Telegram">
+                <Image src="/footer/social-telegram.svg" alt="" width={40} height={40} className="size-10 object-contain" />
               </Link>
-              <Link href="#" className="transition-transform hover:scale-110">
-                <Image src="/footer/social-youtube.svg" alt="YouTube" width={24} height={24} />
+              <Link href="#" className="flex size-10 items-center justify-center transition-transform hover:scale-110" aria-label="YouTube">
+                <Image src="/footer/social-youtube.svg" alt="" width={40} height={40} className="size-10 object-contain" />
               </Link>
-            </div> */}
+            </div>
           </div>
 
           {/* Column 2: Quick Links */}
@@ -85,6 +83,8 @@ export function SiteFooter() {
                   {t(`quickLinks.items.${item}`)}
                 </Link>
               ))}
+
+              {/* Admin links removed (per design request) */}
             </nav>
           </div>
 
@@ -133,6 +133,7 @@ export function SiteFooter() {
             </Link>
           </div>
         </div>
+        
       </div>
     </footer>
   )

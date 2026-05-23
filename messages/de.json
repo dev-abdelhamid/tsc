@@ -56,21 +56,44 @@
         "passwordLabel": "Passwort",
         "passwordPlaceholder": "Passwort",
         "showPassword": "Passwort anzeigen",
-        "hidePassword": "Passwort ausblenden"
+        "hidePassword": "Passwort ausblenden",
+        "phonePlaceholder": "Telefonnummer",
+        "confirmPasswordPlaceholder": "Passwort bestätigen",
+        "companyNamePlaceholder": "Firmenname",
+        "termsLabel": "Ich akzeptiere die AGB und Datenschutzrichtlinie"
       }
     },
     "forgotPassword": {
       "title": "Passwort zurücksetzen",
-      "description": "Gib deine E-Mail ein und wir senden dir einen Link zum Zurücksetzen.",
+      "description": "Gib deine E-Mail ein — wir senden dir einen Bestätigungscode.",
       "logoAlt": "Talent Seeker Logo",
       "submit": "Link senden",
+      "step1": "Code senden",
+      "step2": "Code bestätigen",
+      "step3": "Neues Passwort",
       "back": "Zurück",
       "rememberPassword": "Passwort wieder eingefallen?",
       "signIn": "Anmelden",
       "alternateAction": "Zurück zur Anmeldung",
       "fields": {
         "emailLabel": "E-Mail",
-        "emailPlaceholder": "Deine E-Mail"
+        "emailPlaceholder": "Deine E-Mail",
+        "codePlaceholder": "6-stelliger Code",
+        "passwordPlaceholder": "Neues Passwort",
+        "confirmPlaceholder": "Passwort bestätigen"
+      }
+    },
+    "verifyEmail": {
+      "title": "E-Mail bestätigen",
+      "description": "Gib den Code ein, den wir dir per E-Mail gesendet haben.",
+      "logoAlt": "Talent Seeker Logo",
+      "submit": "Bestätigen",
+      "resend": "Code erneut senden",
+      "back": "Zurück",
+      "hasAccount": "Bereits ein Konto?",
+      "signIn": "Anmelden",
+      "fields": {
+        "codePlaceholder": "Bestätigungscode"
       }
     }
   },
@@ -171,6 +194,7 @@
       },
       "moreDetails": "Mehr Details",
       "showAll": "Alle Jobs anzeigen",
+      "salaryPeriod": "/Monat",
       "items": {
         "frontend": {
           "department": "IT",
@@ -219,10 +243,34 @@
       "filter": "Filter",
       "department": "Abteilung",
       "postedAgo": "vor 14 Stunden",
-      "salaryPeriod": "/Monat",
-      "time": "Zeit",
+      "salaryPeriod": " /Monat",
+      "employmentFullTime": "Vollzeit",
       "companyName": "Firmenname",
-      "companySubLabel": "Titel",
+      "companySubLabel": "Standort",
+      "noResults": "Keine Stellen entsprechen Ihren Filtern. Passen Sie die Suche an oder setzen Sie die Filter zurück.",
+      "closeFilters": "Schließen",
+      "description": "Stellenbeschreibung",
+      "requirements": "Anforderungen",
+      "responsibilities": "Aufgaben",
+      "applyNow": "Jetzt bewerben",
+      "vacancies": "offene Stellen",
+      "detail": {
+        "lookingFor": "Wir suchen eine/n...",
+        "shareWith": "Teilen über:",
+        "monthly": "Monatlich",
+        "details": "Details",
+        "industry": "Branche",
+        "employmentType": "Beschäftigungsart",
+        "vacancy": "Stellen",
+        "gender": "Geschlecht",
+        "age": "Alter",
+        "applicationDeadline": "Bewerbungsfrist",
+        "applyForJob": "Jetzt bewerben",
+        "relatedJobs": "Ähnliche Jobs",
+        "placeholderOne": "Wir suchen eine motivierte Fachkraft, die unser wachsendes Team unterstützt und zu unseren Zielen beiträgt.",
+        "placeholderTwo": "Sie arbeiten eng mit verschiedenen Teams zusammen und übernehmen Verantwortung in Planung und Umsetzung.",
+        "placeholderThree": "Wir bieten ein unterstützendes Umfeld mit Entwicklungsmöglichkeiten und klaren Prozessen."
+      },
       "filterPanel": {
         "title": "Filter",
         "clearAll": "Alles löschen",
@@ -293,6 +341,7 @@
       "title": "Einblicke in den deutschen Arbeitsmarkt",
       "description": "Aktuelle News zu Visa-Regeln, Karrieretipps und Branchentrends, damit du in Deutschland erfolgreich bist.",
       "readMore": "Mehr lesen",
+      "viewAll": "Alle News anzeigen",
       "items": {
         "first": {
           "title": "CBS Evening News",
@@ -318,6 +367,8 @@
     },
     "newsPage": {
       "languageAria": "Sprache wechseln",
+      "backToNews": "Zurück zu den News",
+      "empty": "Derzeit sind keine Artikel verfügbar. Bitte später erneut versuchen.",
       "relatedTitle": "Verwandte News",
       "shareWith": "Teilen mit",
       "featured": {
@@ -481,6 +532,276 @@
       }
     }
   },
+  "CompanyJobs": {
+    "title": "Stelle erstellen",
+    "listTitle": "Meine Stellen",
+    "addJob": "+ Stelle hinzufügen",
+    "empty": "Sie haben noch keine Stellen veröffentlicht",
+    "loadError": "Stellen konnten nicht geladen werden",
+    "cancel": "Abbrechen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "submit": "Veröffentlichen",
+    "submitting": "Wird veröffentlicht...",
+    "compressing": "Bild wird optimiert...",
+    "imageSizeHint": "Bilder werden vor dem Upload komprimiert. JPG, PNG oder WebP bis 12 MB.",
+    "delete": "Löschen",
+    "stop": "Stoppen",
+    "applications": "Bewerbungen",
+    "confirmDelete": "Diese Stelle löschen?",
+    "steps": {
+      "basic": "Grundinformationen",
+      "info": "Stelleninformationen",
+      "description": "Stellenbeschreibung"
+    },
+    "fields": {
+      "title": "Titel",
+      "category": "Kategorie",
+      "subCategory": "Unterkategorie",
+      "sameAsCategory": "Wie Kategorie",
+      "state": "Bundesland / Region",
+      "vacancy": "Stellen",
+      "gender": "Geschlecht",
+      "deadline": "Bewerbungsfrist",
+      "salary": "Gehalt",
+      "age": "Alter",
+      "description": "Beschreibung",
+      "responsibilities": "Aufgaben",
+      "requirements": "Anforderungen",
+      "image": "Stellen-Bannerbild"
+    },
+    "placeholders": {
+      "title": "Stellentitel",
+      "image": "Klicken zum Hochladen oder Ändern",
+      "select": "Auswählen",
+      "salaryFrom": "von €",
+      "salaryTo": "bis €",
+      "ageFrom": "von",
+      "ageTo": "bis"
+    },
+    "gender": {
+      "Male": "Männlich",
+      "Female": "Weiblich",
+      "All": "Alle"
+    },
+    "status": {
+      "pending": "Ausstehend",
+      "approved": "Aktiv",
+      "rejected": "Abgelehnt",
+      "stopped": "Gestoppt"
+    },
+    "menu": {
+      "applications": "Bewerbungen",
+      "review": "Vorschau",
+      "stop": "Stoppen",
+      "delete": "Löschen"
+    },
+    "review": {
+      "title": "Stellenvorschau",
+      "backToJobs": "Zurück zu allen Stellen",
+      "viewApplications": "Bewerbungen anzeigen",
+      "companyFallback": "Ihr Unternehmen",
+      "industryFallback": "Branche"
+    },
+    "applicationsPage": {
+      "title": "Bewerbungen",
+      "backToJobs": "Zurück zu allen Stellen",
+      "candidate": "Kandidat",
+      "statusLabel": "Status",
+      "actionsLabel": "Aktionen",
+      "approve": "Genehmigen",
+      "reject": "Ablehnen",
+      "details": "Details",
+      "empty": "Noch keine Bewerbungen für diese Stelle.",
+      "unknownCandidate": "Bewerber",
+      "status": {
+        "pending": "Ausstehend",
+        "accepted": "Genehmigt",
+        "rejected": "Abgelehnt"
+      }
+    },
+    "columns": {
+      "title": "Stellentitel",
+      "category": "Kategorie",
+      "status": "Status",
+      "applications": "Bewerber",
+      "deadline": "Frist",
+      "actions": "Aktionen"
+    },
+    "errors": {
+      "title": "Stellentitel eingeben",
+      "category": "Kategorie wählen",
+      "subCategory": "Unterkategorie wählen",
+      "categoriesUnavailable": "Kategorien konnten nicht vom Server geladen werden. API-Verbindung prüfen und Seite neu laden.",
+      "state": "Bundesland wählen",
+      "vacancy": "Anzahl der Stellen eingeben",
+      "gender": "Geschlecht wählen",
+      "deadline": "Frist wählen",
+      "salary": "Gehaltsbereich eingeben",
+      "salaryRange": "Gehalt von muss kleiner als bis sein",
+      "age": "Altersbereich eingeben",
+      "ageRange": "Alter von muss kleiner als bis sein",
+      "description": "Beschreibung eingeben",
+      "responsibilities": "Aufgaben eingeben",
+      "requirements": "Anforderungen eingeben",
+      "image": "Bitte ein Bannerbild hochladen",
+      "imageSize": "Bild darf maximal 12 MB groß sein",
+      "imageCompress": "Bild konnte nicht verarbeitet werden. Bitte andere Datei wählen."
+    },
+    "removeImage": "Entfernen"
+  },
+  "Admin": {
+    "dashboard": {
+      "title": "Admin-Dashboard",
+      "description": "Plattformübersicht",
+      "kpi": {
+        "users": "Benutzer",
+        "companies": "Unternehmen",
+        "jobs": "Stellen",
+        "pending": "Ausstehende Stellen"
+      },
+      "pendingTable": "Ausstehende Stellen zur Prüfung",
+      "viewAll": "Alle anzeigen",
+      "noPending": "Keine ausstehenden Stellen",
+      "col": {
+        "job": "Stelle",
+        "company": "Unternehmen",
+        "category": "Kategorie",
+        "status": "Status",
+        "actions": "Aktionen"
+      },
+      "status": {
+        "pending": "Ausstehend"
+      }
+    },
+    "jobs": {
+      "title": "Stellenverwaltung",
+      "description": "Stellen prüfen, genehmigen oder ablehnen",
+      "tabs": {
+        "pending": "Ausstehend",
+        "approved": "Veröffentlicht",
+        "rejected": "Abgelehnt",
+        "all": "Alle"
+      },
+      "columns": {
+        "title": "Stelle",
+        "company": "Unternehmen",
+        "category": "Kategorie",
+        "salary": "Gehalt",
+        "status": "Status",
+        "actions": "Aktionen"
+      },
+      "status": {
+        "pending": "Ausstehend",
+        "approved": "Veröffentlicht",
+        "rejected": "Abgelehnt"
+      },
+      "approve": "Genehmigen",
+      "reject": "Ablehnen",
+      "empty": "Keine Stellen",
+      "error": "Aktion fehlgeschlagen"
+    },
+    "users": {
+      "title": "Benutzer",
+      "description": "Benutzer- und Unternehmenskonten verwalten",
+      "filters": {
+        "all": "Alle",
+        "user": "Benutzer",
+        "company": "Unternehmen",
+        "admin": "Admin"
+      },
+      "columns": {
+        "name": "Name",
+        "email": "E-Mail",
+        "phone": "Telefon",
+        "role": "Rolle",
+        "actions": "Aktionen"
+      },
+      "roles": {
+        "user": "Benutzer",
+        "company": "Unternehmen",
+        "admin": "Admin"
+      },
+      "delete": "Löschen",
+      "deleteConfirm": "Diesen Benutzer löschen?",
+      "empty": "Keine Benutzer",
+      "error": "Löschen fehlgeschlagen"
+    },
+    "companies": {
+      "title": "Unternehmen",
+      "description": "Registrierte Unternehmenskonten",
+      "columns": {
+        "name": "Unternehmen",
+        "email": "E-Mail",
+        "phone": "Telefon",
+        "verified": "Verifizierung"
+      },
+      "verified": "Verifiziert",
+      "notVerified": "Nicht verifiziert",
+      "empty": "Keine Unternehmen"
+    },
+    "successStories": {
+      "title": "Erfolgsgeschichten",
+      "description": "Erfolgsgeschichten auf der Startseite verwalten",
+      "hint": "Geschichten auf Arabisch, Englisch und Deutsch mit Bild hinzufügen oder bearbeiten.",
+      "loadError": "Erfolgsgeschichten konnten nicht geladen werden",
+      "columns": {
+        "image": "Bild",
+        "name": "Name",
+        "role": "Rolle",
+        "location": "Ort",
+        "quote": "Zitat",
+        "actions": "Aktionen"
+      },
+      "fields": {
+        "name": "Name",
+        "role": "Rolle",
+        "quote": "Zitat",
+        "location": "Ort",
+        "image": "Bild"
+      },
+      "add": "+ Geschichte hinzufügen",
+      "createTitle": "Neue Geschichte",
+      "editTitle": "Geschichte bearbeiten",
+      "save": "Speichern",
+      "saving": "Speichern…",
+      "cancel": "Abbrechen",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "deleteConfirm": "Diese Geschichte löschen?",
+      "empty": "Keine Erfolgsgeschichten",
+      "error": "Speichern fehlgeschlagen",
+      "locationRequired": "Ort ist erforderlich"
+    },
+    "settings": {
+      "title": "Einstellungen & Inhalte",
+      "description": "Website-Einstellungen, News und Benachrichtigungen",
+      "tabs": {
+        "settings": "Website-Einstellungen",
+        "news": "News",
+        "notifications": "Benachrichtigungen"
+      },
+      "settingsEmpty": "Keine Einstellungen vom API",
+      "edit": "Bearbeiten",
+      "save": "Speichern",
+      "addNews": "+ Neuer Artikel",
+      "newsTitle": "Titel",
+      "newsDesc": "Beschreibung",
+      "newsImage": "Artikelbild",
+      "saveNews": "Veröffentlichen",
+      "newsColTitle": "Titel",
+      "newsColDate": "Datum",
+      "newsColActions": "Aktionen",
+      "newsEmpty": "Keine News",
+      "notificationsEmpty": "Keine Benachrichtigungen",
+      "markAllRead": "Alle als gelesen markieren",
+      "markRead": "Gelesen",
+      "unread": "Neu",
+      "delete": "Löschen",
+      "deleteConfirm": "Diesen Artikel löschen?",
+      "error": "Etwas ist schiefgelaufen"
+    }
+  },
   "Ui": {
     "common": {
       "loading": "Wird geladen"
@@ -489,6 +810,7 @@
       "close": "Schließen"
     },
     "sheet": {
+      "title": "Seitenleisten-Drawer",
       "close": "Schließen"
     },
     "sidebar": {

@@ -2,20 +2,22 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { Bell, ChevronDown, Check, User } from "lucide-react"
+import { Bell, ChevronDown, Check, Menu, User } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet"
 import { Link, usePathname } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
+import type { User } from "@/lib/api/types"
 
 type NavItemKey = "home" | "about" | "services" | "jobs" | "news" | "contact"
 
 type SiteHeaderProps = {
   activeItem?: NavItemKey
   initialIsLoggedIn?: boolean
-  initialUser?: any
+  initialUser?: User | null
   isDashboard?: boolean
 }
 
@@ -31,7 +33,7 @@ const NAV_ITEMS: Array<{ key: NavItemKey; href: string }> = [
 const LOCALE_OPTIONS = [
   { locale: "de", label: "Deutsch", flag: "🇩🇪" },
   { locale: "en", label: "English", flag: "🇬🇧" },
-  { locale: "ar", label: "العربية", flag: "🇸" },
+  { locale: "ar", label: "العربية", flag: "🇸🇦" },
 ] as const
 
 interface Notification {
@@ -57,7 +59,7 @@ export function SiteHeader({
   
   const [authState, setAuthState] = React.useState<{
     isLoggedIn: boolean
-    user: any
+    user: User | null
     checked: boolean
   }>(() => ({
     isLoggedIn: initialIsLoggedIn || false,
@@ -65,17 +67,10 @@ export function SiteHeader({
     checked: !!initialIsLoggedIn,
   }))
 
-  const [notifications] = React.useState<Notification[]>([
-    {
-      id: 1,
-      title: isRTL ? "أنت في الـ Top 40" : "You're in the Top 40",
-      description: isRTL 
-        ? "أخبار رائعة! أنت حالياً مصنف ضمن أفضل 40 شريك" 
-        : "Great news! You are currently ranked among the top 40 partners",
-      time: "May 5, 1:30 PM",
-      read: false,
-    },
-  ])
+  const [notifications, setNotifications] = React.useState<Notification[]>([])
+  const [notificationsLoading, setNotificationsLoading] = React.useState(false)
+
+  const [unreadCount, setUnreadCount] = React.useState<number>(0)
 
   const activeNav = React.useMemo(() => {
     if (activeItem) return activeItem
@@ -87,7 +82,7 @@ export function SiteHeader({
   }, [activeItem, pathname])
 
   const currentLocaleOption = LOCALE_OPTIONS.find((opt) => opt.locale === currentLocale) ?? LOCALE_OPTIONS[0]
-  const unreadCount = notifications.filter((n) => !n.read).length
+  
   const { isLoggedIn, user } = authState
 
   const checkAuth = React.useCallback(async () => {
@@ -115,7 +110,7 @@ export function SiteHeader({
     }
     
     try {
-      const res = await fetch(`/${currentLocale}/api/session`, {
+      const res = await fetch("/api/auth/session", {
         credentials: "include",
         cache: "no-store",
         headers: { "Content-Type": "application/json" }
@@ -143,22 +138,24 @@ export function SiteHeader({
 
   React.useEffect(() => {
     if (initialIsLoggedIn !== undefined) {
-      setAuthState({
-        isLoggedIn: initialIsLoggedIn,
-        user: initialUser || null,
-        checked: true,
-      })
+      setTimeout(() => {
+        setAuthState({
+          isLoggedIn: initialIsLoggedIn,
+          user: initialUser || null,
+          checked: true,
+        })
+      }, 0)
       return
     }
     
     if (!authState.checked) {
-      checkAuth()
+      setTimeout(() => checkAuth(), 0)
     }
   }, [initialIsLoggedIn, initialUser, authState.checked, checkAuth])
 
   React.useEffect(() => {
     if (!initialIsLoggedIn) {
-      checkAuth()
+      setTimeout(() => checkAuth(), 0)
     }
   }, [currentLocale, pathname, initialIsLoggedIn, checkAuth])
 
@@ -172,20 +169,88 @@ export function SiteHeader({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const markAsRead = (id: number) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    )
+  React.useEffect(() => {
+    let mounted = true
+    async function fetchUnread() {
+      try {
+        const res = await fetch("/api/notifications/unread-count", {
+          credentials: "include",
+          cache: "no-store",
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        if (mounted && typeof data.unread_count === "number") {
+          setUnreadCount(data.unread_count)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    if (isLoggedIn) fetchUnread()
+
+    return () => { mounted = false }
+  }, [isLoggedIn, currentLocale])
+
+  React.useEffect(() => {
+    if (!isLoggedIn || !showNotifications) return
+    let mounted = true
+
+    async function fetchNotifications() {
+      setNotificationsLoading(true)
+      try {
+        const res = await fetch("/api/notifications?page=1", {
+          credentials: "include",
+          cache: "no-store",
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        if (!mounted) return
+        const list = Array.isArray(data.data) ? data.data : []
+        setNotifications(
+          list.map((n: { id: number; title: string; body?: string; message?: string; created_at?: string; read_at?: string | null }) => ({
+            id: n.id,
+            title: n.title,
+            description: n.body || n.message || "",
+            time: n.created_at
+              ? new Date(n.created_at).toLocaleString(currentLocale === "ar" ? "ar-EG" : currentLocale)
+              : "",
+            read: Boolean(n.read_at),
+          }))
+        )
+      } catch (err) {
+        console.error(err)
+      } finally {
+        if (mounted) setNotificationsLoading(false)
+      }
+    }
+
+    fetchNotifications()
+    return () => { mounted = false }
+  }, [isLoggedIn, showNotifications, currentLocale])
+
+  const markAsRead = async (id: number) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    setUnreadCount((prev) => Math.max(0, prev - 1))
+    try {
+      await fetch(`/api/notifications/${id}/read`, { method: "POST", credentials: "include" })
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const closeMobileMenu = () => {
+    document.querySelector<HTMLButtonElement>("[data-slot=sheet-close]")?.click()
   }
 
   if (!authState.checked) {
     return (
-      <header className="relative w-full overflow-hidden bg-[#001222]">
-        <div className="mx-auto flex h-[128px] max-w-[1512px] items-center justify-between px-6 lg:px-[100px]">
-          <div className="h-16 w-16 bg-gray-700/50 rounded animate-pulse" />
-          <div className="flex items-center gap-4">
-            <div className="h-11 w-20 bg-gray-700/50 rounded animate-pulse" />
-            <div className="h-11 w-11 bg-gray-700/50 rounded-full animate-pulse" />
+      <header className="relative z-50 w-full overflow-hidden bg-[#001222]">
+        <div className="mx-auto flex h-[88px] max-w-[1512px] items-center justify-between px-4 sm:px-6 lg:h-[128px] lg:px-[100px]">
+          <div className="h-12 w-12 rounded bg-gray-700/50 animate-pulse lg:h-16 lg:w-16" />
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-16 rounded bg-gray-700/50 animate-pulse" />
+            <div className="h-10 w-10 rounded-full bg-gray-700/50 animate-pulse" />
           </div>
         </div>
       </header>
@@ -193,65 +258,161 @@ export function SiteHeader({
   }
 
   return (
-    <header className={cn(
-      "relative w-full overflow-hidden shadow-2xl transition-all",
-      isDashboard ? "bg-[#001222]" : "bg-[#001222]"
-    )}>
+    <header
+      className={cn(
+        "sticky top-0 z-50 w-full overflow-visible bg-[#001222] shadow-2xl transition-all",
+        isDashboard && "bg-[#001222]"
+      )}
+    >
       <div className="pointer-events-none absolute top-0 -start-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
       <div className="pointer-events-none absolute top-0 -end-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
 
-      <div className="mx-auto flex h-[128px] max-w-[1512px] items-center justify-between px-6 lg:px-[100px]">
-        <Link href="/" aria-label="Talent Seeker" className="relative z-50 shrink-0">
-          <Image 
-            src="/home/hero/hero-logo.svg" 
-            alt="Talent Seeker" 
-            width={64} 
-            height={64} 
-            className="h-14 w-14 lg:h-16 lg:w-16" 
-            loading="eager"
-            priority
-          />
-        </Link>
-
-        {!isDashboard && (
-          <nav className="relative z-50 hidden items-center gap-4 lg:flex">
-            {NAV_ITEMS.map((item, index) => (
-              <React.Fragment key={item.key}>
-                {index > 0 && <div className="h-[18px] w-px bg-white/20" aria-hidden="true" />}
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "px-2 text-[16px] leading-[1.16] font-normal text-white transition-all duration-200 hover:text-[#7CCEF3] hover:scale-105",
-                    activeNav === item.key && "text-[#40A0CA] font-semibold"
-                  )}
-                >
-                  {t(`nav.${item.key}`)}
+      <div className="relative z-50 mx-auto flex h-[88px] max-w-[1512px] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[128px] lg:gap-6 lg:px-[100px]">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0 rounded-[12px] border-[#40A0CA]/50 bg-transparent text-white hover:bg-white/10 lg:hidden"
+                aria-label={isRTL ? "فتح القائمة" : "Open menu"}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side={isRTL ? "right" : "left"}
+              className="flex w-[min(100vw,320px)] flex-col border-[#40A0CA]/20 bg-[#001222] p-0 text-white"
+            >
+              <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Navigation Menu"}</SheetTitle>
+              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+                <Link href="/" onClick={closeMobileMenu} aria-label={t("brand")} className="flex shrink-0 items-center gap-2 relative z-50">
+                  <Image src="/home/hero/hero-logo.svg" alt={t("brand")} width={48} height={48} className="h-11 w-11" />
+                  <span className="text-sm font-semibold tracking-tight text-white">{t("brand")}</span>
                 </Link>
-              </React.Fragment>
-            ))}
-          </nav>
-        )}
+                <SheetClose asChild>
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
+                    <span className="sr-only">{isRTL ? "إغلاق" : "Close"}</span>
+                    <span className="text-xl leading-none">×</span>
+                  </Button>
+                </SheetClose>
+              </div>
 
-        <div className="relative z-50 flex items-center gap-3 lg:gap-4 overflow-visible">
+              <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-4">
+                {NAV_ITEMS.map((item) => (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    onClick={closeMobileMenu}
+                    className={cn(
+                      "rounded-[10px] px-4 py-3 text-[16px] leading-relaxed font-normal transition-colors hover:bg-white/10",
+                      activeNav === item.key ? "bg-[#40A0CA]/20 font-semibold text-[#7CCEF3]" : "text-white"
+                    )}
+                  >
+                    {t(`nav.${item.key}`)}
+                  </Link>
+                ))}
+              </nav>
+
+              <div className="space-y-3 border-t border-white/10 px-4 py-5">
+                <p className="px-1 text-[12px] font-medium text-white/60">{isRTL ? "اللغة" : "Language"}</p>
+                <div className="flex flex-col gap-1">
+                  {LOCALE_OPTIONS.map((option) => (
+                    <Link
+                      key={option.locale}
+                      locale={option.locale}
+                      href={pathname}
+                      onClick={closeMobileMenu}
+                      className={cn(
+                        "flex items-center justify-between rounded-[10px] px-4 py-2.5 text-[15px] leading-relaxed transition-colors hover:bg-white/10",
+                        option.locale === currentLocale && "bg-[#40A0CA]/20 font-semibold text-[#7CCEF3]"
+                      )}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>{option.flag}</span>
+                        {option.label}
+                      </span>
+                      {option.locale === currentLocale && <Check className="h-4 w-4 shrink-0" />}
+                    </Link>
+                  ))}
+                </div>
+
+                {isLoggedIn ? (
+                  <Link href="/dashboard" onClick={closeMobileMenu} className="block">
+                    <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
+                      {isRTL ? "لوحة التحكم" : "Dashboard"}
+                    </PrimaryButton>
+                  </Link>
+                ) : (
+                  <Link href="/sign-in" onClick={closeMobileMenu} className="block">
+                    <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
+                      {t("login")}
+                    </PrimaryButton>
+                  </Link>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center gap-2 sm:gap-3 relative z-50">
+            <Image
+              src="/home/hero/hero-logo.svg"
+              alt={t("brand")}
+              width={64}
+              height={64}
+              className="h-11 w-11 sm:h-12 sm:w-12 lg:h-16 lg:w-16"
+              loading="eager"
+              priority
+            />
+         
+          </Link>
+        </div>
+
+        <nav className="hidden items-center gap-4 lg:flex">
+          {NAV_ITEMS.map((item, index) => (
+            <React.Fragment key={item.key}>
+              {index > 0 && <div className="h-[18px] w-px bg-white/20" aria-hidden="true" />}
+              <Link
+                href={item.href}
+                className={cn(
+                  "px-2 text-[16px] leading-[1.16] font-normal text-white transition-all duration-200 hover:text-[#7CCEF3] hover:scale-105",
+                  activeNav === item.key && "font-semibold text-[#40A0CA]"
+                )}
+              >
+                {t(`nav.${item.key}`)}
+              </Link>
+            </React.Fragment>
+          ))}
+        </nav>
+
+        <div className="relative flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="h-[44px] gap-2 rounded-[12px] border border-[#40A0CA]/50 bg-transparent px-3 text-white hover:bg-white/10 transition-all"
+                className="h-10 gap-1.5 rounded-[12px] border border-[#40A0CA]/50 bg-transparent px-2.5 text-white hover:bg-white/10 sm:h-[44px] sm:gap-2 sm:px-3"
               >
-                <ChevronDown className="h-4 w-4 text-white/90" />
-                <span className="text-lg">{currentLocaleOption.flag}</span>
+                <span className="text-base sm:text-lg">{currentLocaleOption.flag}</span>
+                <ChevronDown className="hidden h-4 w-4 text-white/90 sm:block" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[190px] rounded-[12px] border border-[#cfe7f7] bg-white p-1 z-[100]">
+            <DropdownMenuContent
+              align={isRTL ? "start" : "end"}
+              sideOffset={8}
+              className={cn(
+                "z-[200] w-[min(calc(100vw-2rem),190px)] rounded-[12px] border border-[#cfe7f7] bg-white p-1 shadow-lg",
+                isRTL && "text-end"
+              )}
+            >
               {LOCALE_OPTIONS.map((option) => (
                 <DropdownMenuItem key={option.locale} asChild className="rounded-[8px] px-2 py-2 text-[#032C44]">
-                  <Link locale={option.locale} href={pathname} className="flex w-full items-center justify-between">
+                  <Link locale={option.locale} href={pathname} className="flex w-full items-center justify-between gap-3">
                     <span className="flex items-center gap-2">
                       <span className="text-lg">{option.flag}</span>
                       {option.label}
                     </span>
-                    {option.locale === currentLocale && <Check className="h-4 w-4 text-[#006EA8]" />}
+                    {option.locale === currentLocale && <Check className="h-4 w-4 shrink-0 text-[#006EA8]" />}
                   </Link>
                 </DropdownMenuItem>
               ))}
@@ -263,25 +424,35 @@ export function SiteHeader({
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative h-[44px] w-[44px] rounded-[12px] bg-gradient-to-br from-[#006EA8] to-[#005685] hover:from-[#005685] hover:to-[#003F64] shadow-[0px_42px_107px_rgba(123,190,255,0.34)] transition-all hover:scale-105"
+                className="relative h-10 w-10 rounded-[12px] bg-gradient-to-br from-[#006EA8] to-[#005685] shadow-[0px_42px_107px_rgba(123,190,255,0.34)] transition-all hover:scale-105 sm:h-[44px] sm:w-[44px]"
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="h-5 w-5 text-white" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+                  <span className="absolute -top-1 -end-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white animate-pulse">
                     {unreadCount}
                   </span>
                 )}
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-[52px] w-[380px] bg-white rounded-[16px] shadow-2xl border border-gray-100 z-[9999] max-h-[500px] overflow-hidden pointer-events-auto">
+                <div className="absolute end-0 top-[calc(100%+8px)] z-[9999] max-h-[min(70vh,500px)] w-[min(calc(100vw-2rem),380px)] overflow-hidden rounded-[16px] border border-gray-100 bg-white shadow-2xl pointer-events-auto">
                   <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-[#006EA8]/5 to-[#005685]/5">
                     <h3 className="font-bold text-gray-900 text-lg">
                       {isRTL ? "الإشعارات" : "Notifications"}
                     </h3>
                   </div>
                   <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
+                    {notificationsLoading && (
+                      <div className="p-6 text-center text-sm text-gray-500">
+                        {isRTL ? "جاري التحميل..." : "Loading..."}
+                      </div>
+                    )}
+                    {!notificationsLoading && notifications.length === 0 && (
+                      <div className="p-6 text-center text-sm text-gray-500">
+                        {isRTL ? "لا توجد إشعارات" : "No notifications"}
+                      </div>
+                    )}
                     {notifications.map((notification) => (
                       <div
                         key={notification.id}
@@ -315,11 +486,10 @@ export function SiteHeader({
             </div>
           )}
 
-          {/* ✅ User Profile - بدون زر الخروج (يظهر فقط في السايدبار) */}
           {isLoggedIn ? (
             <Link href="/dashboard" className="hidden sm:block">
-              <div className="h-[44px] w-[44px] rounded-full bg-gradient-to-br from-[#006EA8] to-[#005685] p-0.5 shadow-[0px_42px_107px_rgba(123,190,255,0.34)] cursor-pointer hover:shadow-[0px_50px_120px_rgba(123,190,255,0.4)] transition-all hover:scale-105">
-                <div className="h-full w-full rounded-full bg-white p-0.5 flex items-center justify-center overflow-hidden">
+              <div className="h-10 w-10 cursor-pointer rounded-full bg-gradient-to-br from-[#006EA8] to-[#005685] p-0.5 shadow-[0px_42px_107px_rgba(123,190,255,0.34)] transition-all hover:scale-105 lg:h-[44px] lg:w-[44px]">
+                <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white p-0.5">
                   {user?.avatar ? (
                     <Image
                       src={user.avatar}
@@ -329,14 +499,14 @@ export function SiteHeader({
                       className="h-full w-full rounded-full object-cover"
                     />
                   ) : (
-                    <User className="w-6 h-6 text-[#006EA8]" />
+                    <User className="h-5 w-5 text-[#006EA8] lg:h-6 lg:w-6" />
                   )}
                 </div>
               </div>
             </Link>
           ) : (
-            <Link href="/sign-in">
-              <PrimaryButton className="w-[120px] lg:w-[150px] hover:shadow-lg transition-all hover:scale-105">
+            <Link href="/sign-in" className="hidden sm:block">
+              <PrimaryButton className="h-10 min-w-[100px] px-4 text-[14px] font-medium transition-all hover:scale-105 hover:shadow-lg lg:h-[52px] lg:w-[150px] lg:text-[20px]">
                 {t("login")}
               </PrimaryButton>
             </Link>
