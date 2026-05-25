@@ -1,3 +1,4 @@
+// app/[locale]/dashboard/layout.tsx
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/session"
 import { DashboardSidebar } from "@/features/dashboard/components/dashboard-sidebar"
@@ -22,6 +23,7 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-[#F7F9FC]">
       <div className="mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-4 sm:py-6 lg:px-8 lg:py-8">
         <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:gap-6">
+          {/* السايد بار: يظهر ديسكتوب، والموبايل فيه زرار فتح قائمة */}
           <DashboardSidebar locale={locale} userRole={user.role} />
           <main className="min-w-0 flex-1">{children}</main>
         </div>

@@ -17,20 +17,25 @@ export async function CategoriesSection() {
   return (
     <SectionShell id="categories" stagger={false} className="overflow-hidden bg-white py-12 sm:py-16 lg:py-[82px]">
       <div className="flex flex-col gap-10 lg:gap-16">
-        <StaggerInView className="flex flex-col items-start gap-6 text-start" immediate>
-          <StaggerItem immediate>
+        {/* Header section with stagger animation */}
+        <StaggerInView 
+          className="flex flex-col items-start gap-6 text-start"
+          leadDelay={0.55}
+          staggerDelay={0.15}
+        >
+          <StaggerItem>
             <div className="inline-flex items-center gap-2 rounded-lg bg-[rgba(64,160,202,0.25)] px-4 py-2 text-[12px] leading-[1.16] font-normal text-[#40A0CA]">
               <Globe className="h-4 w-4 shrink-0 text-[#40A0CA]" strokeWidth={1.5} />
               {t("eyebrow")}
             </div>
           </StaggerItem>
           <div className="flex flex-col gap-6">
-            <StaggerItem immediate>
+            <StaggerItem>
               <h2 className="max-w-[683px] font-heading text-[28px] font-bold capitalize leading-[1.5] text-[#171717] sm:text-[32px] lg:text-[36px]">
                 {t("title")}
               </h2>
             </StaggerItem>
-            <StaggerItem immediate>
+            <StaggerItem>
               <p className="max-w-[1312px] text-[14px] font-normal leading-[1.16] text-[#525252] sm:text-[16px]">
                 {t("description")}
               </p>
@@ -38,10 +43,15 @@ export async function CategoriesSection() {
           </div>
         </StaggerInView>
 
-        <StaggerInView className="overflow-hidden" immediate>
+        {/* Cards grid with stagger animation - slightly delayed after header */}
+        <StaggerInView 
+          className="overflow-hidden"
+          leadDelay={0.75}
+          staggerDelay={0.08}
+        >
           <div className="grid grid-cols-1 gap-6 overflow-hidden sm:grid-cols-2 lg:grid-cols-4">
             {categories.map((key) => (
-              <StaggerItem key={key} immediate className="overflow-hidden p-1">
+              <StaggerItem key={key} className="overflow-hidden p-1">
                 <Card
                   className={cn(
                     "group relative min-h-[236px] cursor-pointer overflow-hidden rounded-lg border border-[#d4d4d4] bg-white transition-all duration-300",
@@ -68,7 +78,7 @@ export async function CategoriesSection() {
               </StaggerItem>
             ))}
 
-            <StaggerItem immediate className="overflow-hidden p-1 sm:col-span-2 lg:col-span-1">
+            <StaggerItem className="overflow-hidden p-1 sm:col-span-2 lg:col-span-1">
               <Card className="min-h-[236px] overflow-hidden rounded-lg border border-[#4BB7E7] bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#398DB3_0%,#2D7494_100%)] bg-size-[150px_150px,auto] bg-blend-[plus-lighter,normal] text-white shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19)]">
                 <CardContent className="flex h-full min-h-[236px] flex-col justify-between gap-4 overflow-hidden px-6 py-6">
                   <div className="space-y-4 text-start">

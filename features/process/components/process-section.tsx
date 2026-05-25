@@ -75,44 +75,43 @@ export async function ProcessSection() {
   return (
     <SectionShell stagger={false} className="relative overflow-visible bg-[#001222] py-[72px] lg:py-[88px]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center_bottom,rgba(65,160,202,0.42)_0%,rgba(65,160,202,0.18)_28%,rgba(0,18,34,0)_72%)]" />
-      <StaggerInView className="relative space-y-6 text-center">
-        <StaggerItem>
+      
+      {/* Header section with stagger animation */}
+      <StaggerInView leadDelay={0.55}>
+        <div className="relative space-y-6 text-center">
           <div className="mx-auto flex w-fit items-center gap-2 rounded-[8px] bg-[#04324F] px-4 py-2">
             <Image src="/footer/icon-link.svg" alt="" width={16} height={16} />
             <span className="text-[12px] leading-[1.16] font-normal text-[#40A0CA]">{t("eyebrow")}</span>
           </div>
-        </StaggerItem>
-        <StaggerItem>
           <h2 className="mx-auto max-w-[866px] text-balance font-heading text-[28px] font-bold capitalize leading-[1.5] text-[#F5F5F5] sm:text-[32px] lg:text-[36px]">
             {t("title")}
           </h2>
-        </StaggerItem>
-        <StaggerItem>
           <p className="mx-auto max-w-[500px] text-[14px] leading-[1.16] text-[#D4D4D4] sm:text-[16px]">
             {t("description")}
           </p>
-        </StaggerItem>
+        </div>
       </StaggerInView>
 
-      <StaggerInView className="relative mt-20 overflow-visible" immediate>
-        <div className="relative grid gap-12 md:grid-cols-3" dir={isRtl ? "rtl" : "ltr"}>
-          <StepConnector index={0} rtl={isRtl} />
-          <StepConnector index={1} rtl={isRtl} />
+      {/* Steps grid with stagger animation - starts after header */}
+      <StaggerInView leadDelay={0.75}>
+        <div className="relative mt-20 overflow-visible">
+          <div className="relative grid gap-12 md:grid-cols-3" dir={isRtl ? "rtl" : "ltr"}>
+            <StepConnector index={0} rtl={isRtl} />
+            <StepConnector index={1} rtl={isRtl} />
 
-          {steps.map((step) => {
-            const src = icons[step]
-            return (
-              <StaggerItem key={step}>
-                <div className="relative z-[1] flex flex-col items-center text-center">
+            {steps.map((step) => {
+              const src = icons[step]
+              return (
+                <div key={step} className="relative z-[1] flex flex-col items-center text-center">
                   <div className="flex h-12 w-12 items-center justify-center">
                     <Image src={src} alt={t(`steps.${step}.title`)} width={48} height={48} className="object-contain" />
                   </div>
                   <h3 className="mt-6 text-[20px] leading-[1.16] font-bold text-[#F5F5F5]">{t(`steps.${step}.title`)}</h3>
                   <p className="mt-3 max-w-[280px] text-[16px] leading-normal text-[#D4D4D4]">{t(`steps.${step}.description`)}</p>
                 </div>
-              </StaggerItem>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       </StaggerInView>
     </SectionShell>

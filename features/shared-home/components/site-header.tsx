@@ -19,6 +19,7 @@ type SiteHeaderProps = {
   initialIsLoggedIn?: boolean
   initialUser?: User | null
   isDashboard?: boolean
+  onMobileMenuClick?: () => void  // جديد: للتعامل مع زر المنيو في الداشبورد
 }
 
 const NAV_ITEMS: Array<{ key: NavItemKey; href: string }> = [
@@ -48,7 +49,8 @@ export function SiteHeader({
   activeItem, 
   initialIsLoggedIn, 
   initialUser,
-  isDashboard = false 
+  isDashboard = false,
+  onMobileMenuClick 
 }: SiteHeaderProps) {
   const t = useTranslations("Landing.hero")
   const currentLocale = useLocale()
@@ -159,7 +161,6 @@ export function SiteHeader({
     }
   }, [currentLocale, pathname, initialIsLoggedIn, checkAuth])
 
-  // Improved click outside handler
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -278,6 +279,20 @@ export function SiteHeader({
       <div className="pointer-events-none absolute top-0 -end-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
 
       <div className="relative z-50 mx-auto flex h-[88px] w-full max-w-[1512px] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[128px] lg:gap-6 lg:px-[100px]">
+        {/* زر المنيو - يظهر فقط في حالة الداشبورد على الشاشات الصغيرة */}
+        {isDashboard && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 shrink-0 rounded-[12px] border-white/20 bg-white/5 text-white hover:bg-white/10 lg:hidden shadow-sm"
+            aria-label={isRTL ? "فتح القائمة" : "Open menu"}
+            onClick={onMobileMenuClick}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
+
         <div className="flex shrink-0 items-center">
           <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center relative z-50">
             <Image
@@ -292,22 +307,25 @@ export function SiteHeader({
           </Link>
         </div>
 
-        <nav className="hidden lg:flex lg:items-center lg:gap-4">
-          {NAV_ITEMS.map((item, index) => (
-            <React.Fragment key={item.key}>
-              {index > 0 && <div className="h-[18px] w-px bg-white/20" aria-hidden="true" />}
-              <Link
-                href={item.href}
-                className={cn(
-                  "whitespace-nowrap px-2 text-[16px] leading-[1.16] font-normal text-white transition-all duration-200 hover:text-[#7CCEF3] hover:scale-105",
-                  activeNav === item.key && "font-semibold text-[#40A0CA]"
-                )}
-              >
-                {t(`nav.${item.key}`)}
-              </Link>
-            </React.Fragment>
-          ))}
-        </nav>
+        {/* إخفاء روابط التنقل في الداشبورد */}
+        {!isDashboard && (
+          <nav className="hidden lg:flex lg:items-center lg:gap-4">
+            {NAV_ITEMS.map((item, index) => (
+              <React.Fragment key={item.key}>
+                {index > 0 && <div className="h-[18px] w-px bg-white/20" aria-hidden="true" />}
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "whitespace-nowrap px-2 text-[16px] leading-[1.16] font-normal text-white transition-all duration-200 hover:text-[#7CCEF3] hover:scale-105",
+                    activeNav === item.key && "font-semibold text-[#40A0CA]"
+                  )}
+                >
+                  {t(`nav.${item.key}`)}
+                </Link>
+              </React.Fragment>
+            ))}
+          </nav>
+        )}
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-4">
           <DropdownMenu>
@@ -342,7 +360,6 @@ export function SiteHeader({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Notifications - Fixed to appear above all content */}
           {isLoggedIn && (
             <div className="relative" ref={notificationsRef}>
               <Button
@@ -360,10 +377,8 @@ export function SiteHeader({
                 )}
               </Button>
 
-              {/* Notifications Dropdown - Fixed positioning with portal-like behavior */}
               {showNotifications && (
                 <>
-                  {/* Backdrop */}
                   <div 
                     className="fixed inset-0 z-[9998] "
                     onClick={() => setShowNotifications(false)}
@@ -456,67 +471,70 @@ export function SiteHeader({
             </Link>
           )}
 
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0 rounded-[12px] border-white/20 bg-white/5 text-white hover:bg-white/10 lg:hidden shadow-sm"
-                aria-label={isRTL ? "فتح القائمة" : "Open menu"}
+          {/* المنيو القديم - يظهر فقط في حالة عدم كوننا في الداشبورد */}
+          {!isDashboard && (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 shrink-0 rounded-[12px] border-white/20 bg-white/5 text-white hover:bg-white/10 lg:hidden shadow-sm"
+                  aria-label={isRTL ? "فتح القائمة" : "Open menu"}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side={isRTL ? "left" : "right"}
+                className="flex w-[min(100vw,320px)] flex-col border-[#40A0CA]/20 bg-[#001222] p-0 text-white overflow-x-hidden"
               >
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side={isRTL ? "left" : "right"}
-              className="flex w-[min(100vw,320px)] flex-col border-[#40A0CA]/20 bg-[#001222] p-0 text-white overflow-x-hidden"
-            >
-              <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Navigation Menu"}</SheetTitle>
-              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-                <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center gap-2 relative z-50">
-                  <Image src="/home/hero/hero-logo.svg" alt={t("brand")} width={48} height={48} className="h-12 w-auto" />
-                </Link>
-                <SheetClose asChild>
-                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
-                    <span className="sr-only">{isRTL ? "إغلاق" : "Close"}</span>
-                    <span className="text-xl leading-none">×</span>
-                  </Button>
-                </SheetClose>
-              </div>
+                <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Navigation Menu"}</SheetTitle>
+                <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+                  <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center gap-2 relative z-50">
+                    <Image src="/home/hero/hero-logo.svg" alt={t("brand")} width={48} height={48} className="h-12 w-auto" />
+                  </Link>
+                  <SheetClose asChild>
+                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
+                      <span className="sr-only">{isRTL ? "إغلاق" : "Close"}</span>
+                      <span className="text-xl leading-none">×</span>
+                    </Button>
+                  </SheetClose>
+                </div>
 
-              <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-4">
-                {NAV_ITEMS.map((item) => (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    onClick={closeMobileMenu}
-                    className={cn(
-                      "rounded-[10px] px-4 py-3 text-[16px] leading-relaxed font-normal transition-colors hover:bg-white/10",
-                      activeNav === item.key ? "bg-[#40A0CA]/20 font-semibold text-[#7CCEF3]" : "text-white"
-                    )}
-                  >
-                    {t(`nav.${item.key}`)}
-                  </Link>
-                ))}
-              </nav>
-              <div className="space-y-3 border-t border-white/10 px-4 py-5">
-                {isLoggedIn ? (
-                  <Link href="/dashboard" onClick={closeMobileMenu} className="block">
-                    <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
-                      {isRTL ? "لوحة التحكم" : "Dashboard"}
-                    </PrimaryButton>
-                  </Link>
-                ) : (
-                  <Link href="/sign-in" onClick={closeMobileMenu} className="block">
-                    <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
-                      {t("login")}
-                    </PrimaryButton>
-                  </Link>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
+                <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-4">
+                  {NAV_ITEMS.map((item) => (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      onClick={closeMobileMenu}
+                      className={cn(
+                        "rounded-[10px] px-4 py-3 text-[16px] leading-relaxed font-normal transition-colors hover:bg-white/10",
+                        activeNav === item.key ? "bg-[#40A0CA]/20 font-semibold text-[#7CCEF3]" : "text-white"
+                      )}
+                    >
+                      {t(`nav.${item.key}`)}
+                    </Link>
+                  ))}
+                </nav>
+                <div className="space-y-3 border-t border-white/10 px-4 py-5">
+                  {isLoggedIn ? (
+                    <Link href="/dashboard" onClick={closeMobileMenu} className="block">
+                      <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
+                        {isRTL ? "لوحة التحكم" : "Dashboard"}
+                      </PrimaryButton>
+                    </Link>
+                  ) : (
+                    <Link href="/sign-in" onClick={closeMobileMenu} className="block">
+                      <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
+                        {t("login")}
+                      </PrimaryButton>
+                    </Link>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
       </div>
     </header>

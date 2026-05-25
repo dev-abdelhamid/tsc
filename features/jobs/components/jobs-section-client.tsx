@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect, useRef } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { useLocale, useTranslations } from "next-intl"
@@ -26,6 +26,8 @@ export function JobsSectionClient({ jobs, categories }: JobsSectionClientProps) 
   const t = useTranslations("Landing.jobs")
   const locale = useLocale()
   const [activeFilter, setActiveFilter] = useState<number | "all">("all")
+  const [isChanging, setIsChanging] = useState(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const filters = useMemo(() => {
     const items: { id: number | "all"; label: string }[] = [
@@ -68,8 +70,28 @@ export function JobsSectionClient({ jobs, categories }: JobsSectionClientProps) 
 
   const hasNoResults = activeFilter !== "all" && visibleJobs.length === 0
 
+  // Cleanup timeout
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [])
+
+  const handleFilterChange = (filterId: number | "all") => {
+    if (activeFilter === filterId || isChanging) return
+    
+    setIsChanging(true)
+    setActiveFilter(filterId)
+    
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => {
+      setIsChanging(false)
+    }, 400)
+  }
+
   return (
-    <SectionShell id="jobs" stagger={false} className="overflow-visible bg-white py-12 sm:py-16 lg:py-[82px]">
+    <SectionShell id="jobs" stagger={false} className="overflow-hidden bg-white py-12 sm:py-16 lg:py-[82px]">
+      {/* Header Section - بدون تغيير */}
       <StaggerInView className="mx-auto flex max-w-[1312px] flex-col items-center gap-6 text-center sm:gap-8">
         <StaggerItem>
           <p className="inline-flex items-center justify-center gap-2 rounded-lg bg-[rgba(64,160,202,0.25)] px-4 py-2 text-[12px] leading-[1.16] font-normal text-[#40A0CA]">
@@ -89,12 +111,13 @@ export function JobsSectionClient({ jobs, categories }: JobsSectionClientProps) 
         </StaggerItem>
       </StaggerInView>
 
+      {/* Filters Section - نفس التصميم الأصلي */}
       <StaggerInView className="mx-auto mt-8 flex w-full max-w-[715px] flex-wrap items-center justify-center gap-0">
         {filters.map((filter) => (
           <StaggerItem key={String(filter.id)}>
             <button
               type="button"
-              onClick={() => setActiveFilter(filter.id === "all" ? "all" : filter.id)}
+              onClick={() => handleFilterChange(filter.id === "all" ? "all" : filter.id)}
               className={cn(
                 "min-w-[120px] flex-1 px-2 py-2 text-center text-[14px] uppercase leading-[1.16] transition-colors sm:min-w-[143px] sm:text-[16px]",
                 activeFilter === filter.id
@@ -108,69 +131,78 @@ export function JobsSectionClient({ jobs, categories }: JobsSectionClientProps) 
         ))}
       </StaggerInView>
 
+      {/* Jobs Grid - مع حل مشكلة الاختفاء */}
       {hasNoResults ? (
         <StaggerInView className="mx-auto mt-10 w-full max-w-[760px] rounded-[18px] border border-dashed border-[#78A3BE] bg-[#F8FBFF] px-6 py-10 text-center">
           <p className="text-[18px] font-semibold text-[#002B46]">
-            لا توجد وظائف حالياً في هذا التصنيف.
+            {locale === "ar" ? "لا توجد وظائف حالياً في هذا التصنيف." : "No jobs currently available in this category."}
           </p>
           <p className="mt-3 text-[14px] leading-[1.6] text-[#525252]">
-            جرّب اختيار تصنيف آخر أو افتح كل الوظائف لرؤية المزيد من الفرص.
+            {locale === "ar" 
+              ? "جرّب اختيار تصنيف آخر أو افتح كل الوظائف لرؤية المزيد من الفرص."
+              : "Try another category or view all jobs to see more opportunities."}
           </p>
           <button
             type="button"
-            onClick={() => setActiveFilter("all")}
+            onClick={() => handleFilterChange("all")}
             className="mt-5 inline-flex h-11 items-center justify-center rounded-[10px] bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] px-6 text-[16px] font-medium text-white"
           >
             {t("filters.all")}
           </button>
         </StaggerInView>
       ) : (
-        <StaggerInView className="mx-auto mt-10 grid w-full max-w-[1312px] gap-6 overflow-visible sm:grid-cols-2 xl:grid-cols-3">
-          {visibleJobs.map((job) => (
-            <StaggerItem key={job.id} className="overflow-visible p-2">
-              <Card
-                className={cn(
-                  "group mx-auto w-full max-w-[420px] cursor-pointer overflow-visible rounded-lg border border-[#78A3BE] bg-white transition-all duration-300",
-                  "hover:border-[#4BB7E7] hover:bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] hover:bg-size-[180px_180px,auto] hover:bg-blend-[plus-lighter,normal] hover:text-white",
-                  "hover:shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#E8F2FF,0_4px_5px_rgba(0,86,133,0.15),0_10px_13px_rgba(0,86,133,0.22),0_24px_32px_rgba(0,86,133,0.19)]"
-                )}
-              >
-                <CardContent className="space-y-4 p-5 sm:p-6">
-                  <Badge className="w-fit rounded-full bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] px-3 py-1 text-[12px] text-white group-hover:border group-hover:border-white/30 group-hover:bg-white/15">
-                    {job.category?.name ?? "—"}
-                  </Badge>
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-start text-[18px] font-bold leading-[1.16] text-[#262626] group-hover:text-white sm:text-[20px]">
-                      {getJobTitle(job, locale)}
-                    </h3>
-                    <p className="shrink-0 text-end text-[14px] font-medium leading-[1.16] text-[#002B46] group-hover:text-white sm:text-[16px]">
-                      {formatJobEmploymentForCard(job.gender, "Full-time")}
-                    </p>
-                  </div>
-                  <p className="text-start text-[16px] font-medium leading-[1.16] text-[#40A0CA] group-hover:text-[#E8F2FF]">
-                    {formatJobSalary(job, t("salaryPeriod") || "/month")}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <div className="grid size-8 shrink-0 place-items-center rounded-full border border-[#78A3BE] group-hover:border-white/60">
-                      <span className="size-4 rounded-full border border-[#78A3BE] group-hover:border-white/70" />
+        <StaggerInView 
+          key={activeFilter} // المفتاح الوحيد الذي يحل المشكلة
+          className="mx-auto mt-10 w-full max-w-[1312px]"
+        >
+          <div className="grid gap-6 overflow-hidden sm:grid-cols-2 xl:grid-cols-3">
+            {visibleJobs.map((job) => (
+              <StaggerItem key={`${job.id}-${activeFilter}`} className="overflow-hidden p-2">
+                <Card
+                  className={cn(
+                    "group mx-auto w-full  cursor-pointer overflow-hidden rounded-lg border border-[#78A3BE] bg-white transition-all duration-300",
+                    "hover:border-[#4BB7E7] hover:bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] hover:bg-size-[180px_180px,auto] hover:bg-blend-[plus-lighter,normal] hover:text-white",
+                    "hover:shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#E8F2FF,0_4px_5px_rgba(0,86,133,0.15),0_10px_13px_rgba(0,86,133,0.22),0_24px_32px_rgba(0,86,133,0.19)]"
+                  )}
+                >
+                  <CardContent className="space-y-4 p-5 sm:p-6">
+                    <Badge className="w-fit rounded-full bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] px-3 py-1 text-[12px] text-white group-hover:border group-hover:border-white/30 group-hover:bg-white/15">
+                      {job.category?.name ?? "—"}
+                    </Badge>
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-start text-[18px] font-bold leading-[1.16] text-[#262626] group-hover:text-white sm:text-[20px]">
+                        {getJobTitle(job, locale)}
+                      </h3>
+                      <p className="shrink-0 text-end text-[14px] font-medium leading-[1.16] text-[#002B46] group-hover:text-white sm:text-[16px]">
+                        {formatJobEmploymentForCard(job.gender, "Full-time")}
+                      </p>
                     </div>
-                    <p className="text-start text-[14px] leading-[1.16] text-[#525252] group-hover:text-[#e8f2ff] sm:text-[16px]">
-                      {job.company?.name ?? "—"}
+                    <p className="text-start text-[16px] font-medium leading-[1.16] text-[#40A0CA] group-hover:text-[#E8F2FF]">
+                      {formatJobSalary(job, t("salaryPeriod") || "/month")}
                     </p>
-                  </div>
-                  <PrimaryButton asChild className="h-11 rounded-[10px] text-[16px] font-medium sm:text-[18px]">
-                    <Link href={`/jobs/${job.id}`}>
-                      {t("moreDetails")}
-                      <MoveUpRight className="size-5 shrink-0 rtl:-scale-x-100" />
-                    </Link>
-                  </PrimaryButton>
-                </CardContent>
-              </Card>
-            </StaggerItem>
-          ))}
+                    <div className="flex items-center gap-2">
+                      <div className="grid size-8 shrink-0 place-items-center rounded-full border border-[#78A3BE] group-hover:border-white/60">
+                        <span className="size-4 rounded-full border border-[#78A3BE] group-hover:border-white/70" />
+                      </div>
+                      <p className="text-start text-[14px] leading-[1.16] text-[#525252] group-hover:text-[#e8f2ff] sm:text-[16px]">
+                        {job.company?.name ?? "—"}
+                      </p>
+                    </div>
+                    <PrimaryButton asChild className="h-11 rounded-[10px] text-[16px] font-medium sm:text-[18px]">
+                      <Link href={`/jobs/${job.id}`}>
+                        {t("moreDetails")}
+                        <MoveUpRight className="size-5 shrink-0 rtl:-scale-x-100" />
+                      </Link>
+                    </PrimaryButton>
+                  </CardContent>
+                </Card>
+              </StaggerItem>
+            ))}
+          </div>
         </StaggerInView>
       )}
 
+      {/* Show All Button - بدون تغيير */}
       <StaggerInView className="mt-8 flex justify-center">
         <StaggerItem>
           <PrimaryButton asChild className="h-11 w-auto min-w-[200px] rounded-[10px] px-8 text-[16px] font-medium sm:text-[18px]">

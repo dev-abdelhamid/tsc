@@ -151,7 +151,7 @@
 
 @layer base {
   * {
-    @apply border-border ;
+    @apply border-border outline-ring/10;
   }
   button:hover,
   a:hover {
@@ -162,29 +162,5 @@
   }
   html {
     @apply font-sans;
-  }
-}
-
-@layer utilities {
-  html,
-  body {
-    -ms-overflow-style: none;
-  }
-
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar {
-    display: none;
-  }
-
-  * {
-    -ms-overflow-style: none;
-  }
-
-  *::-webkit-scrollbar {
-    display: none;
-  }
-
-  [data-slot="scroll-area-scrollbar"] {
-    display: none !important;
   }
 }
