@@ -80,7 +80,7 @@ export default async function UserApplicationsPage({
       : app.status === "rejected"
         ? "rejected"
         : "pending") as "accepted" | "rejected" | "pending",
-    detailsHref: `/${locale}/jobs/${app.job?.id ?? app.id}`,
+    detailsHref: `/jobs/${app.job?.id ?? app.id}`,
   }))
 
   return (

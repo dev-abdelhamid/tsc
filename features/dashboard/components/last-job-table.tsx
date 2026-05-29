@@ -3,7 +3,7 @@
 import React from "react"
 import { useLocale } from "next-intl"
 import { CheckCircle, XCircle, Clock, Briefcase } from "lucide-react"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 
 interface Job {
   id: number
@@ -114,7 +114,7 @@ export function LastJobTable({ jobs, title }: LastJobTableProps) {
                 </div>
                 <div className={`flex-1 px-2 flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
                   <Link 
-                    href={`/${locale}/dashboard/company/jobs/${job.id}`}
+                    href={`/dashboard/company/jobs/${job.id}`}
                     className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#006EA8] to-[#005685] rounded-[8px] shadow-[inset_0px_1px_18px_2px_#E8F2FF,inset_0px_1px_4px_2px_#C2DDFF] hover:shadow-lg transition-shadow"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className={isRTL ? 'scale-x-[-1]' : ''}>

@@ -1,6 +1,6 @@
 import * as React from "react"
 import Image from "next/image"
-import { Link, getPathname, stripLocalePrefix, usePathname } from "@/i18n/navigation"
+import { Link, stripLocalePrefix, usePathname } from "@/i18n/navigation"
 import { useLocale } from "next-intl"
 import { cn } from "@/lib/utils"
 
@@ -21,8 +21,7 @@ interface SharedSidebarProps {
 export function SharedSidebar({ items, isRTL = false, onNavigate }: SharedSidebarProps) {
   const locale = useLocale()
   const rawPathname = usePathname()
-  const normalizedHref = stripLocalePrefix(rawPathname ?? "/")
-  const pathname = getPathname({ href: normalizedHref, locale }) ?? "/"
+  const pathname = stripLocalePrefix(rawPathname ?? "/")
   const activeHref = React.useMemo(() => {
     const normalized = pathname.replace(/\/$/, "") || "/"
     const sorted = [...items].sort((a, b) => b.href.length - a.href.length)

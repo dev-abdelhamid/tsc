@@ -1,4 +1,4 @@
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/session"
 import { getCompanyJobs, getCompanyStats } from "@/lib/api/services/company.service"
@@ -108,7 +108,7 @@ export default async function CompanyDashboardPage({
         <p className="text-center text-sm text-gray-500">
           {isAr ? "لا توجد وظائف بعد — " : "No jobs yet — "}
           <Link
-            href={`/${locale}/dashboard/company/jobs/create`}
+            href="/dashboard/company/jobs/create"
             className="font-semibold text-[#006EA8] hover:underline"
           >
             {isAr ? "أنشئ وظيفة" : "Create a job"}

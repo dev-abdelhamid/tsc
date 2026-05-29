@@ -50,7 +50,7 @@ export default async function UserDashboardPage({
       : app.status === "rejected"
         ? "rejected"
         : "pending") as "approved" | "rejected" | "pending",
-    detailsHref: `/${locale}/jobs/${app.job?.id ?? app.id}`,
+    detailsHref: `/jobs/${app.job?.id ?? app.id}`,
   }))
 
   return (
@@ -61,7 +61,7 @@ export default async function UserDashboardPage({
           title={isAr ? "إجمالي طلبات الوظائف" : "Total Jobs Apply"}
           value={stats.total_applications}
           unit={isAr ? "Job" : "Job"}
-          viewAllHref={`/${locale}/dashboard/user/applications`}
+          viewAllHref="/dashboard/user/applications"
           viewAllLabel={isAr ? "عرض الكل" : "View All"}
           isRTL={isAr}
         />
@@ -70,7 +70,7 @@ export default async function UserDashboardPage({
           title={isAr ? "الوظائف المفضلة" : "Total Favourite Jobs"}
           value={0}
           unit={isAr ? "Job" : "Job"}
-          viewAllHref={`/${locale}/dashboard/user/favourites`}
+          viewAllHref="/dashboard/user/favourites"
           viewAllLabel={isAr ? "عرض الكل" : "View All"}
           isRTL={isAr}
         />
@@ -79,7 +79,7 @@ export default async function UserDashboardPage({
           title={isAr ? "إجمالي التذاكر" : "Total Ticket"}
           value={0}
           unit={isAr ? "ticket" : "ticket"}
-          viewAllHref={`/${locale}/dashboard/user/tickets`}
+          viewAllHref="/dashboard/user/tickets"
           viewAllLabel={isAr ? "عرض الكل" : "View All"}
           isRTL={isAr}
         />
