@@ -14,6 +14,7 @@ import {
 } from "@/lib/api/services/news.service"
 import { updateSetting } from "@/lib/api/services/settings.service"
 import { updateAbout } from "../../../lib/api/services/about.service"
+import { updateHomePageContent } from "@/lib/api/services/home-page.service"
 import {
   deleteNotification,
   markAllAsRead,
@@ -164,6 +165,19 @@ export async function saveAboutAction(formData: FormData, locale: string) {
     return { ok: true as const }
   } catch (err) {
     const message = err instanceof ApiError ? err.message : "Failed to save about page"
+    return { ok: false as const, message }
+  }
+}
+
+export async function saveHomeContentAction(formData: FormData, locale: string) {
+  try {
+    const { token } = await requireAdmin(locale)
+    await updateHomePageContent(formData, token, locale)
+    revalidatePath(`/${locale}`)
+    revalidatePath(`/${locale}/dashboard/admin/home`)
+    return { ok: true as const }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to save home content"
     return { ok: false as const, message }
   }
 }

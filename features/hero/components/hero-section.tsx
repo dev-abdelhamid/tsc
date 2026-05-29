@@ -3,9 +3,17 @@ import { getTranslations } from "next-intl/server"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home"
 
-export async function HeroSection() {
+type HeroSectionProps = {
+  title?: string
+  description?: string
+  image?: string
+}
+
+export async function HeroSection({ title: titleOverride, description: descriptionOverride, image }: HeroSectionProps) {
   const t = await getTranslations("Landing.hero")
-  const title = t("title")
+  const title = titleOverride || t("title")
+  const description = descriptionOverride || t("description")
+  const heroBackgroundImage = image || "/home/hero/hero-bg-image.png"
 
   // Function to wrap the highlighted word
   const renderTitle = () => {

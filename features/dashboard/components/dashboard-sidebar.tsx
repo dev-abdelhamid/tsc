@@ -1,15 +1,24 @@
 "use client"
 
+import * as React from "react"
 import Image from "next/image"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Menu } from "lucide-react"
+import { Link, stripLocalePrefix, usePathname } from "@/i18n/navigation"
 import { useAuth } from "@/hooks/use-auth"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 
-const ACTIVE_GRADIENT = "linear-gradient(180deg, #006EA8 0%, #005685 100%)"
+const ACTIVE_GRADIENT_CLASS = "bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)]"
+
+type SidebarNavItem = {
+  icon: string
+  label: string
+  href: string
+}
+
+type SidebarGroup = {
+  title: string
+  items: SidebarNavItem[]
+}
 
 interface SidebarItemProps {
   iconSrc: string
@@ -33,9 +42,9 @@ function SidebarItem({ iconSrc, label, href, active, flipIcon, isRTL }: SidebarI
         <span
           className={cn(
             "absolute top-1/2 z-[2] h-8 w-0.5 -translate-y-1/2",
+            ACTIVE_GRADIENT_CLASS,
             isRTL ? "right-0" : "left-0"
           )}
-          style={{ background: ACTIVE_GRADIENT }}
           aria-hidden
         />
       )}
@@ -60,17 +69,10 @@ function SidebarItem({ iconSrc, label, href, active, flipIcon, isRTL }: SidebarI
       <span
         className={cn(
           "relative z-[1] flex-none text-base leading-[150%]",
-          active ? "bg-clip-text font-semibold text-transparent" : "font-medium text-[#6B7280]"
-        )}
-        style={
           active
-            ? {
-                backgroundImage: ACTIVE_GRADIENT,
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-              }
-            : undefined
-        }
+            ? cn("bg-clip-text font-semibold text-transparent", ACTIVE_GRADIENT_CLASS)
+            : "font-medium text-[#6B7280]"
+        )}
       >
         {label}
       </span>
@@ -104,13 +106,119 @@ function SidebarLogout({ label, flipIcon }: { label: string; flipIcon?: boolean 
 function resolveActivePath(pathname: string, hrefs: string[]): string | null {
   const normalized = pathname.replace(/\/$/, "") || "/"
   const sorted = [...hrefs].sort((a, b) => b.length - a.length)
+
   for (const href of sorted) {
     const h = href.replace(/\/$/, "")
     if (normalized === h || normalized.startsWith(`${h}/`)) {
       return h
     }
   }
+
   return null
+}
+
+function getLabel(locale: string, arabic: string, english: string, german: string) {
+  if (locale === "ar") {
+    return arabic
+  }
+
+  if (locale === "de") {
+    return german
+  }
+
+  return english
+}
+
+function getAdminGroups(locale: string): SidebarGroup[] {
+  return [
+    {
+      title: getLabel(locale, "نظرة عامة", "Overview", "Übersicht"),
+      items: [
+        {
+          icon: "/dashboard/dashboard.svg",
+          label: getLabel(locale, "لوحة التحكم", "Dashboard", "Dashboard"),
+          href: "/dashboard/admin",
+        },
+      ],
+    },
+    {
+      title: getLabel(locale, "المحتوى", "Content", "Inhalt"),
+      items: [
+        {
+          icon: "/dashboard/profile.svg",
+          label: getLabel(locale, "الصفحة الرئيسية", "Home Page", "Startseite"),
+          href: "/dashboard/admin/home",
+        },
+        {
+          icon: "/dashboard/profile.svg",
+          label: getLabel(locale, "من نحن", "About Page", "Über uns"),
+          href: "/dashboard/admin/about",
+        },
+        {
+          icon: "/dashboard/education_Info.svg",
+          label: getLabel(locale, "قصص النجاح", "Success Stories", "Erfolgsgeschichten"),
+          href: "/dashboard/admin/success-stories",
+        },
+        {
+          icon: "/dashboard/tickets.svg",
+          label: getLabel(locale, "الأخبار", "News", "Neuigkeiten"),
+          href: "/dashboard/admin/news",
+        },
+      ],
+    },
+    {
+      title: getLabel(locale, "الإدارة", "Management", "Verwaltung"),
+      items: [
+        {
+          icon: "/dashboard/education_Info.svg",
+          label: getLabel(locale, "المستخدمين", "Users", "Benutzer"),
+          href: "/dashboard/admin/users",
+        },
+        {
+          icon: "/dashboard/profile.svg",
+          label: getLabel(locale, "الشركات", "Companies", "Unternehmen"),
+          href: "/dashboard/admin/companies",
+        },
+        {
+          icon: "/dashboard/jobs.svg",
+          label: getLabel(locale, "الوظائف", "Jobs", "Stellenanzeigen"),
+          href: "/dashboard/admin/jobs",
+        },
+        {
+          icon: "/dashboard/education_Info.svg",
+          label: getLabel(locale, "الإشعارات", "Notifications", "Benachrichtigungen"),
+          href: "/dashboard/admin/notifications",
+        },
+        {
+          icon: "/dashboard/favourites.svg",
+          label: getLabel(locale, "الإعدادات", "Settings", "Einstellungen"),
+          href: "/dashboard/admin/settings",
+        },
+      ],
+    },
+  ]
+}
+
+function getUserItems(locale: string, userRole: "user" | "company") {
+  const isRTL = locale === "ar"
+
+  if (userRole === "user") {
+    return [
+      { icon: "/dashboard/dashboard.svg", label: isRTL ? "لوحة التحكم" : "Dashboard", href: "/dashboard/user" },
+      { icon: "/dashboard/profile.svg", label: isRTL ? "تحديث الملف الشخصي" : "Update Profile", href: "/dashboard/user/profile" },
+      { icon: "/dashboard/education_Info.svg", label: isRTL ? "المؤهلات والتعليم" : "Education Info", href: "/dashboard/user/education" },
+      { icon: "/dashboard/jobs.svg", label: isRTL ? "طلبات الوظائف" : "Job Application", href: "/dashboard/user/applications" },
+      { icon: "/dashboard/favourites.svg", label: isRTL ? "الوظائف المفضلة" : "Favourite Job", href: "/dashboard/user/favourites" },
+      { icon: "/dashboard/tickets.svg", label: isRTL ? "التذاكر" : "Tickets", href: "/dashboard/user/tickets" },
+    ]
+  }
+
+  return [
+    { icon: "/dashboard/dashboard.svg", label: isRTL ? "لوحة التحكم" : "Dashboard", href: "/dashboard/company" },
+    { icon: "/dashboard/profile.svg", label: isRTL ? "تحديث الملف الشخصي" : "Update Profile", href: "/dashboard/company/profile" },
+    { icon: "/dashboard/jobs.svg", label: isRTL ? "كل الوظائف" : "All Jobs", href: "/dashboard/company/jobs" },
+    { icon: "/dashboard/tickets.svg", label: isRTL ? "التذاكر" : "Tickets", href: "/dashboard/company/tickets" },
+  ]
 }
 
 function SidebarNav({
@@ -122,79 +230,55 @@ function SidebarNav({
   userRole: "user" | "company" | "admin"
   onNavigate?: () => void
 }) {
-  const pathname = usePathname() ?? ""
+  const rawPathname = usePathname() ?? ""
+  const pathname = stripLocalePrefix(rawPathname)
   const isRTL = locale === "ar"
   const flipIcon = isRTL
+  const groups = userRole === "admin" ? getAdminGroups(locale) : []
+  const menuItems = userRole === "admin" ? [] : getUserItems(locale, userRole)
+  const hrefs = groups.flatMap((group) => group.items.map((item) => item.href))
 
-  const getMenuItems = () => {
-    switch (userRole) {
-      case "user":
-        return [
-          { icon: "/dashboard/dashboard.svg", label: isRTL ? "لوحة التحكم" : "Dashboard", href: `/${locale}/dashboard/user` },
-          { icon: "/dashboard/profile.svg", label: isRTL ? "تحديث الملف الشخصي" : "Update Profile", href: `/${locale}/dashboard/user/profile` },
-          { icon: "/dashboard/education_Info.svg", label: isRTL ? "المؤهلات والتعليم" : "Education Info", href: `/${locale}/dashboard/user/education` },
-          { icon: "/dashboard/jobs.svg", label: isRTL ? "طلبات الوظائف" : "Job Application", href: `/${locale}/dashboard/user/applications` },
-          { icon: "/dashboard/favourites.svg", label: isRTL ? "الوظائف المفضلة" : "Favourite Job", href: `/${locale}/dashboard/user/favourites` },
-          { icon: "/dashboard/tickets.svg", label: isRTL ? "التذاكر" : "Tickets", href: `/${locale}/dashboard/user/tickets` },
-        ]
-      case "company":
-        return [
-          { icon: "/dashboard/dashboard.svg", label: isRTL ? "لوحة التحكم" : "Dashboard", href: `/${locale}/dashboard/company` },
-          { icon: "/dashboard/profile.svg", label: isRTL ? "تحديث الملف الشخصي" : "Update Profile", href: `/${locale}/dashboard/company/profile` },
-          { icon: "/dashboard/jobs.svg", label: isRTL ? "كل الوظائف" : "All Jobs", href: `/${locale}/dashboard/company/jobs` },
-          { icon: "/dashboard/tickets.svg", label: isRTL ? "التذاكر" : "Tickets", href: `/${locale}/dashboard/company/tickets` },
-        ]
-      case "admin":
-        return [
-          { icon: "/dashboard/dashboard.svg", label: isRTL ? "لوحة التحكم" : "Dashboard", href: `/${locale}/dashboard/admin` },
-          { icon: "/dashboard/education_Info.svg", label: isRTL ? "المستخدمين" : "Users", href: `/${locale}/dashboard/admin/users` },
-          { icon: "/dashboard/profile.svg", label: isRTL ? "الشركات" : "Companies", href: `/${locale}/dashboard/admin/companies` },
-          { icon: "/dashboard/jobs.svg", label: isRTL ? "الوظائف" : "Jobs", href: `/${locale}/dashboard/admin/jobs` },
-          {
-            icon: "/dashboard/education_Info.svg",
-            label: isRTL ? "قصص النجاح" : "Success Stories",
-            href: `/${locale}/dashboard/admin/success-stories`,
-          },
-          {
-            icon: "/dashboard/profile.svg",
-            label: isRTL ? " من نحن" : "About Page",
-            href: `/${locale}/dashboard/admin/about`,
-          },
-          {
-            icon: "/dashboard/tickets.svg",
-            label: isRTL ? "الأخبار" : "News",
-            href: `/${locale}/dashboard/admin/news`,
-          },
-          {
-            icon: "/dashboard/education_Info.svg",
-            label: isRTL ? "الإشعارات" : "Notifications",
-            href: `/${locale}/dashboard/admin/notifications`,
-          },
-          { icon: "/dashboard/favourites.svg", label: isRTL ? "الإعدادات" : "Settings", href: `/${locale}/dashboard/admin/settings` },
-        ]
-      default:
-        return []
-    }
+  if (userRole !== "admin") {
+    hrefs.push(...menuItems.map((item) => item.href))
   }
 
-  const menuItems = getMenuItems()
-  const hrefs = menuItems.map((m) => m.href)
   const activeHref = resolveActivePath(pathname, hrefs)
 
   return (
     <>
       <nav className="flex flex-col gap-0 py-2" onClick={onNavigate}>
-        {menuItems.map((item) => (
-          <SidebarItem
-            key={item.href}
-            iconSrc={item.icon}
-            label={item.label}
-            href={item.href}
-            active={activeHref === item.href.replace(/\/$/, "")}
-            flipIcon={flipIcon}
-            isRTL={isRTL}
-          />
-        ))}
+        {userRole === "admin"
+          ? groups.map((group) => (
+              <div key={group.title} className="px-2 pb-2 pt-1">
+                <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6B7280]">
+                  {group.title}
+                </p>
+                <div className="space-y-0">
+                  {group.items.map((item) => (
+                    <SidebarItem
+                      key={item.href}
+                      iconSrc={item.icon}
+                      label={item.label}
+                      href={item.href}
+                      active={activeHref === item.href.replace(/\/$/, "")}
+                      flipIcon={flipIcon}
+                      isRTL={isRTL}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          : menuItems.map((item) => (
+              <SidebarItem
+                key={item.href}
+                iconSrc={item.icon}
+                label={item.label}
+                href={item.href}
+                active={activeHref === item.href.replace(/\/$/, "")}
+                flipIcon={flipIcon}
+                isRTL={isRTL}
+              />
+            ))}
       </nav>
       <div className="mt-2 border-t border-[#E5E7EB]">
         <SidebarLogout label={isRTL ? "تسجيل الخروج" : "Logout"} flipIcon={flipIcon} />
@@ -206,10 +290,31 @@ function SidebarNav({
 interface DashboardSidebarProps {
   locale: string
   userRole: "user" | "company" | "admin"
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function DashboardSidebar({ locale, userRole }: DashboardSidebarProps) {
+export function DashboardSidebar({
+  locale,
+  userRole,
+  open,
+  onOpenChange,
+}: DashboardSidebarProps) {
   const isRTL = locale === "ar"
+  const [internalOpen, setInternalOpen] = React.useState(false)
+
+  const isControlled = open !== undefined
+  const isOpen = isControlled ? open : internalOpen
+
+  const handleOpenChange = React.useCallback(
+    (nextOpen: boolean) => {
+      if (!isControlled) {
+        setInternalOpen(nextOpen)
+      }
+      onOpenChange?.(nextOpen)
+    },
+    [isControlled, onOpenChange]
+  )
 
   const sidebarPanel = (
     <aside className="flex h-fit w-full flex-col rounded-[8px] border border-[#E5E7EB] bg-[#F0F4F8] p-0 lg:w-[310px]">
@@ -219,31 +324,15 @@ export function DashboardSidebar({ locale, userRole }: DashboardSidebarProps) {
 
   return (
     <>
-      {/* Mobile menu */}
-      <div className="mb-4 lg:hidden">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="gap-2 border-[#006EA8]/30 bg-white">
-              <Menu className="h-5 w-5" />
-              <span>{isRTL ? "القائمة" : "Menu"}</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side={isRTL ? "right" : "left"} className="w-[min(100vw,310px)] p-0">
-            <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Menu"}</SheetTitle>
-            <div className="bg-[#F0F4F8] pt-8">
-              <SidebarNav
-                locale={locale}
-                userRole={userRole}
-                onNavigate={() => {
-                  document.querySelector<HTMLButtonElement>("[data-slot=sheet-close]")?.click()
-                }}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
+      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+        <SheetContent side={isRTL ? "right" : "left"} className="w-[min(100vw,310px)] p-0 lg:hidden">
+          <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Menu"}</SheetTitle>
+          <div className="bg-[#F0F4F8] pt-8">
+            <SidebarNav locale={locale} userRole={userRole} onNavigate={() => handleOpenChange(false)} />
+          </div>
+        </SheetContent>
+      </Sheet>
 
-      {/* Desktop */}
       <div className="hidden lg:block">{sidebarPanel}</div>
     </>
   )

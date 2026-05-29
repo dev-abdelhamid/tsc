@@ -532,6 +532,32 @@
       }
     }
   },
+  "LegalPages": {
+    "terms": {
+      "eyebrow": "Terms of Service",
+      "title": "Terms and Conditions",
+      "description": "Read the rules and policies guiding our platform and how we support your use of Talent Seeker.",
+      "privacyAction": "View Privacy Policy",
+      "contactAction": "Contact Support"
+    },
+    "privacy": {
+      "eyebrow": "Privacy Policy",
+      "title": "How We Use Your Data",
+      "description": "Understand how we collect, store, and use your information to improve your career and hiring experience.",
+      "termsAction": "View Terms of Service",
+      "contactAction": "Contact Support"
+    }
+  },
+  "Pages": {
+    "legal": {
+      "faq": {
+        "eyebrow": "Frequently Asked Questions",
+        "title": "Legal and Support FAQs",
+        "description": "Find answers to the most common questions about our services, legal terms, and next steps.",
+        "contactAction": "Contact Support"
+      }
+    }
+  },
   "CompanyJobs": {
     "title": "Create Job",
     "listTitle": "My Jobs",
@@ -780,7 +806,7 @@
     "successStories": {
       "title": "Success stories",
       "description": "Manage homepage success stories",
-      "hint": "Add or edit stories in Arabic, English, and German with an image.",
+      "hint": "Add or edit stories for the current language and add an image.",
       "loadError": "Could not load success stories from the API",
       "columns": {
         "image": "Image",
@@ -800,6 +826,7 @@
       "add": "+ Add story",
       "createTitle": "New story",
       "editTitle": "Edit story",
+      "currentLanguageOnly": "The content will be saved only in the current language.",
       "save": "Save",
       "saving": "Saving…",
       "cancel": "Cancel",
@@ -809,6 +836,60 @@
       "empty": "No success stories",
       "error": "Save failed",
       "locationRequired": "Location is required"
+    },
+    "home": {
+      "title": "Homepage content",
+      "description": "Update the hero, process steps, and homepage section titles shown on the public homepage.",
+      "hint": "The content will be saved only in the current language.",
+      "success": "Homepage content saved.",
+      "loadError": "Could not load homepage content from the API",
+      "error": "Save failed",
+      "save": "Save",
+      "saving": "Saving…",
+      "status": {
+        "editing": "Editing homepage sections",
+        "section": "Active section"
+      },
+      "helper": {
+        "hero": "Edit the main banner text that appears at the top of the homepage.",
+        "categories": "Update the title and description used by the homepage categories filter.",
+        "process": "Manage the three steps that explain how users can start and apply.",
+        "jobs": "Update the jobs section copy shown on the homepage.",
+        "successStories": "Update the success stories block and its heading.",
+        "news": "Update the homepage news section heading and introduction.",
+        "footer": "Update the support callout that appears in the homepage footer area.",
+        "processIcon": "Replace this step icon with a local path or a public URL."
+      },
+      "labels": {
+        "processStep": "Step"
+      },
+      "fields": {
+        "heroTitle": "Main section title",
+        "heroDescription": "Main section description",
+        "heroImage": "Hero image",
+        "sectionCategoriesTitle": "Categories section title",
+        "sectionCategoriesDescription": "Categories section description",
+        "sectionJobsTitle": "Jobs section title",
+        "sectionJobsDescription": "Jobs section description",
+        "sectionTestimonialsTitle": "Success stories section title",
+        "sectionTestimonialsDescription": "Success stories section description",
+        "sectionNewsTitle": "News section title",
+        "sectionNewsDescription": "News section description",
+        "sectionFooterTitle": "Support section title",
+        "sectionFooterDescription": "Support section description",
+        "stepTitle": "Step title",
+        "stepIcon": "Icon path",
+        "stepDescription": "Step description"
+      },
+      "sectionLabels": {
+        "hero": "Main section",
+        "process": "Steps",
+        "categories": "Categories",
+        "jobs": "Jobs",
+        "successStories": "Success stories",
+        "news": "News",
+        "footer": "Support"
+      }
     },
     "about": {
       "title": "About page content",

@@ -532,6 +532,32 @@
       }
     }
   },
+  "LegalPages": {
+    "terms": {
+      "eyebrow": "Nutzungsbedingungen",
+      "title": "Bedingungen und Konditionen",
+      "description": "Lesen Sie die Regeln und Richtlinien, die unsere Plattform leiten und wie wir Ihre Nutzung von Talent Seeker unterstützen.",
+      "privacyAction": "Datenschutzerklärung anzeigen",
+      "contactAction": "Support kontaktieren"
+    },
+    "privacy": {
+      "eyebrow": "Datenschutzerklärung",
+      "title": "Wie wir Ihre Daten verwenden",
+      "description": "Verstehen Sie, wie wir Ihre Informationen sammeln, speichern und nutzen, um Ihre Karriere- und Einstellungserfahrung zu verbessern.",
+      "termsAction": "Nutzungsbedingungen anzeigen",
+      "contactAction": "Support kontaktieren"
+    }
+  },
+  "Pages": {
+    "legal": {
+      "faq": {
+        "eyebrow": "Häufig gestellte Fragen",
+        "title": "Rechtliche FAQ und Support",
+        "description": "Finden Sie Antworten auf die häufigsten Fragen zu unseren Diensten, rechtlichen Bedingungen und den nächsten Schritten.",
+        "contactAction": "Support kontaktieren"
+      }
+    }
+  },
   "CompanyJobs": {
     "title": "Stelle erstellen",
     "listTitle": "Meine Stellen",
@@ -780,7 +806,7 @@
     "successStories": {
       "title": "Erfolgsgeschichten",
       "description": "Erfolgsgeschichten auf der Startseite verwalten",
-      "hint": "Geschichten auf Arabisch, Englisch und Deutsch mit Bild hinzufügen oder bearbeiten.",
+      "hint": "Geschichten in der aktuellen Sprache hinzufügen oder bearbeiten und ein Bild anhängen.",
       "loadError": "Erfolgsgeschichten konnten nicht geladen werden",
       "columns": {
         "image": "Bild",
@@ -800,6 +826,7 @@
       "add": "+ Geschichte hinzufügen",
       "createTitle": "Neue Geschichte",
       "editTitle": "Geschichte bearbeiten",
+      "currentLanguageOnly": "Der Inhalt wird nur in der aktuellen Sprache gespeichert.",
       "save": "Speichern",
       "saving": "Speichern…",
       "cancel": "Abbrechen",
@@ -809,6 +836,60 @@
       "empty": "Keine Erfolgsgeschichten",
       "error": "Speichern fehlgeschlagen",
       "locationRequired": "Ort ist erforderlich"
+    },
+    "home": {
+      "title": "Startseiteninhalt",
+      "description": "Aktualisieren Sie Hero, Prozessschritte und die Abschnittstitel auf der öffentlichen Startseite.",
+      "hint": "Der Inhalt wird nur in der aktuellen Sprache gespeichert.",
+      "success": "Startseiteninhalt gespeichert.",
+      "loadError": "Startseiteninhalt konnte nicht vom API geladen werden",
+      "error": "Speichern fehlgeschlagen",
+      "save": "Speichern",
+      "saving": "Speichern…",
+      "status": {
+        "editing": "Startseitenabschnitte bearbeiten",
+        "section": "Aktiver Abschnitt"
+      },
+      "helper": {
+        "hero": "Bearbeiten Sie den Hauptbanner-Text, der oben auf der Startseite erscheint.",
+        "categories": "Aktualisieren Sie Titel und Beschreibung des Kategorienfilters auf der Startseite.",
+        "process": "Verwalten Sie die drei Schritte, die erklären, wie Nutzer starten und sich bewerben können.",
+        "jobs": "Aktualisieren Sie den Text des Jobabschnitts auf der Startseite.",
+        "successStories": "Aktualisieren Sie den Erfolgsgeschichten-Block und seine Überschrift.",
+        "news": "Aktualisieren Sie die Überschrift und Einführung des News-Abschnitts auf der Startseite.",
+        "footer": "Aktualisieren Sie den Support-Aufruf, der im Footer-Bereich der Startseite erscheint.",
+        "processIcon": "Ersetzen Sie dieses Schritt-Symbol durch einen lokalen Pfad oder eine öffentliche URL."
+      },
+      "labels": {
+        "processStep": "Schritt"
+      },
+      "fields": {
+        "heroTitle": "Hauptbereichstitel",
+        "heroDescription": "Hauptbereichsbeschreibung",
+        "heroImage": "Hero-Bild",
+        "sectionCategoriesTitle": "Titel des Kategorienabschnitts",
+        "sectionCategoriesDescription": "Beschreibung des Kategorienabschnitts",
+        "sectionJobsTitle": "Titel des Jobabschnitts",
+        "sectionJobsDescription": "Beschreibung des Jobabschnitts",
+        "sectionTestimonialsTitle": "Titel des Erfolgsgeschichten-Abschnitts",
+        "sectionTestimonialsDescription": "Beschreibung des Erfolgsgeschichten-Abschnitts",
+        "sectionNewsTitle": "Titel des News-Abschnitts",
+        "sectionNewsDescription": "Beschreibung des News-Abschnitts",
+        "sectionFooterTitle": "Titel des Support-Abschnitts",
+        "sectionFooterDescription": "Beschreibung des Support-Abschnitts",
+        "stepTitle": "Titel des Schritts",
+        "stepIcon": "Symbolpfad",
+        "stepDescription": "Beschreibung des Schritts"
+      },
+      "sectionLabels": {
+        "hero": "Hauptbereich",
+        "process": "Schritte",
+        "categories": "Kategorien",
+        "jobs": "Jobs",
+        "successStories": "Erfolgsgeschichten",
+        "news": "News",
+        "footer": "Support"
+      }
     },
     "about": {
       "title": "Inhalte der About-Seite",

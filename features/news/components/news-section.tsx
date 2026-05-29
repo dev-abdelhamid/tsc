@@ -9,13 +9,22 @@ import { NewsCalendarIcon, NewsEyebrowGlobe } from "@/features/news/components/n
 import { NewsReadMoreButton } from "@/features/news/components/news-read-more-button"
 import { cn } from "@/lib/utils"
 
-export async function NewsSection() {
+type NewsSectionProps = {
+  override?: {
+    title?: string
+    description?: string
+  }
+}
+
+export async function NewsSection({ override }: NewsSectionProps) {
   const locale = await getLocale()
   const t = await getTranslations("Landing.news")
   const items = await getNewsForLocale(locale, t, { per_page: 4 })
 
   const featured = items[0]
   const sideItems = items.slice(1, 4)
+  const title = override?.title ?? t("title")
+  const description = override?.description ?? t("description")
 
   if (!featured) return null
 
@@ -30,12 +39,12 @@ export async function NewsSection() {
         </StaggerItem>
         <StaggerItem>
           <h2 className="max-w-[866px] font-heading text-[28px] font-bold capitalize leading-[1.5] text-[#171717] sm:text-[32px] lg:text-[36px]">
-            {t("title")}
+            {title}
           </h2>
         </StaggerItem>
         <StaggerItem>
           <p className="max-w-[500px] text-[14px] font-normal leading-[1.16] text-[#525252] sm:text-[16px]">
-            {t("description")}
+            {description}
           </p>
         </StaggerItem>
       </StaggerInView>

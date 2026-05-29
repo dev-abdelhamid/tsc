@@ -12,6 +12,7 @@ type StaggerInViewProps = {
   children: React.ReactNode
   className?: string
   leadDelay?: number
+  staggerDelay?: number
   /** Skip scroll-reveal (content always visible — fixes opacity on mobile) */
   immediate?: boolean
 }
@@ -26,6 +27,7 @@ export function StaggerInView({
   children,
   className,
   leadDelay = 0.35,
+  staggerDelay = 0.16,
   immediate = false,
 }: StaggerInViewProps) {
   if (immediate) {
@@ -38,7 +40,7 @@ export function StaggerInView({
       ...staggerContainerVariants.visible,
       transition: {
         delayChildren: leadDelay,
-        staggerChildren: 0.16,
+        staggerChildren: staggerDelay,
       },
     },
   }

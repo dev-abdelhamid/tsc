@@ -20,14 +20,18 @@ import {
 type JobsSectionClientProps = {
   jobs: Job[]
   categories: Category[]
+  title?: string
+  description?: string
 }
 
-export function JobsSectionClient({ jobs, categories }: JobsSectionClientProps) {
+export function JobsSectionClient({ jobs, categories, title, description }: JobsSectionClientProps) {
   const t = useTranslations("Landing.jobs")
   const locale = useLocale()
   const [activeFilter, setActiveFilter] = useState<number | "all">("all")
   const [isChanging, setIsChanging] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const sectionTitle = title ?? t("title")
+  const sectionDescription = description ?? t("description")
 
   const filters = useMemo(() => {
     const items: { id: number | "all"; label: string }[] = [
@@ -101,12 +105,12 @@ export function JobsSectionClient({ jobs, categories }: JobsSectionClientProps) 
         </StaggerItem>
         <StaggerItem>
           <h2 className="max-w-[520px] font-heading text-balance text-[28px] font-bold capitalize leading-[1.5] text-[#171717] sm:text-[32px] lg:text-[36px]">
-            {t("title")}
+            {sectionTitle}
           </h2>
         </StaggerItem>
         <StaggerItem>
           <p className="max-w-[500px] text-[14px] leading-[1.16] font-normal text-[#525252] sm:text-[16px]">
-            {t("description")}
+            {sectionDescription}
           </p>
         </StaggerItem>
       </StaggerInView>

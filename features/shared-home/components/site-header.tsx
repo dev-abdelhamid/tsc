@@ -7,10 +7,12 @@ import { useLocale, useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet"
-import { Link, usePathname } from "@/i18n/navigation"
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Link, stripLocalePrefix, usePathname } from "@/i18n/navigation"
+import { useDashboardMobileMenu } from "@/features/shared-home/components/dashboard-mobile-menu-context"
 import { cn } from "@/lib/utils"
 import type { User } from "@/lib/api/types"
+import { SharedSidebar } from "./shared-sidebar"
 
 type NavItemKey = "home" | "about" | "services" | "jobs" | "news" | "contact"
 
@@ -54,8 +56,12 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   const t = useTranslations("Landing.hero")
   const currentLocale = useLocale()
-  const pathname = usePathname() ?? "/"
+  const rawPathname = usePathname()
+  const normalizedHref = stripLocalePrefix(rawPathname ?? "/")
+  const pathname = normalizedHref || "/"
+  const mobileMenu = useDashboardMobileMenu()
   const [showNotifications, setShowNotifications] = React.useState(false)
+  const [publicMobileMenuOpen, setPublicMobileMenuOpen] = React.useState(false)
   const notificationsRef = React.useRef<HTMLDivElement>(null)
   const buttonRef = React.useRef<HTMLButtonElement>(null)
   const isRTL = currentLocale === "ar"
@@ -250,9 +256,9 @@ export function SiteHeader({
     }
   }
 
-  const closeMobileMenu = () => {
-    document.querySelector<HTMLButtonElement>("[data-slot=sheet-close]")?.click()
-  }
+  const closePublicMobileMenu = React.useCallback(() => {
+    setPublicMobileMenuOpen(false)
+  }, [])
 
   if (!authState.checked) {
     return (
@@ -287,7 +293,10 @@ export function SiteHeader({
             size="icon"
             className="h-10 w-10 shrink-0 rounded-[12px] border-white/20 bg-white/5 text-white hover:bg-white/10 lg:hidden shadow-sm"
             aria-label={isRTL ? "فتح القائمة" : "Open menu"}
-            onClick={onMobileMenuClick}
+            onClick={() => {
+              onMobileMenuClick?.()
+              mobileMenu.open()
+            }}
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -384,8 +393,10 @@ export function SiteHeader({
                     onClick={() => setShowNotifications(false)}
                   />
                   <div 
-                    className="fixed top-[64px] lg:top-[128px] z-[9999] max-h-[min(60vh,450px)] w-[min(96vw,360px)] overflow-hidden rounded-[16px] border border-gray-100 bg-white shadow-2xl pointer-events-auto "
-                    style={{ [isRTL ? "left" : "right"]: "16px" }}
+                    className={cn(
+                      "fixed top-[64px] lg:top-[128px] z-[9999] max-h-[min(60vh,450px)] w-[min(96vw,360px)] overflow-hidden rounded-[16px] border border-gray-100 bg-white shadow-2xl pointer-events-auto",
+                      isRTL ? "left-[16px]" : "right-[16px]"
+                    )}
                   >
                     <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gradient-to-r from-[#006EA8]/5 to-[#005685]/5">
                       <h3 className="font-bold text-gray-900 text-lg">
@@ -473,7 +484,7 @@ export function SiteHeader({
 
           {/* المنيو القديم - يظهر فقط في حالة عدم كوننا في الداشبورد */}
           {!isDashboard && (
-            <Sheet>
+            <Sheet open={publicMobileMenuOpen} onOpenChange={setPublicMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button
                   type="button"
@@ -486,51 +497,63 @@ export function SiteHeader({
                 </Button>
               </SheetTrigger>
               <SheetContent
-                side={isRTL ? "left" : "right"}
-                className="flex w-[min(100vw,320px)] flex-col border-[#40A0CA]/20 bg-[#001222] p-0 text-white overflow-x-hidden"
+                side={isRTL ? "right" : "left"}
+                className="w-[min(100vw,310px)] p-0 lg:hidden"
               >
-                <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Navigation Menu"}</SheetTitle>
-                <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-                  <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center gap-2 relative z-50">
-                    <Image src="/home/hero/hero-logo.svg" alt={t("brand")} width={48} height={48} className="h-12 w-auto" />
-                  </Link>
-                  <SheetClose asChild>
-                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
-                      <span className="sr-only">{isRTL ? "إغلاق" : "Close"}</span>
-                      <span className="text-xl leading-none">×</span>
-                    </Button>
-                  </SheetClose>
-                </div>
+                <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Menu"}</SheetTitle>
+                <div className="flex h-full flex-col bg-[#F0F4F8]">
+                  <div
+                    className={cn(
+                      "flex items-center border-b border-[#E5E7EB] px-4 py-4",
+                      isRTL ? "justify-between flex-row-reverse" : "justify-between"
+                    )}
+                  >
+                    <SheetClose asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-12 w-12 rounded-full bg-[#EAF4FB] text-[#005685] shadow-sm hover:bg-[#DCEEF9]"
+                        aria-label={isRTL ? "إغلاق القائمة" : "Close menu"}
+                      >
+                        <Image
+                          src="/jobs/icon-close-circle.svg"
+                          alt=""
+                          width={24}
+                          height={24}
+                          className="h-6 w-6 [filter:brightness(0)_saturate(100%)_invert(28%)_sepia(89%)_saturate(1200%)_hue-rotate(176deg)_brightness(92%)_contrast(101%)]"
+                          aria-hidden
+                        />
+                      </Button>
+                    </SheetClose>
 
-                <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-4">
-                  {NAV_ITEMS.map((item) => (
-                    <Link
-                      key={item.key}
-                      href={item.href}
-                      onClick={closeMobileMenu}
-                      className={cn(
-                        "rounded-[10px] px-4 py-3 text-[16px] leading-relaxed font-normal transition-colors hover:bg-white/10",
-                        activeNav === item.key ? "bg-[#40A0CA]/20 font-semibold text-[#7CCEF3]" : "text-white"
-                      )}
-                    >
-                      {t(`nav.${item.key}`)}
+                    <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center">
+                      <Image
+                        src="/home/hero/hero-logo.svg"
+                        alt={t("brand")}
+                        width={144}
+                        height={46}
+                        className="h-11 w-auto"
+                      />
                     </Link>
-                  ))}
-                </nav>
-                <div className="space-y-3 border-t border-white/10 px-4 py-5">
-                  {isLoggedIn ? (
-                    <Link href="/dashboard" onClick={closeMobileMenu} className="block">
-                      <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
-                        {isRTL ? "لوحة التحكم" : "Dashboard"}
-                      </PrimaryButton>
-                    </Link>
-                  ) : (
-                    <Link href="/sign-in" onClick={closeMobileMenu} className="block">
-                      <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
-                        {t("login")}
-                      </PrimaryButton>
-                    </Link>
-                  )}
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto px-4 py-4">
+                    <div className="rounded-[12px] border border-[#E5E7EB] bg-white p-2 shadow-sm">
+                      <SharedSidebar
+                        items={[
+                          { icon: "/dashboard/dashboard.svg", label: t("nav.home"), href: "/" },
+                          { icon: "/dashboard/profile.svg", label: t("nav.about"), href: "/about" },
+                          { icon: "/dashboard/education_Info.svg", label: t("nav.services"), href: "/#categories" },
+                          { icon: "/dashboard/jobs.svg", label: t("nav.jobs"), href: "/jobs" },
+                          { icon: "/dashboard/tickets.svg", label: t("nav.news"), href: "/news" },
+                          { icon: "/dashboard/favourites.svg", label: t("nav.contact"), href: "/contact" },
+                        ]}
+                        isRTL={isRTL}
+                        onNavigate={closePublicMobileMenu}
+                      />
+                    </div>
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

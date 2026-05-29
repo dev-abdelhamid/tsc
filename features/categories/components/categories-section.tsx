@@ -10,9 +10,18 @@ import { Globe, MoveUpRight } from "lucide-react"
 const CARD_HOVER_SHADOW =
   "hover:border-[#4BB7E7] hover:bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] hover:bg-size-[150px_150px,auto] hover:bg-blend-[plus-lighter,normal] hover:text-white hover:shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19)]"
 
-export async function CategoriesSection() {
+type CategoriesSectionProps = {
+  override?: {
+    title?: string
+    description?: string
+  }
+}
+
+export async function CategoriesSection({ override }: CategoriesSectionProps) {
   const t = await getTranslations("Landing.categories")
   const categories = getCategoryKeys()
+  const title = override?.title ?? t("title")
+  const description = override?.description ?? t("description")
 
   return (
     <SectionShell id="categories" stagger={false} className="overflow-hidden bg-white py-12 sm:py-16 lg:py-[82px]">
@@ -32,12 +41,12 @@ export async function CategoriesSection() {
           <div className="flex flex-col gap-6">
             <StaggerItem>
               <h2 className="max-w-[683px] font-heading text-[28px] font-bold capitalize leading-[1.5] text-[#171717] sm:text-[32px] lg:text-[36px]">
-                {t("title")}
+                {title}
               </h2>
             </StaggerItem>
             <StaggerItem>
               <p className="max-w-[1312px] text-[14px] font-normal leading-[1.16] text-[#525252] sm:text-[16px]">
-                {t("description")}
+                {description}
               </p>
             </StaggerItem>
           </div>

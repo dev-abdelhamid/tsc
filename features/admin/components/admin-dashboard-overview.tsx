@@ -1,6 +1,7 @@
 "use client"
 
 import { Link } from "@/i18n/navigation"
+import { DashboardStatCard } from "@/features/dashboard/components/dashboard-stat-card"
 import { useTranslations } from "next-intl"
 import type { Job } from "@/lib/api/types"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
@@ -24,25 +25,51 @@ export function AdminDashboardOverview({
 }) {
   const t = useTranslations("Admin.dashboard")
 
+
   const kpis = [
-    { label: t("kpi.users"), value: stats.total_users, href: "/dashboard/admin/users" },
-    { label: t("kpi.companies"), value: stats.total_companies, href: "/dashboard/admin/companies" },
-    { label: t("kpi.jobs"), value: stats.total_jobs, href: "/dashboard/admin/jobs" },
-    { label: t("kpi.pending"), value: stats.pending_jobs, href: "/dashboard/admin/jobs?filter=pending" },
+    {
+      label: t("kpi.users"),
+      value: stats.total_users,
+      href: "/dashboard/admin/users",
+      icon: "/dashboard/profile.svg",
+      viewAllLabel: t("viewAll"),
+    },
+    {
+      label: t("kpi.companies"),
+      value: stats.total_companies,
+      href: "/dashboard/admin/companies",
+      icon: "/dashboard/education_Info.svg",
+      viewAllLabel: t("viewAll"),
+    },
+    {
+      label: t("kpi.jobs"),
+      value: stats.total_jobs,
+      href: "/dashboard/admin/jobs",
+      icon: "/dashboard/jobs.svg",
+      viewAllLabel: t("viewAll"),
+    },
+    {
+      label: t("kpi.pending"),
+      value: stats.pending_jobs,
+      href: "/dashboard/admin/jobs?filter=pending",
+      icon: "/dashboard/tickets.svg",
+      viewAllLabel: t("viewAll"),
+    },
   ]
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <Link
-            key={`${kpi.href}-${kpi.label}`}
-            href={kpi.href}
-            className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
-          >
-            <p className="text-[14px] font-medium text-[#6B7280]">{kpi.label}</p>
-            <p className="mt-1 text-[32px] font-black text-[#111827] leading-tight">{kpi.value}</p>
-          </Link>
+          <DashboardStatCard
+            key={kpi.label}
+            iconSrc={kpi.icon}
+            title={kpi.label}
+            value={kpi.value}
+            viewAllHref={kpi.href}
+            viewAllLabel={kpi.viewAllLabel}
+            isRTL={locale === "ar"}
+          />
         ))}
       </div>
 

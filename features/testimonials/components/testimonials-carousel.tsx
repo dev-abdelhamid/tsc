@@ -263,12 +263,11 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
                           }}
                           transition={{ duration: 0.25, ease: "easeOut" }}
                           className={cn(
-                            "pointer-events-none absolute inset-x-0 bottom-0 top-auto z-20 mx-auto",
+                            "pointer-events-none absolute inset-x-0 bottom-0 top-auto z-20 mx-auto hidden lg:block",
                             "h-[min(380px,94%)] w-[calc(100%-12px)] max-w-[445px] origin-center overflow-visible rounded-[32px]",
                             "border-0 bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)]",
                             "bg-size-[120px_120px,auto] bg-blend-[plus-lighter,normal] text-white",
-                            "shadow-[0px_42px_107px_rgba(123,190,255,0.34),0px_24px_32px_rgba(0,86,133,0.19),0px_10px_13px_rgba(0,86,133,0.22),0px_4px_5px_rgba(0,86,133,0.15),0px_0px_0px_4px_#E8F2FF,0px_0px_0px_5px_#FFFFFF,inset_0px_1px_18px_2px_#E8F2FF,inset_0px_1px_4px_2px_#C2DDFF]",
-                            "max-lg:hidden"
+                            "shadow-[0px_42px_107px_rgba(123,190,255,0.34),0px_24px_32px_rgba(0,86,133,0.19),0px_10px_13px_rgba(0,86,133,0.22),0px_4px_5px_rgba(0,86,133,0.15),0px_0px_0px_4px_#E8F2FF,0px_0px_0px_5px_#FFFFFF,inset_0px_1px_18px_2px_#E8F2FF,inset_0px_1px_4px_2px_#C2DDFF]"
                           )}
                         >
                           <Card className="h-full overflow-visible border-0 bg-transparent shadow-none">

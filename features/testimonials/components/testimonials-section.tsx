@@ -3,6 +3,13 @@ import type { SuccessStory } from "@/lib/api/types"
 import { getSuccessStories } from "@/lib/api/services/success-stories.service"
 import { TestimonialsCarousel } from "@/features/testimonials/components/testimonials-carousel"
 
+type TestimonialsSectionProps = {
+  override?: {
+    title?: string
+    description?: string
+  }
+}
+
 const FALLBACK_KEYS = ["jacob", "ronald", "albert", "lina", "youssef", "nora"] as const
 
 function buildFallbackStories(
@@ -17,7 +24,7 @@ function buildFallbackStories(
   }))
 }
 
-export async function TestimonialsSection() {
+export async function TestimonialsSection({ override }: TestimonialsSectionProps) {
   const locale = await getLocale()
   const t = await getTranslations("Landing.testimonials")
   const isRtl = locale === "ar"
@@ -41,8 +48,8 @@ export async function TestimonialsSection() {
       isRtl={isRtl}
       labels={{
         eyebrow: t("eyebrow"),
-        title: t("title"),
-        description: t("description"),
+        title: override?.title ?? t("title"),
+        description: override?.description ?? t("description"),
       }}
     />
   )

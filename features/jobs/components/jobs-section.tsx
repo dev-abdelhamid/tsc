@@ -3,7 +3,14 @@ import { getCategoriesForForm } from "@/lib/api/services/categories.service"
 import { getJobsForLocale } from "@/features/jobs/lib/jobs-for-locale"
 import { JobsSectionClient } from "@/features/jobs/components/jobs-section-client"
 
-export async function JobsSection() {
+type JobsSectionProps = {
+  override?: {
+    title?: string
+    description?: string
+  }
+}
+
+export async function JobsSection({ override }: JobsSectionProps) {
   const locale = await getLocale()
   const t = await getTranslations("Landing.jobs")
 
@@ -12,5 +19,5 @@ export async function JobsSection() {
     getCategoriesForForm(locale),
   ])
 
-  return <JobsSectionClient jobs={jobs} categories={categories} />
+  return <JobsSectionClient jobs={jobs} categories={categories} title={override?.title} description={override?.description} />
 }

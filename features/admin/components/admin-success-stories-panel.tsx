@@ -13,20 +13,18 @@ import {
 import { AdminTableCell, AdminTableRow, AdminTableShell } from "./admin-table-shell"
 import { PrimaryButton } from "@/components/ui/primary-button"
 
-const LOCALES = ["ar", "en", "de"] as const
-
 type FormState = {
-  name: Record<string, string>
-  role: Record<string, string>
-  quote: Record<string, string>
-  location: Record<string, string>
+  name: string
+  role: string
+  quote: string
+  location: string
 }
 
 const emptyForm = (): FormState => ({
-  name: { ar: "", en: "", de: "" },
-  role: { ar: "", en: "", de: "" },
-  quote: { ar: "", en: "", de: "" },
-  location: { ar: "", en: "", de: "" },
+  name: "",
+  role: "",
+  quote: "",
+  location: "",
 })
 
 export function AdminSuccessStoriesPanel({
@@ -64,35 +62,34 @@ export function AdminSuccessStoriesPanel({
   function openEdit(story: SuccessStory) {
     setEditingId(story.id)
     setForm({
-      name: { ar: story.name, en: story.name, de: story.name },
-      role: { ar: story.role, en: story.role, de: story.role },
-      quote: { ar: story.quote, en: story.quote, de: story.quote },
-      location: { ar: story.location ?? "", en: story.location ?? "", de: story.location ?? "" },
+      name: story.name,
+      role: story.role,
+      quote: story.quote,
+      location: story.location ?? "",
     })
     setShowForm(true)
     setError(null)
   }
 
-  function appendLocalized(formData: FormData, key: string, values: Record<string, string>) {
-    for (const loc of LOCALES) {
-      const v = values[loc]?.trim()
-      if (v) formData.append(`${key}[${loc}]`, v)
+  function appendCurrentLocale(formData: FormData, key: string, value: string) {
+    const trimmed = value.trim()
+    if (trimmed) {
+      formData.append(`${key}[${locale}]`, trimmed)
     }
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const formData = new FormData()
-    appendLocalized(formData, "name", form.name)
-    appendLocalized(formData, "role", form.role)
-    appendLocalized(formData, "quote", form.quote)
-    appendLocalized(formData, "location", form.location)
+    appendCurrentLocale(formData, "name", form.name)
+    appendCurrentLocale(formData, "role", form.role)
+    appendCurrentLocale(formData, "quote", form.quote)
+    appendCurrentLocale(formData, "location", form.location)
     const file = fileRef.current?.files?.[0]
     if (file) formData.append("image", file)
 
     setError(null)
-    // client-side fast-fail: require location for current locale
-    if (!form.location[locale]?.trim()) {
+    if (!form.location.trim()) {
       setError(t("locationRequired"))
       return
     }
@@ -140,59 +137,46 @@ export function AdminSuccessStoriesPanel({
           <h3 className="mb-4 text-base font-bold text-[#111827]">
             {editingId ? t("editTitle") : t("createTitle")}
           </h3>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {LOCALES.map((loc) => (
-              <div key={loc} className="space-y-3 rounded-lg border border-[#E5E7EB] bg-white p-3">
-                <p className="text-xs font-bold uppercase text-[#006EA8]">{loc}</p>
-                <label className="block text-xs text-[#6B7280]">
-                  {t("fields.name")}
-                  <input
-                    className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm"
-                    value={form.name[loc]}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, name: { ...f.name, [loc]: e.target.value } }))
-                    }
-                  />
-                </label>
-                <label className="block text-xs text-[#6B7280]">
-                  {t("fields.role")}
-                  <input
-                    className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm"
-                    value={form.role[loc]}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, role: { ...f.role, [loc]: e.target.value } }))
-                    }
-                  />
-                </label>
-                <label className="block text-xs text-[#6B7280]">
-                  {t("fields.quote")}
-                  <textarea
-                    rows={2}
-                    className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm"
-                    value={form.quote[loc]}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, quote: { ...f.quote, [loc]: e.target.value } }))
-                    }
-                  />
-                </label>
-                <label className="block text-xs text-[#6B7280]">
-                  {t("fields.location")}
-                  <input
-                    className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm"
-                    value={form.location[loc]}
-                    required={loc === locale}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, location: { ...f.location, [loc]: e.target.value } }))
-                    }
-                  />
-                </label>
-              </div>
-            ))}
+          <p className="mb-4 text-sm text-[#6B7280]">{t("currentLanguageOnly")}</p>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <label className="block text-xs text-[#6B7280]">
+              {t("fields.name")}
+              <input
+                className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </label>
+            <label className="block text-xs text-[#6B7280]">
+              {t("fields.role")}
+              <input
+                className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm"
+                value={form.role}
+                onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+              />
+            </label>
+            <label className="block text-xs text-[#6B7280] lg:col-span-2">
+              {t("fields.quote")}
+              <textarea
+                rows={3}
+                className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm"
+                value={form.quote}
+                onChange={(e) => setForm((f) => ({ ...f, quote: e.target.value }))}
+              />
+            </label>
+            <label className="block text-xs text-[#6B7280]">
+              {t("fields.location")}
+              <input
+                className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm"
+                value={form.location}
+                onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              />
+            </label>
+            <label className="block text-xs text-[#6B7280]">
+              {t("fields.image")}
+              <input ref={fileRef} type="file" accept="image/*" className="mt-1 block text-sm" />
+            </label>
           </div>
-          <label className="mt-4 block text-sm text-[#6B7280]">
-            {t("fields.image")}
-            <input ref={fileRef} type="file" accept="image/*" className="mt-1 block text-sm" />
-          </label>
           <div className="mt-4 flex gap-2">
             <PrimaryButton type="submit" disabled={pending} className="h-9 rounded-lg px-4 text-sm">
               {pending ? t("saving") : t("save")}

@@ -1,12 +1,20 @@
 import { getLocale, getTranslations } from "next-intl/server"
-import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home"
+import { SectionShell, StaggerInView } from "@/features/shared-home"
 import { getProcessSteps } from "@/features/process/services/process.service"
 import Image from "next/image"
 
-const icons: Record<string, string> = {
-  createAccount: "/process/profile.svg",
-  completeProfile: "/process/info.svg",
-  apply: "/process/job.svg",
+const defaultStepIcons = ["/process/profile.svg", "/process/info.svg", "/process/job.svg"]
+
+type ProcessStep = {
+  title: string
+  description: string
+  icon?: string
+}
+
+type ProcessSectionProps = {
+  steps?: ProcessStep[]
+  title?: string
+  description?: string
 }
 
 function CurvedArrow({ className, rtl }: { className?: string; rtl?: boolean }) {
@@ -54,29 +62,45 @@ function CurvedArrow({ className, rtl }: { className?: string; rtl?: boolean }) 
 }
 
 function StepConnector({ index, rtl }: { index: 0 | 1; rtl: boolean }) {
-  const leftPercent = rtl ? (index === 0 ? 56 : 22) : index === 0 ? 22 : 56
+  const leftClass = rtl
+    ? index === 0
+      ? "left-[56%]"
+      : "left-[22%]"
+    : index === 0
+      ? "left-[22%]"
+      : "left-[56%]"
 
   return (
-    <div
-      className="pointer-events-none absolute top-[18px] z-10 hidden h-10 w-[24%] md:block"
-      style={{ left: `${leftPercent}%` }}
-    >
+    <div className={`pointer-events-none absolute top-[18px] z-10 hidden h-10 w-[24%] md:block ${leftClass}`}>
       <CurvedArrow rtl={rtl} className="h-full w-full opacity-100" />
     </div>
   )
 }
 
-export async function ProcessSection() {
+export async function ProcessSection({ steps: overrideSteps, title: titleOverride, description: descriptionOverride }: ProcessSectionProps) {
   const t = await getTranslations("Landing.process")
   const locale = await getLocale()
   const isRtl = locale === "ar"
-  const steps = getProcessSteps()
+  
+  // Get process steps - handle both array and async responses
+  const processSteps = getProcessSteps()
+  const stepKeys = Array.isArray(processSteps) ? processSteps : ["createAccount", "completeProfile", "apply"]
+  
+  const steps = overrideSteps?.length
+    ? overrideSteps
+    : (stepKeys as readonly string[]).map((step, index) => ({
+        title: t(`steps.${step}.title`),
+        description: t(`steps.${step}.description`),
+        icon: defaultStepIcons[index],
+      }))
+
+  const title = titleOverride ?? t("title")
+  const description = descriptionOverride ?? t("description")
 
   return (
     <SectionShell stagger={false} className="relative overflow-visible bg-[#001222] py-[72px] lg:py-[88px]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center_bottom,rgba(65,160,202,0.42)_0%,rgba(65,160,202,0.18)_28%,rgba(0,18,34,0)_72%)]" />
-      
-      {/* Header section with stagger animation */}
+
       <StaggerInView leadDelay={0.55}>
         <div className="relative space-y-6 text-center">
           <div className="mx-auto flex w-fit items-center gap-2 rounded-[8px] bg-[#04324F] px-4 py-2">
@@ -84,30 +108,30 @@ export async function ProcessSection() {
             <span className="text-[12px] leading-[1.16] font-normal text-[#40A0CA]">{t("eyebrow")}</span>
           </div>
           <h2 className="mx-auto max-w-[866px] text-balance font-heading text-[28px] font-bold capitalize leading-[1.5] text-[#F5F5F5] sm:text-[32px] lg:text-[36px]">
-            {t("title")}
+            {title}
           </h2>
           <p className="mx-auto max-w-[500px] text-[14px] leading-[1.16] text-[#D4D4D4] sm:text-[16px]">
-            {t("description")}
+            {description}
           </p>
         </div>
       </StaggerInView>
 
-      {/* Steps grid with stagger animation - starts after header */}
       <StaggerInView leadDelay={0.75}>
         <div className="relative mt-20 overflow-visible">
           <div className="relative grid gap-12 md:grid-cols-3" dir={isRtl ? "rtl" : "ltr"}>
             <StepConnector index={0} rtl={isRtl} />
             <StepConnector index={1} rtl={isRtl} />
 
-            {steps.map((step) => {
-              const src = icons[step]
+            {steps.map((step, index) => {
+              const src = step.icon ?? defaultStepIcons[index % defaultStepIcons.length]
+
               return (
-                <div key={step} className="relative z-[1] flex flex-col items-center text-center">
+                <div key={`${step.title}-${index}`} className="relative z-[1] flex flex-col items-center text-center">
                   <div className="flex h-12 w-12 items-center justify-center">
-                    <Image src={src} alt={t(`steps.${step}.title`)} width={48} height={48} className="object-contain" />
+                    <Image src={src} alt={step.title} width={48} height={48} className="object-contain" />
                   </div>
-                  <h3 className="mt-6 text-[20px] leading-[1.16] font-bold text-[#F5F5F5]">{t(`steps.${step}.title`)}</h3>
-                  <p className="mt-3 max-w-[280px] text-[16px] leading-normal text-[#D4D4D4]">{t(`steps.${step}.description`)}</p>
+                  <h3 className="mt-6 text-[20px] leading-[1.16] font-bold text-[#F5F5F5]">{step.title}</h3>
+                  <p className="mt-3 max-w-[280px] text-[16px] leading-normal text-[#D4D4D4]">{step.description}</p>
                 </div>
               )
             })}
