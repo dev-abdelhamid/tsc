@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import type { SuccessStory } from "@/lib/api/types"
 import { resolveStoryImageUrl } from "@/features/testimonials/lib/resolve-story-image"
 import { TestimonialArrowNext, TestimonialArrowPrev } from "@/features/testimonials/components/testimonial-arrows"
-import { Globe } from "lucide-react"
+import { NewsEyebrowGlobe as Globe } from "@/features/news/components/news-icons"
 
 export type TestimonialsLabels = {
   eyebrow: string
@@ -188,7 +188,7 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
             >
               <StaggerItem immediate>
                 <p className="inline-flex items-center gap-2 rounded-lg bg-[rgba(64,160,202,0.25)] px-4 py-2 text-[12px] leading-[1.16] font-normal text-[#40A0CA]">
-                  <Globe className="h-4 w-4 shrink-0 text-[#40A0CA]" strokeWidth={1.5} />
+                  <Globe className="h-4 w-4 shrink-0 text-[#40A0CA]" />
                   {labels.eyebrow}
                 </p>
               </StaggerItem>

@@ -17,6 +17,7 @@ export function RelatedNewsCard({ item, locale, imageIndex = 0 }: RelatedNewsCar
 
   return (
     <Link
+      locale={locale}
       href={`/news/${item.slug}`}
       className="group flex gap-4 rounded-[16px] transition hover:opacity-95 text-start"
     >

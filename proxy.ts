@@ -56,16 +56,33 @@ async function isAuthenticated(request: NextRequest): Promise<boolean> {
 /**
  * الـ middleware الرئيسي - يدمج الترجمة والمصادقة
  */
-export default function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+  // تحديد اللغة من مسار الـ URL (مثل /ar/... أو /en/...)
+  const urlLocale = pathname.split("/")[1] || routing.defaultLocale
+
+  // إنشاء نسخة من الهيدرز الحالية وإضافة هيدرز اللغة مبكراً
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("Accept-Language", urlLocale)
+  requestHeaders.set("X-Requested-Locale", urlLocale)
+  requestHeaders.set("X-NEXT-INTL-LOCALE", urlLocale)
+
+  // Debug: طباعة المعلومات الأساسية للمساعدة في تتبع مشكلة الـ locale
+  // eslint-disable-next-line no-console
+  console.debug(`[proxy] pathname=${pathname} urlLocale=${urlLocale}`)
+  // eslint-disable-next-line no-console
+  console.debug(`[proxy] original Accept-Language=${request.headers.get("accept-language")}`)
+  // eslint-disable-next-line no-console
+  console.debug(`[proxy] forwarded Accept-Language=${requestHeaders.get("Accept-Language")} X-NEXT-INTL-LOCALE=${requestHeaders.get("X-NEXT-INTL-LOCALE")}`)
 
   // السماح برسائل API بدون تحقق من المصادقة
   if (pathname.startsWith("/api/auth") || pathname.startsWith("/api/public")) {
     return NextResponse.next()
   }
 
-  // تطبيق middleware الترجمة أولاً
-  const response = intlMiddleware(request)
+  // استدعاء middleware الخاص بـ next-intl باستخدام الطلب الذي يحتوي على هيدرز اللغة
+  const forwardedRequest = new Request(request.url, { headers: requestHeaders, method: request.method })
+  const response = await intlMiddleware(forwardedRequest as unknown as NextRequest)
 
   // إذا كان الرد يحتوي على redirect (مثل توجيه اللغة)
   if (response?.status === 307 || response?.status === 308) {
@@ -75,7 +92,7 @@ export default function proxy(request: NextRequest) {
   // التحقق من المسارات العامة
   if (isPublicPath(pathname)) {
     // إضافة headers أمان أساسية حتى للمسارات العامة
-    const responseWithHeaders = NextResponse.next()
+    const responseWithHeaders = NextResponse.next({ request: { headers: requestHeaders } })
     responseWithHeaders.headers.set("X-Content-Type-Options", "nosniff")
     responseWithHeaders.headers.set("X-Frame-Options", "DENY")
     responseWithHeaders.headers.set("X-XSS-Protection", "1; mode=block")
@@ -85,19 +102,18 @@ export default function proxy(request: NextRequest) {
 
   // التحقق من المسارات التي تتطلب مصادقة
   if (pathname.startsWith("/dashboard")) {
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       // إعادة توجيه للدخول إذا كان المسار يتطلب مصادقة
       const locale = pathname.split("/")[1] || "ar"
       return NextResponse.redirect(new URL(`/${locale}/sign-in`, request.url))
     }
   }
 
-  // إضافة headers أمان إضافية
-  const requestHeaders = new Headers(request.headers)
+  // إضافات أمان/معلوماتية إضافية
   requestHeaders.set("x-authenticated", "true")
   requestHeaders.set("x-timestamp", new Date().toISOString())
 
-  // إنشاء رد جديد مع Headers الأمان
+  // إنشاء رد جديد مع Headers المحدثة
   const responseWithHeaders = NextResponse.next({
     request: {
       headers: requestHeaders,

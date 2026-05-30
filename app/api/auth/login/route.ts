@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
     }
     session.accessToken = tokens.access_token
     session.refreshToken = tokens.refresh_token
+    session.locale = locale
     session.isLoggedIn = true
     await session.save()
 

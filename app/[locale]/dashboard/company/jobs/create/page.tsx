@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { getCategoriesForForm } from "@/lib/api/services/categories.service"
 import { CreateJobWizard } from "@/features/company-jobs/components/create-job-wizard"
@@ -9,6 +10,7 @@ export default async function CreateJobPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  setRequestLocale(locale)
   const session = await getSession()
 
   if (!session.isLoggedIn || !session.user) {

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { getNotifications } from "@/lib/api/services/notifications.service"
 import { AdminNotificationsPanel } from "@/features/admin/components/admin-notifications-panel"
@@ -10,6 +11,7 @@ export default async function AdminNotificationsPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  setRequestLocale(locale)
   const session = await getSession()
 
   if (!session.user || session.user.role !== "admin" || !session.accessToken) {

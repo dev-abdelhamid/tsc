@@ -1,6 +1,6 @@
 import Image from "next/image"
 import { notFound } from "next/navigation"
-import { getLocale, getTranslations } from "next-intl/server"
+import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 import { getNewsItem } from "@/lib/api/services/news.service"
 import { getNewsForLocale } from "@/features/news/lib/news-fallback"
@@ -13,6 +13,7 @@ import { JobDetailShare } from "@/features/jobs/components/job-detail-share"
 
 type NewsDetailPageProps = {
   slug: string
+  locale?: string
 }
 
 function renderArticleContent(content: string) {
@@ -32,8 +33,9 @@ function renderArticleContent(content: string) {
   ))
 }
 
-export async function NewsDetailPage({ slug }: NewsDetailPageProps) {
-  const locale = await getLocale()
+export async function NewsDetailPage({ slug, locale: propLocale }: NewsDetailPageProps) {
+  const locale = propLocale ?? (await getLocale())
+  setRequestLocale(locale)
   const isRtl = locale === "ar"
   const newsT = await getTranslations("Landing.news")
   const pageT = await getTranslations("Landing.newsPage")
@@ -67,6 +69,7 @@ export async function NewsDetailPage({ slug }: NewsDetailPageProps) {
     <div className="bg-white pt-8 pb-12 sm:pt-12 sm:pb-16 lg:pt-[71px] lg:pb-[82px]">
       <div className="mx-auto max-w-[1312px] px-4 sm:px-6 lg:px-8">
         <Link
+          locale={locale}
           href="/news"
           className="inline-flex items-center gap-2 text-[14px] font-medium text-[#006EA8] hover:underline"
         >

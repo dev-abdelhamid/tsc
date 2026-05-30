@@ -39,6 +39,7 @@ export function AuthCardWrapper({
   return (
     <section className="relative flex min-h-screen w-full items-center justify-center px-4 py-16 text-white sm:px-6 sm:py-20">
       <Link
+        locale={locale}
         href={backHref}
         className="absolute start-4 top-4 z-10 inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#041d33]/80 px-4 py-2.5 text-sm font-medium text-[#b5cadd] transition-colors hover:border-white/20 hover:text-white sm:start-6 sm:top-6 sm:px-6 sm:py-3 sm:text-lg"
       >
@@ -82,7 +83,7 @@ export function AuthCardWrapper({
         <footer className="flex w-full flex-col items-center gap-4 opacity-100 sm:gap-6">
           <div className="flex flex-wrap items-center justify-center gap-1 text-sm leading-[21px]">
             <span className="text-white">{footerPrefix}</span>
-            <Link href={footerActionHref} className="font-medium text-[#40a0ca]">
+            <Link locale={locale} href={footerActionHref} className="font-medium text-[#40a0ca]">
               {footerActionLabel}
             </Link>
           </div>

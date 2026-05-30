@@ -24,15 +24,31 @@ function pickLocalizedString(value: unknown, locale = "ar"): string {
   if (!value || typeof value !== "object") return ""
 
   const map = value as Record<string, unknown>
-  const priority = [locale, "ar", "en", "de"]
+  const candidate = map[locale]
+  if (typeof candidate === "string" && candidate.trim()) return candidate.trim()
+
+  return ""
+}
+
+function pickLocalizedField(
+  row: Record<string, unknown>,
+  field: string,
+  locale = "ar"
+): string {
+  const direct = pickLocalizedString(row[field], locale)
+  if (direct) return direct
+
+  const priority = [`${field}_${locale}`, `${field}${locale}`]
+  const fallbacks = [`${field}_ar`, `${field}_en`, `${field}_de`, `${field}ar`, `${field}en`, `${field}de`]
 
   for (const key of priority) {
-    const candidate = map[key]
-    if (typeof candidate === "string" && candidate.trim()) return candidate
+    const value = row[key]
+    if (typeof value === "string" && value.trim()) return value.trim()
   }
 
-  for (const candidate of Object.values(map)) {
-    if (typeof candidate === "string" && candidate.trim()) return candidate
+  for (const key of fallbacks) {
+    const value = row[key]
+    if (typeof value === "string" && value.trim()) return value.trim()
   }
 
   return ""
@@ -57,11 +73,10 @@ function normalizeFeatures(raw: unknown, locale = "ar"): AboutFeature[] {
       if (!item || typeof item !== "object") return null
 
       const row = item as Record<string, unknown>
-      const title = pickLocalizedString(row.title, locale)
-      const description = pickLocalizedString(
-        row.description ?? row.description_en ?? row.description_ar,
-        locale
-      )
+      const title = pickLocalizedField(row, "title", locale)
+      const description =
+        pickLocalizedField(row, "description", locale) ||
+        pickLocalizedField(row, "content", locale)
 
       if (!title && !description) return null
 
@@ -83,32 +98,31 @@ function normalizeAbout(raw: unknown, locale = "ar"): AboutPageContent | null {
   const data = extractData(raw)
   if (!data) return null
 
-  const title = pickLocalizedString(data.title, locale)
+  const title = pickLocalizedField(data, "title", locale)
 
-  const descriptionLeft = pickLocalizedString(
-    data.description_left ?? data.descriptionLeft ?? data.description,
-    locale
-  )
-  const descriptionRight = pickLocalizedString(
-    data.description_right ?? data.descriptionRight ?? data.description_left,
-    locale
-  )
+  const descriptionLeft =
+    pickLocalizedField(data, "description_left", locale) ||
+    pickLocalizedField(data, "descriptionLeft", locale) ||
+    pickLocalizedField(data, "description", locale)
+  const descriptionRight =
+    pickLocalizedField(data, "description_right", locale) ||
+    pickLocalizedField(data, "descriptionRight", locale) ||
+    pickLocalizedField(data, "description_left", locale)
 
   // The API returns secondSection as a nested object
   const secondSection = data.secondSection as Record<string, unknown> | undefined
 
-  const secondTitle = pickLocalizedString(
-    data.second_title ?? data.secondTitle ?? secondSection?.title ?? data.title,
-    locale
-  )
-  const secondDescription = pickLocalizedString(
-    data.second_description ??
-      data.secondDescription ??
-      secondSection?.description ??
-      data.description_right ??
-      data.description_left,
-    locale
-  )
+  const secondTitle =
+    pickLocalizedField(data, "second_title", locale) ||
+    pickLocalizedField(data, "secondTitle", locale) ||
+    pickLocalizedField(secondSection ?? {}, "title", locale) ||
+    title
+  const secondDescription =
+    pickLocalizedField(data, "second_description", locale) ||
+    pickLocalizedField(data, "secondDescription", locale) ||
+    pickLocalizedField(secondSection ?? {}, "description", locale) ||
+    pickLocalizedField(data, "description_right", locale) ||
+    pickLocalizedField(data, "description_left", locale)
 
   // image: API returns imageUrl (not image)
   const image =

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import Image from "next/image"
-import { getTranslations } from "next-intl/server"
+import { getTranslations, setRequestLocale } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 import { getSession } from "@/lib/session"
 import { getCompanyJobs } from "@/lib/api/services/company.service"
@@ -22,6 +22,7 @@ export default async function CompanyJobsPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  setRequestLocale(locale)
   const t = await getTranslations("CompanyJobs")
   const session = await getSession()
   const isRtl = locale === "ar"
@@ -70,7 +71,7 @@ export default async function CompanyJobsPage({
           {t("listTitle")}
         </h1>
         <PrimaryButton asChild className="h-9 rounded-lg px-4  w-auto text-sm">
-          <Link href="/dashboard/company/jobs/create">{t("addJob")}</Link>
+          <Link locale={locale} href="/dashboard/company/jobs/create">{t("addJob")}</Link>
         </PrimaryButton>
       </div>
 
@@ -79,7 +80,7 @@ export default async function CompanyJobsPage({
           <div className="px-4 py-12 text-center">
             <p className="mb-4 text-[#525252]">{t("empty")}</p>
             <PrimaryButton asChild className="h-9 rounded-lg px-4 text-sm">
-              <Link href="/dashboard/company/jobs/create">{t("addJob")}</Link>
+              <Link locale={locale} href="/dashboard/company/jobs/create">{t("addJob")}</Link>
             </PrimaryButton>
           </div>
         ) : (
@@ -140,6 +141,7 @@ export default async function CompanyJobsPage({
                         aria-hidden
                       />
                       <Link
+                        locale={locale}
                         href={`/dashboard/company/jobs/${job.id}`}
                         className={cn("truncate hover:text-[#006EA8] hover:underline justify-start ")}
                       >
@@ -148,6 +150,7 @@ export default async function CompanyJobsPage({
                     </div>
                     <div className="flex w-[18%] justify-center px-2 py-3 text-base text-[#262626]">
                       <Link
+                        locale={locale}
                         href={`/dashboard/company/jobs/${job.id}/applications`}
                         className="font-semibold text-[#006EA8] hover:underline"
                       >

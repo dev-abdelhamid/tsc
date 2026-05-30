@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
 
@@ -8,6 +9,7 @@ export default async function UserEducationPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  setRequestLocale(locale)
   const session = await getSession()
   if (!session.user || session.user.role !== "user") redirect(`/${locale}/dashboard`)
 

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { getTranslations } from "next-intl/server"
+import { getTranslations, setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { getAdminJobs } from "@/lib/api/services/admin.service"
 import type { Job } from "@/lib/api/types"
@@ -18,6 +18,7 @@ export default async function AdminJobsPage({
   searchParams: Promise<{ status?: string }>
 }) {
   const { locale } = await params
+  setRequestLocale(locale)
   const { status: statusParam } = await searchParams
   const session = await getSession()
   const t = await getTranslations("Admin.jobs")
@@ -43,13 +44,22 @@ export default async function AdminJobsPage({
         }
       }
     }
+    // Debug: Log first job to check salary fields
+    if (jobs.length > 0) {
+      console.log("[AdminJobsPage] First job salary data:", {
+        id: jobs[0].id,
+        salary_from: jobs[0].salary_from,
+        salary_to: jobs[0].salary_to,
+        has_salary: jobs[0].salary_from != null && jobs[0].salary_to != null,
+      })
+    }
   } catch (err) {
     console.error(err)
     jobs = []
   }
 
   const initialTab: Tab =
-    statusParam && VALID_TABS.includes(statusParam as Tab) ? (statusParam as Tab) : "pending"
+    statusParam && VALID_TABS.includes(statusParam as Tab) ? (statusParam as Tab) : "all"
 
   return (
     <AdminPageLayout title={t("title")} description={t("description")}>

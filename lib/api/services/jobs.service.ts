@@ -15,6 +15,61 @@ export interface JobsFilter {
   state?: string
 }
 
+function pickLocalizedString(value: unknown, locale = "ar"): string {
+  if (typeof value === "string") return value
+  if (!value || typeof value !== "object") return ""
+
+  const map = value as Record<string, unknown>
+  const priority = [locale, "ar", "en", "de"]
+
+  for (const key of priority) {
+    const candidate = map[key]
+    if (typeof candidate === "string" && candidate.trim()) return candidate.trim()
+  }
+
+  for (const candidate of Object.values(map)) {
+    if (typeof candidate === "string" && candidate.trim()) return candidate.trim()
+  }
+
+  return ""
+}
+
+function pickLocalizedField(
+  row: Record<string, unknown>,
+  field: string,
+  locale = "ar"
+): string | undefined {
+  const direct = pickLocalizedString(row[field], locale)
+  if (direct) return direct
+
+  const priority = [`${field}_${locale}`, `${field}${locale}`]
+  const fallbacks = [`${field}_ar`, `${field}_en`, `${field}_de`, `${field}ar`, `${field}en`, `${field}de`]
+
+  for (const key of priority) {
+    const value = row[key]
+    if (typeof value === "string" && value.trim()) return value.trim()
+  }
+
+  for (const key of fallbacks) {
+    const value = row[key]
+    if (typeof value === "string" && value.trim()) return value.trim()
+  }
+
+  return undefined
+}
+
+function normalizeNestedValue<T extends { name?: string }>(
+  raw: unknown,
+  locale: string
+): T | undefined {
+  if (!raw || typeof raw !== "object") return undefined
+  const row = raw as Record<string, unknown>
+  const name = pickLocalizedField(row, "name", locale)
+
+  if (!name) return raw as T
+  return { ...row, name } as T
+}
+
 function extractJobsList(raw: unknown): unknown[] {
   if (Array.isArray(raw)) return raw
   if (!raw || typeof raw !== "object") return []
@@ -74,9 +129,31 @@ function normalizeJob(item: unknown, locale: string): Job | null {
   if (!Number.isFinite(id) || id <= 0) return null
 
   const title =
-    typeof row.title === "string" || (row.title && typeof row.title === "object")
+    typeof row.title === "object" && row.title !== null
       ? (row.title as Job["title"])
-      : getJobTitle({ title: String(row.name || "") }, locale)
+      : pickLocalizedField(row, "title", locale) ||
+        pickLocalizedField(row, "name", locale) ||
+        (typeof row.title === "string" ? row.title : undefined) ||
+        (typeof row.name === "string" ? row.name : undefined)
+
+  const description =
+    typeof row.description === "object" && row.description !== null
+      ? (row.description as Job["description"])
+      : pickLocalizedField(row, "description", locale) ||
+        pickLocalizedField(row, "content", locale) ||
+        (typeof row.description === "string" ? row.description : undefined)
+
+  const requirements =
+    typeof row.requirements === "object" && row.requirements !== null
+      ? (row.requirements as Job["requirements"])
+      : pickLocalizedField(row, "requirements", locale) ||
+        (typeof row.requirements === "string" ? row.requirements : undefined)
+
+  const responsibilities =
+    typeof row.responsibilities === "object" && row.responsibilities !== null
+      ? (row.responsibilities as Job["responsibilities"])
+      : pickLocalizedField(row, "responsibilities", locale) ||
+        (typeof row.responsibilities === "string" ? row.responsibilities : undefined)
 
   const salary = readRange(row, "salary_from", "salary_to", "salary")
   const age = readRange(row, "age_from", "age_to", "age")
@@ -90,10 +167,10 @@ function normalizeJob(item: unknown, locale: string): Job | null {
 
   return {
     id,
-    title,
-    description: row.description as Job["description"],
-    requirements: row.requirements as Job["requirements"],
-    responsibilities: row.responsibilities as Job["responsibilities"],
+    title: title ?? getJobTitle({ title: String(row.name || "") }, locale),
+    description,
+    requirements,
+    responsibilities,
     image: typeof row.image === "string" ? row.image : undefined,
     salary_from: salary.from,
     salary_to: salary.to,
@@ -104,11 +181,26 @@ function normalizeJob(item: unknown, locale: string): Job | null {
     employment_type: employmentType,
     state: typeof row.state === "string" ? row.state : undefined,
     location: typeof row.location === "string" ? row.location : undefined,
-    city: row.city as Job["city"],
-    country: row.country as Job["country"],
-    category: row.category as Job["category"],
-    sub_category: (row.sub_category ?? row.subCategory) as Job["sub_category"],
-    company: row.company as Job["company"],
+    city: normalizeNestedValue(row.city, locale) as Job["city"],
+    country: normalizeNestedValue(row.country, locale) as Job["country"],
+    category: normalizeNestedValue(row.category, locale) as Job["category"],
+    sub_category: normalizeNestedValue(row.sub_category ?? row.subCategory, locale) as Job["sub_category"],
+    company: (() => {
+      if (!row.company || typeof row.company !== "object") {
+        return row.company as unknown as Job["company"]
+      }
+      const company = normalizeNestedValue(row.company, locale) as Record<string, unknown>
+      if (company.company_type && typeof company.company_type === "object") {
+        company.company_type = normalizeNestedValue(company.company_type, locale)
+      }
+      if (company.country && typeof company.country === "object") {
+        company.country = normalizeNestedValue(company.country, locale)
+      }
+      if (company.city && typeof company.city === "object") {
+        company.city = normalizeNestedValue(company.city, locale)
+      }
+      return company as unknown as Job["company"]
+    })(),
     status: mapStatus(row.status),
     application_deadline:
       (typeof row.application_deadline === "string" && row.application_deadline) ||

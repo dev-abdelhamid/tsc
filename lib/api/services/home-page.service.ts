@@ -27,7 +27,12 @@ type NormalizedStep = {
 export type HomePageContent = {
   hero: HomeHeroOverride
   sections: {
-    categories: HomeSectionOverride
+    categories: HomeSectionOverride & {
+      heroStats?: {
+        total: string
+        unit?: string
+      }
+    }
     jobs: HomeSectionOverride
     testimonials: HomeSectionOverride
     news: HomeSectionOverride
@@ -56,31 +61,7 @@ function pickLocalizedString(value: unknown, locale = "ar"): string | undefined 
   }
 
   const record = value as Record<string, unknown>
-
-  // First, try to get the exact requested locale
-  const candidate = trimText(record[locale])
-  if (candidate) {
-    return candidate
-  }
-
-  // If not found, try other locales in order: ar, en, de
-  for (const key of ["ar", "en", "de"]) {
-    if (key === locale) continue // Skip already checked
-    const text = trimText(record[key])
-    if (text) {
-      return text
-    }
-  }
-
-  // Last resort: any value that exists
-  for (const value of Object.values(record)) {
-    const text = trimText(value)
-    if (text) {
-      return text
-    }
-  }
-
-  return undefined
+  return trimText(record[locale])
 }
 
 function normalizeSection(raw: unknown, locale = "ar"): HomeSectionOverride {
@@ -237,7 +218,9 @@ export function defaultHomePageContent(): HomePageContent {
   return {
     hero: {},
     sections: {
-      categories: {},
+      categories: {
+        heroStats: { total: "13k+", unit: "" }
+      },
       jobs: {},
       testimonials: {},
       news: {},

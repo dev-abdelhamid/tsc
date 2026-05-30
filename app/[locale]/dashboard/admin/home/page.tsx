@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { getTranslations } from "next-intl/server"
+import { getTranslations, setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { getAdminHomePageContent } from "@/lib/api/services/home-page.service"
 import { AdminHomePanel } from "@/features/admin/components/admin-home-panel"
@@ -11,10 +11,15 @@ export default async function AdminHomePage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  setRequestLocale(locale)
   const session = await getSession()
   const t = await getTranslations("Admin.home")
 
-  if (!session.user || session.user.role !== "admin") {
+  if (!session.isLoggedIn || !session.user || !session.accessToken) {
+    redirect(`/${locale}/sign-in`)
+  }
+
+  if (session.user.role !== "admin") {
     redirect(`/${locale}/dashboard`)
   }
 
@@ -22,11 +27,26 @@ export default async function AdminHomePage({
   let loadError: string | null = null
 
   try {
-    content = await getAdminHomePageContent(session.accessToken!, locale)
+    // Fetch content for all supported locales so admin can edit translations
+    const [arContent, enContent, deContent] = await Promise.all([
+      getAdminHomePageContent(session.accessToken!, "ar"),
+      getAdminHomePageContent(session.accessToken!, "en"),
+      getAdminHomePageContent(session.accessToken!, "de"),
+    ])
+    // Do not mutate the returned objects (avoid circular refs). Create a
+    // new wrapper object that contains the primary locale content and a
+    // separate `__allLocales` map so we can pass both to the client safely.
+    const allLocales = { ar: arContent, en: enContent, de: deContent }
+    content = { ...(arContent || {}), __allLocales: allLocales } as any
   } catch (err) {
     console.error(err)
     loadError = t("loadError")
   }
+  // Build a small, stable fingerprint to force remount when essential
+  // editable content changes (avoid stringifying the whole object).
+  const remountKey = content
+    ? [content.hero?.title ?? "", content.hero?.description ?? "", (content.processSteps ?? []).map((s: any) => s.icon ?? s.title ?? "").join("|")].join("||")
+    : "empty"
 
   return (
     <AdminPageLayout title={t("title")} description={t("description")}>
@@ -35,7 +55,7 @@ export default async function AdminHomePage({
           {loadError}
         </p>
       )}
-      <AdminHomePanel content={content} locale={locale} loadError={loadError} />
+      <AdminHomePanel key={remountKey} content={content} locale={locale} loadError={loadError} />
     </AdminPageLayout>
   )
 }

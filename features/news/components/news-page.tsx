@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { getLocale, getTranslations } from "next-intl/server"
+import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home"
 import { getNewsForLocale } from "@/features/news/lib/news-fallback"
@@ -8,8 +8,9 @@ import { resolveNewsImageUrl } from "@/features/news/lib/resolve-news-image"
 import { NewsCalendarIcon, NewsEyebrowGlobe } from "@/features/news/components/news-icons"
 import { NewsReadMoreButton } from "@/features/news/components/news-read-more-button"
 
-export async function NewsPage() {
-  const locale = await getLocale()
+export async function NewsPage({ locale: propLocale }: { locale?: string } = {}) {
+  const locale = propLocale ?? (await getLocale())
+  setRequestLocale(locale)
   const newsT = await getTranslations("Landing.news")
   const pageT = await getTranslations("Landing.newsPage")
   const items = await getNewsForLocale(locale, newsT, { per_page: 12 })
@@ -60,7 +61,7 @@ export async function NewsPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                  <NewsReadMoreButton href={`/news/${featured.slug}`} label={newsT("readMore")} />
+                  <NewsReadMoreButton locale={locale} href={`/news/${featured.slug}`} label={newsT("readMore")} />
                   <p className="inline-flex items-center gap-2 text-[16px] leading-[1.16] text-[#525252]">
                     <NewsCalendarIcon className="h-5 w-5 text-[#40A0CA]" />
                     {formatNewsDate(featured.published_at, locale)}
@@ -75,7 +76,7 @@ export async function NewsPage() {
           {gridItems.map((item, index) => (
             <StaggerItem key={item.id}>
               <article className="flex h-full flex-col gap-4">
-                <Link href={`/news/${item.slug}`} className="block overflow-hidden rounded-2xl">
+                <Link locale={locale} href={`/news/${item.slug}`} className="block overflow-hidden rounded-2xl">
                   <Image
                     src={resolveNewsImageUrl(item.image, index + 1)}
                     alt={item.title}
@@ -89,7 +90,7 @@ export async function NewsPage() {
                 <div className="flex flex-1 flex-col justify-between gap-6 py-2">
                   <div className="space-y-4">
                     <h3 className="font-heading text-[20px] font-bold leading-[1.2] text-[#171717] sm:text-[24px]">
-                      <Link href={`/news/${item.slug}`} className="hover:text-[#006EA8]">
+                      <Link locale={locale} href={`/news/${item.slug}`} className="hover:text-[#006EA8]">
                         {item.title}
                       </Link>
                     </h3>
@@ -99,6 +100,7 @@ export async function NewsPage() {
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <NewsReadMoreButton
+                      locale={locale}
                       href={`/news/${item.slug}`}
                       label={newsT("readMore")}
                       className="h-11 w-auto min-w-[180px] px-4 text-[14px]"

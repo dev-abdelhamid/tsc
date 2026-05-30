@@ -100,7 +100,7 @@ export async function HeroSection({ title: titleOverride, description: descripti
 
         <StaggerItem>
           <p className="mx-auto mt-4 max-w-[680px] text-pretty text-center text-[15px] font-normal leading-relaxed text-white/80 sm:mt-6 sm:text-[16px] lg:mt-8 lg:text-[18px] lg:leading-[1.6]">
-            {t("description")}
+            {description}
           </p>
         </StaggerItem>
 

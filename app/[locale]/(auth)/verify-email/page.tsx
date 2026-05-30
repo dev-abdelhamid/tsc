@@ -1,9 +1,15 @@
 import { Suspense } from "react"
-import { getTranslations } from "next-intl/server"
+import { getTranslations, setRequestLocale } from "next-intl/server"
 import { AuthCardWrapper } from "@/features/auth/components/auth-card-wrapper"
 import { VerifyEmailForm } from "@/features/auth/components/verify-email-form"
 
-export default async function VerifyEmailPage() {
+type Props = {
+  params: Promise<{ locale: string }>
+}
+
+export default async function VerifyEmailPage({ params }: Props) {
+  const { locale } = await params
+  setRequestLocale(locale)
   const t = await getTranslations("Auth.verifyEmail")
 
   return (
@@ -27,3 +33,5 @@ export default async function VerifyEmailPage() {
     </AuthCardWrapper>
   )
 }
+
+export const dynamic = "force-dynamic"

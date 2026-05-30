@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { CompanyJobReviewPage } from "@/features/company-jobs/components/company-job-review-page"
 
@@ -8,6 +9,7 @@ export default async function CompanyJobReviewRoutePage({
   params: Promise<{ locale: string; id: string }>
 }) {
   const { locale, id } = await params
+  setRequestLocale(locale)
   const jobId = Number(id)
   if (!Number.isFinite(jobId) || jobId <= 0) {
     redirect(`/${locale}/dashboard/company/jobs`)

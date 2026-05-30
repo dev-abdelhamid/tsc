@@ -306,6 +306,7 @@ export function CreateJobWizard({
           {t("title")}
         </h1>
         <Link
+          locale={locale}
           href="/dashboard/company/jobs"
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#006EA8] transition-opacity hover:opacity-70"
           aria-label={t("cancel")}
@@ -498,7 +499,7 @@ export function CreateJobWizard({
 
       <div className="flex w-full max-w-[256px] flex-wrap items-center justify-center gap-4 sm:flex-nowrap">
         {step === 1 ? (
-          <GradientOutlineButton onClick={() => router.push("/dashboard/company/jobs")}>
+          <GradientOutlineButton onClick={() => router.push("/dashboard/company/jobs") }>
             {t("cancel")}
           </GradientOutlineButton>
         ) : (

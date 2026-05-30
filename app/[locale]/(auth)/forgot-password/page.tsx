@@ -1,8 +1,14 @@
-import { getTranslations } from "next-intl/server"
+import { getTranslations, setRequestLocale } from "next-intl/server"
 import { AuthCardWrapper } from "@/features/auth/components/auth-card-wrapper"
 import { ForgotPasswordForm } from "@/features/auth/components/forgot-password-form"
 
-export default async function ForgotPasswordPage() {
+type Props = {
+  params: Promise<{ locale: string }>
+}
+
+export default async function ForgotPasswordPage({ params }: Props) {
+  const { locale } = await params
+  setRequestLocale(locale)
   const t = await getTranslations("Auth.forgotPassword")
 
   return (
@@ -28,3 +34,5 @@ export default async function ForgotPasswordPage() {
     </AuthCardWrapper>
   )
 }
+
+export const dynamic = "force-dynamic"

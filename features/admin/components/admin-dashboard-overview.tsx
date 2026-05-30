@@ -68,6 +68,7 @@ export function AdminDashboardOverview({
             value={kpi.value}
             viewAllHref={kpi.href}
             viewAllLabel={kpi.viewAllLabel}
+            locale={locale}
             isRTL={locale === "ar"}
           />
         ))}
@@ -77,6 +78,7 @@ export function AdminDashboardOverview({
         <div className="flex items-center justify-between bg-gradient-to-l from-[#032C44] to-[#41A0CA] px-6 py-4">
           <h2 className="text-[15px] font-bold text-white">{t("pendingTable")}</h2>
           <Link
+            locale={locale}
             href="/dashboard/admin/jobs"
             className="text-[13px] font-semibold text-[#B8E6F7] hover:text-white"
           >

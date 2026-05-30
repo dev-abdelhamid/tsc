@@ -44,6 +44,7 @@ export function SharedSidebar({ items, isRTL = false, onNavigate }: SharedSideba
         return (
           <Link
             key={item.href}
+            locale={locale}
             href={item.href}
             className={cn(
               "relative isolate flex h-14 w-full flex-none items-center gap-2 self-stretch px-4 py-4 transition-colors",

@@ -23,6 +23,7 @@ export function RelatedJobCard({
 
   return (
     <Link
+      locale={locale}
       href={`/jobs/${job.id}`}
       className="flex min-h-[117px] flex-col justify-between rounded-[8px] border border-[#e8f2ff] bg-white p-4 transition hover:border-[#78a3be] hover:shadow-[0_4px_16px_rgba(0,43,70,0.06)]"
     >

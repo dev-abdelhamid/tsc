@@ -85,7 +85,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       className={`${fontVariable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col overflow-x-hidden bg-white">
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <DirectionProvider dir={direction} direction={direction}>
             {/* ✅ تمرير Plain Object فقط */}
             <SiteChrome session={sessionData}>

@@ -1,3 +1,4 @@
+import { setRequestLocale } from "next-intl/server"
 import { NewsDetailPage } from "@/features/news/components/news-detail-page"
 
 type Props = {
@@ -5,6 +6,9 @@ type Props = {
 }
 
 export default async function SingleNewsRoutePage({ params }: Props) {
-  const { slug } = await params
-  return <NewsDetailPage slug={slug} />
+  const { slug, locale } = await params
+  setRequestLocale(locale)
+  // eslint-disable-next-line no-console
+  console.debug(`[news route detail] params.locale=${locale} slug=${slug}`)
+  return <NewsDetailPage slug={slug} locale={locale} />
 }

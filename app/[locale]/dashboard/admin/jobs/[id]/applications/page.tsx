@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation"
+import { setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { AdminJobApplicationsPage } from "@/features/admin/components/admin-job-applications-page"
 
@@ -8,6 +9,7 @@ export default async function AdminJobApplicationsRoutePage({
   params: Promise<{ locale: string; id: string }>
 }) {
   const { locale, id } = await params
+  setRequestLocale(locale)
   const jobId = Number(id)
 
   if (!Number.isFinite(jobId) || jobId <= 0) {

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { setRequestLocale } from "next-intl/server"
 import { getProfile, refreshToken as refreshTokenService } from "@/lib/api/services/auth.service"
 import { ApiError } from "@/lib/api/client"
 import { getSession } from "@/lib/session"
@@ -20,6 +21,7 @@ export default async function CompanyProfilePage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  setRequestLocale(locale)
   const session = await getSession()
   if (!session.user || session.user.role !== "company") redirect(`/${locale}/dashboard`)
   if (!session.accessToken) redirect(`/${locale}/dashboard`)

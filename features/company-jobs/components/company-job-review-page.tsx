@@ -49,6 +49,7 @@ export async function CompanyJobReviewPage({
   return (
     <div className="flex w-full flex-col gap-6">
       <Link
+        locale={locale}
         href="/dashboard/company/jobs"
         className="inline-flex items-center gap-2 text-[14px] font-medium text-[#006EA8] hover:underline"
       >
@@ -69,7 +70,7 @@ export async function CompanyJobReviewPage({
               {t("review.title")}
             </h1>
             <PrimaryButton asChild className="h-9 rounded-lg px-4 text-sm">
-              <Link href={`/dashboard/company/jobs/${jobId}/applications`}>
+              <Link locale={locale} href={`/dashboard/company/jobs/${jobId}/applications`}>
                 {t("review.viewApplications")}
               </Link>
             </PrimaryButton>

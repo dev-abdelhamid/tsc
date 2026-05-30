@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useAuth } from "@/hooks/use-auth"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { AuthCardWrapper } from "@/features/auth/components/auth-card-wrapper"
 import { AuthFieldGroup } from "@/features/auth/components/auth-field-group"
 import { AuthUserCompanyTabs } from "@/features/auth/components/auth-user-company-tabs"
@@ -18,6 +18,7 @@ type FormValues = {
 export default function SignInPage() {
   const t = useTranslations("Auth.signIn")
   const { signIn, loading, error: authError } = useAuth()
+  const locale = useLocale()
   const {
     register,
     handleSubmit,
@@ -57,7 +58,7 @@ export default function SignInPage() {
         />
       }
       asideSlot={
-        <Link href="/forgot-password" className="text-sm text-white/80 hover:text-white">
+        <Link locale={locale} href="/forgot-password" className="text-sm text-white/80 hover:text-white">
           {t("forgotPassword")}
         </Link>
       }

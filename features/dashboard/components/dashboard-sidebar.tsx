@@ -24,14 +24,16 @@ interface SidebarItemProps {
   iconSrc: string
   label: string
   href: string
+  locale: string
   active?: boolean
   flipIcon?: boolean
   isRTL?: boolean
 }
 
-function SidebarItem({ iconSrc, label, href, active, flipIcon, isRTL }: SidebarItemProps) {
+function SidebarItem({ iconSrc, label, href, locale, active, flipIcon, isRTL }: SidebarItemProps) {
   return (
     <Link
+      locale={locale}
       href={href}
       className={cn(
         "relative isolate flex h-14 w-full flex-none items-center gap-2 self-stretch px-4 py-4 transition-colors",
@@ -145,7 +147,7 @@ function getAdminGroups(locale: string): SidebarGroup[] {
       title: getLabel(locale, "المحتوى", "Content", "Inhalt"),
       items: [
         {
-          icon: "/dashboard/profile.svg",
+          icon: "/dashboard/dashboard.svg",
           label: getLabel(locale, "الصفحة الرئيسية", "Home Page", "Startseite"),
           href: "/dashboard/admin/home",
         },
@@ -260,6 +262,7 @@ function SidebarNav({
                       iconSrc={item.icon}
                       label={item.label}
                       href={item.href}
+                      locale={locale}
                       active={activeHref === item.href.replace(/\/$/, "")}
                       flipIcon={flipIcon}
                       isRTL={isRTL}
@@ -274,6 +277,7 @@ function SidebarNav({
                 iconSrc={item.icon}
                 label={item.label}
                 href={item.href}
+                locale={locale}
                 active={activeHref === item.href.replace(/\/$/, "")}
                 flipIcon={flipIcon}
                 isRTL={isRTL}

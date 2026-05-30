@@ -150,10 +150,20 @@ export function AdminJobsPanel({
       >
         {filtered.map((job, index) => {
           const status = mapStatus(job.status)
-          const salary =
-            job.salary_from != null && job.salary_to != null
-              ? `€${job.salary_from} – €${job.salary_to}`
-              : "—"
+          const hasSalary = job.salary_from != null && job.salary_to != null
+          const salary = hasSalary
+            ? `€${job.salary_from} – €${job.salary_to}`
+            : "—"
+
+          // Debug: Log jobs without salary
+          if (!hasSalary && index === 0) {
+            console.log("[AdminJobsPanel] First job without salary:", {
+              id: job.id,
+              title: job.title,
+              salary_from: job.salary_from,
+              salary_to: job.salary_to,
+            })
+          }
 
           return (
             <AdminTableRow key={job.id} striped={index % 2 === 1}>
@@ -176,6 +186,7 @@ export function AdminJobsPanel({
               <AdminTableCell className="w-[18%]">
                 <div className={cn("flex flex-wrap gap-2", isRTL && "flex-row-reverse")}>
                   <Link
+                    locale={locale}
                     href={`/dashboard/admin/jobs/${job.id}`}
                     className="rounded-lg border border-[#DCEBFF] bg-[#F6FBFF] px-3 py-1.5 text-xs font-semibold text-[#006EA8] hover:bg-[#EAF6FF]"
                   >

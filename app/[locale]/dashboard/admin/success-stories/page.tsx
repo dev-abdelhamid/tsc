@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { getTranslations } from "next-intl/server"
+import { getTranslations, setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { getAdminSuccessStories } from "@/lib/api/services/success-stories.service"
 import { AdminSuccessStoriesPanel } from "@/features/admin/components/admin-success-stories-panel"
@@ -11,6 +11,7 @@ export default async function AdminSuccessStoriesPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  setRequestLocale(locale)
   const session = await getSession()
   const t = await getTranslations("Admin.successStories")
 

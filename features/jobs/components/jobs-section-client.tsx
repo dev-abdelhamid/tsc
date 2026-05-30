@@ -28,7 +28,6 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
   const t = useTranslations("Landing.jobs")
   const locale = useLocale()
   const [activeFilter, setActiveFilter] = useState<number | "all">("all")
-  const [isChanging, setIsChanging] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const sectionTitle = title ?? t("title")
   const sectionDescription = description ?? t("description")
@@ -82,15 +81,13 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
   }, [])
 
   const handleFilterChange = (filterId: number | "all") => {
-    if (activeFilter === filterId || isChanging) return
-    
-    setIsChanging(true)
+    if (activeFilter === filterId) return
     setActiveFilter(filterId)
-    
+    // Optional visual debounce handled by CSS/animations; no blocking needed
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
     timeoutRef.current = setTimeout(() => {
-      setIsChanging(false)
-    }, 400)
+      // noop: placeholder if animation sync needed in future
+    }, 300)
   }
 
   return (
@@ -193,7 +190,7 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
                       </p>
                     </div>
                     <PrimaryButton asChild className="h-11 rounded-[10px] text-[16px] font-medium sm:text-[18px]">
-                      <Link href={`/jobs/${job.id}`}>
+                      <Link locale={locale} href={`/jobs/${job.id}`}>
                         {t("moreDetails")}
                         <MoveUpRight className="size-5 shrink-0 rtl:-scale-x-100" />
                       </Link>
@@ -210,7 +207,7 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
       <StaggerInView className="mt-8 flex justify-center">
         <StaggerItem>
           <PrimaryButton asChild className="h-11 w-auto min-w-[200px] rounded-[10px] px-8 text-[16px] font-medium sm:text-[18px]">
-            <Link href="/jobs">{t("showAll")}</Link>
+            <Link locale={locale} href="/jobs">{t("showAll")}</Link>
           </PrimaryButton>
         </StaggerItem>
       </StaggerInView>

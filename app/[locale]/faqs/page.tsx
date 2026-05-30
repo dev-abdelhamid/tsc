@@ -43,11 +43,11 @@ export default async function FaqsPage({ params }: Props) {
 
   return (
     <LegalPageShell
-      eyebrow={legalT("eyebrow")}
-      title={legalT("title")}
-      description={legalT("description")}
+      eyebrow={legalT("faq.eyebrow")}
+      title={legalT("faq.title")}
+      description={legalT("faq.description")}
       actions={[
-        { href: "/contact", label: legalT("contactAction") },
+        { href: "/contact", label: legalT("faq.contactAction") },
       ]}
     >
       <div className="rounded-[24px] border border-[#D4D4D4] bg-white px-4 py-2 sm:px-6">

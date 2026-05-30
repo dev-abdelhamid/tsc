@@ -1,12 +1,17 @@
-import { getLocale, getTranslations } from "next-intl/server"
+import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { SectionShell } from "@/features/shared-home"
 import { getCategoriesForForm } from "@/lib/api/services/categories.service"
 import { getJobsForLocale } from "@/features/jobs/lib/jobs-for-locale"
 import { JobsPageClient } from "@/features/jobs/components/jobs-page-client"
 import { GERMAN_STATES } from "@/features/company-jobs/lib/constants"
 
-export async function JobsPage() {
-  const locale = await getLocale()
+export async function JobsPage({ locale: propLocale }: { locale?: string } = {}) {
+  const locale = propLocale ?? (await getLocale())
+  // Ensure next-intl uses the route locale for translations
+  setRequestLocale(locale)
+  // Debug: ensure server-side locale is detected correctly
+  // eslint-disable-next-line no-console
+  console.debug(`[jobs] server locale=${locale}`)
   const t = await getTranslations("Landing.jobsPage")
   const jobsT = await getTranslations("Landing.jobs")
 

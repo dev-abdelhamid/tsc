@@ -1,10 +1,16 @@
-import { getTranslations } from "next-intl/server"
+import { getTranslations, setRequestLocale } from "next-intl/server"
 import {
   AuthCardWrapper,
 } from "@/features/auth/components/auth-card-wrapper"
 import { SignUpTabForm } from "@/features/auth/components/sign-up-tab-form"
 
-export default async function SignUpPage() {
+type Props = {
+  params: Promise<{ locale: string }>
+}
+
+export default async function SignUpPage({ params }: Props) {
+  const { locale } = await params
+  setRequestLocale(locale)
   const t = await getTranslations("Auth.signUp")
 
   return (
@@ -36,3 +42,5 @@ export default async function SignUpPage() {
     </AuthCardWrapper>
   )
 }
+
+export const dynamic = "force-dynamic"

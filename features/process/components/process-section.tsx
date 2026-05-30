@@ -1,4 +1,4 @@
-import { getLocale, getTranslations } from "next-intl/server"
+import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { SectionShell, StaggerInView } from "@/features/shared-home"
 import { getProcessSteps } from "@/features/process/services/process.service"
 import Image from "next/image"
@@ -78,8 +78,9 @@ function StepConnector({ index, rtl }: { index: 0 | 1; rtl: boolean }) {
 }
 
 export async function ProcessSection({ steps: overrideSteps, title: titleOverride, description: descriptionOverride }: ProcessSectionProps) {
-  const t = await getTranslations("Landing.process")
   const locale = await getLocale()
+  setRequestLocale(locale)
+  const t = await getTranslations("Landing.process")
   const isRtl = locale === "ar"
   
   // Get process steps - handle both array and async responses

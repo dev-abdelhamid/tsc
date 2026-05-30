@@ -32,6 +32,13 @@ export async function AdminJobApplicationsPage({
   accessToken: string
 }) {
   const t = await getTranslations("Admin.jobs")
+  const safeT = (key: string, fallback = key) => {
+    try {
+      return t(key)
+    } catch {
+      return fallback
+    }
+  }
   const job = await getAdminJobById(jobId, accessToken, locale)
 
   if (!job) {
@@ -41,9 +48,9 @@ export async function AdminJobApplicationsPage({
   const { data: applications } = await getAdminJobApplications(jobId, accessToken, 1, locale)
   const title = getJobTitle(job, locale)
   const statusLabels: Record<string, string> = {
-    pending: t("applicationsPage.status.pending"),
-    accepted: t("applicationsPage.status.accepted"),
-    rejected: t("applicationsPage.status.rejected"),
+    pending: safeT("applicationsPage.status.pending", "Pending"),
+    accepted: safeT("applicationsPage.status.accepted", "Accepted"),
+    rejected: safeT("applicationsPage.status.rejected", "Rejected"),
   }
 
   return (
@@ -51,6 +58,7 @@ export async function AdminJobApplicationsPage({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <Link
+            locale={locale}
             href={`/dashboard/admin/jobs/${jobId}`}
             className="inline-flex items-center gap-2 text-sm font-semibold text-[#006EA8]"
           >
@@ -62,6 +70,7 @@ export async function AdminJobApplicationsPage({
           <p className="mt-2 text-sm text-[#525252]">{title}</p>
         </div>
         <Link
+          locale={locale}
           href="/dashboard/admin/jobs"
           className="rounded-[10px] border border-[#DCEBFF] bg-white px-4 py-2 text-sm font-semibold text-[#006EA8]"
         >
@@ -76,21 +85,23 @@ export async function AdminJobApplicationsPage({
         </div>
 
         <div className="overflow-x-auto">
-          <div className="min-w-[760px]">
+          <div className="min-w-[900px]">
             <div className="flex items-center bg-[#F8FAFC] px-4 py-3 text-sm font-semibold text-[#374151]">
-              <div className="w-[30%]">{t("applicationsPage.candidate")}</div>
-              <div className="w-[20%] text-center">{t("applicationsPage.statusLabel")}</div>
-              <div className="w-[25%]">{t("applicationsPage.appliedAt")}</div>
-              <div className="flex-1 text-left">{t("applicationsPage.email")}</div>
+              <div className="w-[25%]">{safeT("applicationsPage.candidate", "Candidate")}</div>
+              <div className="w-[18%]">{safeT("applicationsPage.statusLabel", "Status")}</div>
+              <div className="w-[20%]">{safeT("applicationsPage.appliedAt", "Applied At")}</div>
+              <div className="w-[20%]">{safeT("applicationsPage.email", "Email")}</div>
+              <div className="flex-1 text-center">{safeT("applicationsPage.actions", "Actions")}</div>
             </div>
 
             {applications.length === 0 ? (
               <p className="px-4 py-12 text-center text-sm text-[#525252]">
-                {t("applicationsPage.empty")}
+                {safeT("applicationsPage.empty", "No applications")}
               </p>
             ) : (
               applications.map((application, index) => {
                 const appStatus = mapStatus(application.status)
+                const cvUrl = application.cv_url
                 return (
                   <div
                     key={application.id}
@@ -99,17 +110,31 @@ export async function AdminJobApplicationsPage({
                       index % 2 === 0 ? "bg-white" : "bg-[#F9FBFD]"
                     )}
                   >
-                    <div className="w-[30%] px-4 py-4 text-sm font-semibold text-[#111827]">
-                      {application.user?.name ?? t("applicationsPage.unknownCandidate")}
+                    <div className="w-[25%] px-4 py-4 text-sm font-semibold text-[#111827]">
+                      {application.user?.name ?? safeT("applicationsPage.unknownCandidate", "Unknown")}
                     </div>
-                    <div className="w-[20%] px-4 py-4 text-center">
+                    <div className="w-[18%] px-4 py-4 text-center">
                       <DashboardStatusBadge status={appStatus} label={statusLabels[appStatus]} />
                     </div>
-                    <div className="w-[25%] px-4 py-4 text-sm text-[#4B5563]">
+                    <div className="w-[20%] px-4 py-4 text-sm text-[#4B5563]">
                       {formatAppliedAt(application.applied_at)}
                     </div>
-                    <div className="flex-1 px-4 py-4 text-sm text-[#4B5563]">
+                    <div className="w-[20%] px-4 py-4 text-sm text-[#4B5563]">
                       {application.user?.email ?? "—"}
+                    </div>
+                    <div className="flex-1 flex items-center justify-center gap-2 px-4 py-4">
+                      {cvUrl ? (
+                        <a
+                          href={cvUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-lg bg-[#D1FAE5] px-3 py-1.5 text-xs font-semibold text-[#065F46] hover:bg-[#A7F3D0]"
+                        >
+                          📄 {safeT("applicationsPage.viewCv", "View CV")}
+                        </a>
+                      ) : (
+                        <span className="text-xs text-[#9CA3AF]">—</span>
+                      )}
                     </div>
                   </div>
                 )

@@ -91,7 +91,7 @@ export function JobCard({ job, locale, isRtl, labels }: JobCardProps) {
         asChild
         className="mt-6 h-[44px] w-full rounded-[12px] text-[16px] font-medium"
       >
-        <Link href={`/jobs/${job.id}`} className="inline-flex items-center justify-center gap-2">
+        <Link locale={locale} href={`/jobs/${job.id}`} className="inline-flex items-center justify-center gap-2">
           {labels.moreDetails}
           <Image
             src="/more.svg"

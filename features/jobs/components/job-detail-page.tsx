@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { getLocale, getTranslations } from "next-intl/server"
+import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 import { formatPostedLabel, getJobTitle } from "@/features/jobs/lib/job-display"
 import { getJobDetailForLocale } from "@/features/jobs/lib/jobs-for-locale"
@@ -9,6 +9,7 @@ import { JobDetailShare } from "@/features/jobs/components/job-detail-share"
 
 type JobDetailPageProps = {
   jobId: number
+  locale?: string
 }
 
 function localizedField(
@@ -31,8 +32,9 @@ function renderSectionBody(text: string) {
   ))
 }
 
-export async function JobDetailPage({ jobId }: JobDetailPageProps) {
-  const locale = await getLocale()
+export async function JobDetailPage({ jobId, locale: propLocale }: JobDetailPageProps) {
+  const locale = propLocale ?? (await getLocale())
+  setRequestLocale(locale)
   const isRtl = locale === "ar"
   const t = await getTranslations("Landing.jobsPage")
   const jobsT = await getTranslations("Landing.jobs")
@@ -59,6 +61,7 @@ export async function JobDetailPage({ jobId }: JobDetailPageProps) {
 
       <div className="mx-auto max-w-[1312px] px-4 pb-16 pt-8 sm:px-6 lg:px-8 lg:pb-24 lg:pt-10">
         <Link
+          locale={locale}
           href="/jobs"
           className="mb-8 inline-flex items-center gap-2 text-[16px] font-medium text-[#006EA8] hover:underline"
         >

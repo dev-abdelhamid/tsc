@@ -41,7 +41,7 @@ export function SiteFooter() {
         <div className="flex flex-col justify-between gap-10 border-b border-[#003F64] pb-10 lg:flex-row lg:gap-20">
           {/* Column 1: Brand & Desc */}
           <div className="flex flex-col gap-6 lg:max-w-[474px]">
-            <Link href="/">
+            <Link locale={locale} href="/">
               <Image 
                 src="/footer/footer-logo.svg" 
                 alt={t("brand")} 
@@ -74,8 +74,7 @@ export function SiteFooter() {
             <nav className="flex flex-col gap-5">
               {["about", "jobs", "services", "contact"].map((item) => (
                 <Link 
-                  key={item} 
-                  href={`/${item}`} 
+                  key={item}                   locale={locale}                  href={`/${item}`} 
                   className="group flex items-center gap-3 text-[16px] leading-[1.16] text-[#F5F5F5] transition-colors hover:text-[#40A0CA]"
                 >
                   <Image src="/footer/icon-link.svg" alt="" width={16} height={16} className="transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
@@ -119,15 +118,15 @@ export function SiteFooter() {
           </div>
 
           <div className="flex items-center gap-6 text-[16px] leading-[1.16] text-[#F5F5F5]">
-            <Link href="/terms" className="transition-colors hover:text-[#40A0CA]">
+            <Link locale={locale} href="/terms" className="transition-colors hover:text-[#40A0CA]">
               {contactT("legal.terms")}
             </Link>
             <div className="h-4 w-px bg-[#40A0CA]" />
-            <Link href="/faqs" className="transition-colors hover:text-[#40A0CA]">
+            <Link locale={locale} href="/faqs" className="transition-colors hover:text-[#40A0CA]">
               {contactT("legal.faqs")}
             </Link>
             <div className="h-4 w-px bg-[#40A0CA]" />
-            <Link href="/privacy" className="transition-colors hover:text-[#40A0CA]">
+            <Link locale={locale} href="/privacy" className="transition-colors hover:text-[#40A0CA]">
               {contactT("legal.privacy")}
             </Link>
           </div>

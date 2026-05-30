@@ -4,6 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import { Bell, ChevronDown, Check, Menu, User as UserIcon, X } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
+import { safeTranslate } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -27,7 +28,7 @@ type SiteHeaderProps = {
 const NAV_ITEMS: Array<{ key: NavItemKey; href: string }> = [
   { key: "home", href: "/" },
   { key: "about", href: "/about" },
-  { key: "services", href: "/#categories" },
+  { key: "services", href: "/services" },
   { key: "jobs", href: "/jobs" },
   { key: "news", href: "/news" },
   { key: "contact", href: "/contact" },
@@ -59,6 +60,15 @@ export function SiteHeader({
   const rawPathname = usePathname()
   const normalizedHref = stripLocalePrefix(rawPathname ?? "/")
   const pathname = normalizedHref || "/"
+  React.useEffect(() => {
+    // dev helper: log locale + pathname changes to debug translation switches
+    try {
+      console.debug("[SiteHeader] locale:", currentLocale, "pathname:", rawPathname)
+    } catch {
+      // ignore in environments where console may be unavailable
+    }
+  }, [currentLocale, rawPathname])
+  const safeT = (key: string, fallback?: string) => safeTranslate(t, key, fallback)
   const mobileMenu = useDashboardMobileMenu()
   const [showNotifications, setShowNotifications] = React.useState(false)
   const [publicMobileMenuOpen, setPublicMobileMenuOpen] = React.useState(false)
@@ -303,10 +313,10 @@ export function SiteHeader({
         )}
 
         <div className="flex shrink-0 items-center">
-          <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center relative z-50">
+          <Link locale={currentLocale} href="/" aria-label={safeT("brand", "Brand")} className="flex shrink-0 items-center relative z-50">
             <Image
               src="/home/hero/hero-logo.svg"
-              alt={t("brand")}
+              alt={safeT("brand", "Brand")}
               width={220}
               height={88}
               className="h-[56px] w-auto sm:h-[72px] lg:h-[92px]"
@@ -323,13 +333,14 @@ export function SiteHeader({
               <React.Fragment key={item.key}>
                 {index > 0 && <div className="h-[18px] w-px bg-white/20" aria-hidden="true" />}
                 <Link
+                  locale={currentLocale}
                   href={item.href}
                   className={cn(
                     "whitespace-nowrap px-2 text-[16px] leading-[1.16] font-normal text-white transition-all duration-200 hover:text-[#7CCEF3] hover:scale-105",
                     activeNav === item.key && "font-semibold text-[#40A0CA]"
                   )}
                 >
-                  {t(`nav.${item.key}`)}
+                  {safeT(`nav.${item.key}`, item.key)}
                 </Link>
               </React.Fragment>
             ))}
@@ -457,7 +468,7 @@ export function SiteHeader({
           )}
 
           {isLoggedIn ? (
-            <Link href="/dashboard" className="hidden sm:block shrink-0">
+            <Link locale={currentLocale} href="/dashboard" className="hidden sm:block shrink-0">
               <div className="h-10 w-10 cursor-pointer rounded-full bg-gradient-to-br from-[#006EA8] to-[#005685] p-0.5 shadow-[0px_42px_107px_rgba(123,190,255,0.34)] transition-all hover:scale-105 lg:h-[44px] lg:w-[44px]">
                 <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white p-0.5">
                   {user?.avatar ? (
@@ -475,9 +486,9 @@ export function SiteHeader({
               </div>
             </Link>
           ) : (
-            <Link href="/sign-in" className="hidden sm:block shrink-0">
+            <Link locale={currentLocale} href="/sign-in" className="hidden sm:block shrink-0">
               <PrimaryButton className="h-10 min-w-[100px] px-4 text-[14px] font-medium transition-all hover:scale-105 hover:shadow-lg lg:h-[52px] lg:w-[150px] lg:text-[20px]">
-                {t("login")}
+                {safeT("login", "Sign in")}
               </PrimaryButton>
             </Link>
           )}
@@ -527,10 +538,10 @@ export function SiteHeader({
                       </Button>
                     </SheetClose>
 
-                    <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center">
+                    <Link locale={currentLocale} href="/" aria-label={safeT("brand", "Brand")} className="flex shrink-0 items-center">
                       <Image
                         src="/home/hero/hero-logo.svg"
-                        alt={t("brand")}
+                        alt={safeT("brand", "Brand")}
                         width={144}
                         height={46}
                         className="h-11 w-auto"
@@ -544,7 +555,7 @@ export function SiteHeader({
                         items={[
                           { icon: "/dashboard/dashboard.svg", label: t("nav.home"), href: "/" },
                           { icon: "/dashboard/profile.svg", label: t("nav.about"), href: "/about" },
-                          { icon: "/dashboard/education_Info.svg", label: t("nav.services"), href: "/#categories" },
+                          { icon: "/dashboard/education_Info.svg", label: t("nav.services"), href: "/services" },
                           { icon: "/dashboard/jobs.svg", label: t("nav.jobs"), href: "/jobs" },
                           { icon: "/dashboard/tickets.svg", label: t("nav.news"), href: "/news" },
                           { icon: "/dashboard/favourites.svg", label: t("nav.contact"), href: "/contact" },

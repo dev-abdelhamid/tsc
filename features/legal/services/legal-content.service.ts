@@ -80,7 +80,8 @@ function pickLocalizedText(value: unknown, locale: string): string | undefined {
 
 async function fetchJson<T>(path: string, locale: string): Promise<T | null> {
   try {
-    const response = await fetch(`${API_BASE}${path}`, {
+    const fullUrl = `${API_BASE}${path}`
+    const response = await fetch(fullUrl, {
       headers: {
         Accept: "application/json",
         "Accept-Language": locale,
@@ -89,6 +90,8 @@ async function fetchJson<T>(path: string, locale: string): Promise<T | null> {
     })
 
     if (!response.ok) {
+      // eslint-disable-next-line no-console
+      console.debug(`[legal-content] ${path} returned ${response.status}`)
       return null
     }
 
@@ -97,8 +100,16 @@ async function fetchJson<T>(path: string, locale: string): Promise<T | null> {
       return null
     }
 
-    return JSON.parse(text) as T
-  } catch {
+    try {
+      return JSON.parse(text) as T
+    } catch (parseError) {
+      // eslint-disable-next-line no-console
+      console.error(`[legal-content] JSON parse error at ${fullUrl}:`, parseError)
+      return null
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(`[legal-content] fetch error:`, err)
     return null
   }
 }

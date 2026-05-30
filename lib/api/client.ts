@@ -32,13 +32,62 @@ function ensureBrowserSafeRequest(endpoint: string) {
   }
 }
 
+function appendLocaleQuery(endpoint: string, locale?: string) {
+  if (!locale) {
+    return endpoint
+  }
+
+  try {
+    const url = new URL(endpoint, "http://localhost")
+    if (!url.searchParams.has("locale")) {
+      url.searchParams.set("locale", locale)
+    }
+
+    if (endpoint.startsWith("http://") || endpoint.startsWith("https://")) {
+      return url.toString()
+    }
+
+    return `${url.pathname}${url.search}`
+  } catch {
+    return endpoint
+  }
+}
+
 async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   ensureBrowserSafeRequest(endpoint)
-  const { locale, token, ...fetchOptions } = options
+  const { locale: optLocale, token, ...fetchOptions } = options
+
+  // Determine locale automatically when not provided:
+  // - On the server read the `X-NEXT-INTL-LOCALE` / `x-requested-locale` / `accept-language` header
+  // - In the browser infer from the pathname (e.g. /ar/..., /en/...)
+  let locale = optLocale
+  if (!locale) {
+    if (!isBrowser) {
+      try {
+        const mod = await import("next/headers")
+        const h = await mod.headers()
+        const headerLocale = h.get("X-NEXT-INTL-LOCALE") || h.get("x-requested-locale") || h.get("accept-language")
+        if (headerLocale) {
+          locale = headerLocale.split(",")[0]
+        }
+      } catch {
+        // ignore - fallback handled below
+      }
+    } else {
+      try {
+        const m = window.location.pathname.match(/^\/([a-z]{2})(?:\/|$)/)
+        locale = m && m[1] ? m[1] : "ar"
+      } catch {
+        locale = "ar"
+      }
+    }
+  }
 
   const headers: Record<string, string> = {
     Accept: "application/json",
     "Accept-Language": locale || "ar",
+    // Some backends expect a custom locale header — include it for robustness
+    "X-Requested-Locale": locale || "ar",
     ...((fetchOptions.headers as Record<string, string>) || {}),
   }
 
@@ -51,8 +100,26 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
     headers["Content-Type"] = "application/json"
   }
 
+  const endpointWithLocale =
+    fetchOptions.method === "GET" ? appendLocaleQuery(endpoint, locale) : endpoint
+  const requestUrl =
+    endpointWithLocale.startsWith("http://") || endpointWithLocale.startsWith("https://")
+      ? endpointWithLocale
+      : `${BASE_URL}${endpointWithLocale}`
   const cacheOption = (fetchOptions as unknown as { cache?: RequestCache }).cache ?? "no-store"
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
+
+  // Debug: log key request info on the server to diagnose locale propagation
+  if (!isBrowser) {
+    try {
+      // Avoid logging sensitive tokens; only indicate presence
+      const hasAuth = !!headers["Authorization"]
+      // eslint-disable-next-line no-console
+      console.debug(`[api] ${fetchOptions.method ?? "GET"} ${requestUrl} Accept-Language=${headers["Accept-Language"]} X-Requested-Locale=${headers["X-Requested-Locale"]} locale_query=${locale} auth=${hasAuth}`)
+    } catch (e) {
+      // ignore
+    }
+  }
+  const res = await fetch(requestUrl, {
     ...fetchOptions,
     headers,
     cache: cacheOption,

@@ -65,6 +65,7 @@ export async function AdminJobDetailView({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-3">
           <Link
+            locale={locale}
             href="/dashboard/admin/jobs"
             className="inline-flex items-center gap-2 text-sm font-semibold text-[#006EA8]"
           >
@@ -108,6 +109,7 @@ export async function AdminJobDetailView({
             </div>
             <div className="flex flex-wrap gap-3">
               <Link
+                locale={locale}
                 href={`/dashboard/admin/jobs/${job.id}/applications`}
                 className="rounded-[16px] border border-[#DCEBFF] bg-[#F6FBFF] px-4 py-3 text-right transition hover:border-[#40A0CA]"
               >

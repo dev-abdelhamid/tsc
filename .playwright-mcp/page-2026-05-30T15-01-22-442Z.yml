@@ -1,0 +1,384 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]
+  - main [ref=e8]:
+    - main [ref=e9]:
+      - generic [ref=e11]:
+        - img [ref=e13]
+        - img [ref=e14]
+        - img
+        - img
+        - generic [ref=e15]:
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e19]: بوابتك لحياة جديدة
+          - heading "مسارك المتكامل لبناء مستقبل مهني في ألمانيا" [level=1] [ref=e21]:
+            - text: مسارك المتكامل لبناء مستقبل مهني في
+            - generic [ref=e22]:
+              - text: ألمانيا
+              - img [ref=e23]
+          - paragraph [ref=e25]: نحن لا نجد لك وظيفة فقط، بل نبني مستقبلك. من مطابقة ملفك مع أفضل أصحاب العمل في ألمانيا إلى دعم التأشيرة والسكن، نرافقك خطوة بخطوة.
+          - button "استكشف الفرص" [ref=e27]
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - generic [ref=e33]:
+            - img [ref=e34]
+            - text: التصنيفات
+          - generic [ref=e37]:
+            - heading "جد الدور المثالي" [level=2] [ref=e39]
+            - paragraph [ref=e41]: ...النص العربي هنا
+        - generic [ref=e43]:
+          - generic [ref=e46] [cursor=pointer]:
+            - img [ref=e48]
+            - generic [ref=e50]:
+              - paragraph [ref=e51]: الأعمال والتسويق
+              - paragraph [ref=e52]: 250 شاغر
+          - generic [ref=e55] [cursor=pointer]:
+            - img [ref=e57]
+            - generic [ref=e59]:
+              - paragraph [ref=e60]: التصميم
+              - paragraph [ref=e61]: 250 شاغر
+          - generic [ref=e64] [cursor=pointer]:
+            - img [ref=e66]
+            - generic [ref=e70]:
+              - paragraph [ref=e71]: التطوير
+              - paragraph [ref=e72]: 250 شاغر
+          - generic [ref=e75] [cursor=pointer]:
+            - img [ref=e77]
+            - generic [ref=e80]:
+              - paragraph [ref=e81]: القطاع الطبي
+              - paragraph [ref=e82]: 250 شاغر
+          - generic [ref=e85] [cursor=pointer]:
+            - img [ref=e87]
+            - generic [ref=e89]:
+              - paragraph [ref=e90]: المبيعات
+              - paragraph [ref=e91]: 250 شاغر
+          - generic [ref=e94] [cursor=pointer]:
+            - img [ref=e96]
+            - generic [ref=e100]:
+              - paragraph [ref=e101]: الموارد البشرية
+              - paragraph [ref=e102]: 250 شاغر
+          - generic [ref=e105] [cursor=pointer]:
+            - img [ref=e107]
+            - generic [ref=e109]:
+              - paragraph [ref=e110]: المالية
+              - paragraph [ref=e111]: 250 شاغر
+          - generic [ref=e114]:
+            - generic [ref=e115]:
+              - paragraph [ref=e116]: 13k+
+              - paragraph [ref=e117]: وظائف منشورة بالفعل
+            - button "عرض المزيد" [ref=e118]:
+              - text: عرض المزيد
+              - img
+      - generic [ref=e120]:
+        - generic [ref=e122]:
+          - generic [ref=e124]: عملية سلسة
+          - heading "رحلتك إلى ألمانيا بشكل أبسط" [level=2] [ref=e125]
+          - paragraph [ref=e126]: من أول طلب حتى وصولك النهائي، نتولى التعقيدات لتتفرغ لمستقبلك المهني الجديد.
+        - generic [ref=e129]:
+          - generic:
+            - img
+          - generic:
+            - img
+          - generic [ref=e130]:
+            - img "إنشاء حساب" [ref=e132]
+            - heading "إنشاء حساب" [level=3] [ref=e133]
+            - paragraph [ref=e134]: يمكنك فتح حساب بسهولة وبدء رحلتك مباشرة.
+          - generic [ref=e135]:
+            - img "أكمل ملفك الشخصي" [ref=e137]
+            - heading "أكمل ملفك الشخصي" [level=3] [ref=e138]
+            - paragraph [ref=e139]: أضف بياناتك كاملة لجذب أصحاب العمل المناسبين.
+          - generic [ref=e140]:
+            - img "قدّم على الوظيفة أو وظّف" [ref=e142]
+            - heading "قدّم على الوظيفة أو وظّف" [level=3] [ref=e143]
+            - paragraph [ref=e144]: قدّم على فرصك المفضلة مع جميع المتطلبات في مكان واحد.
+      - generic [ref=e146]:
+        - generic [ref=e147]:
+          - paragraph [ref=e149]:
+            - img [ref=e150]
+            - text: فرص مميزة
+          - heading "خطوتك المهنية التالية في انتظارك" [level=2] [ref=e155]
+          - paragraph [ref=e157]: استكشف أحدث الفرص في جميع القطاعات وجد المطابقة المثالية.
+        - generic [ref=e158]:
+          - button "كل التصنيفات" [ref=e160]
+          - button "التمريض والرعاية الصحية" [ref=e162]
+          - button "الأعمال والتسويق" [ref=e164]
+          - button "التطوير والبرمجة" [ref=e166]
+          - button "تكنولوجيا" [ref=e168]
+          - button "تكنولوجيا" [ref=e170]
+        - generic [ref=e172]:
+          - generic [ref=e175] [cursor=pointer]:
+            - generic [ref=e176]: IT
+            - generic [ref=e177]:
+              - heading "Corporis inventore u" [level=3] [ref=e178]
+              - paragraph [ref=e179]: Full-time
+            - paragraph [ref=e180]: $1000 – $2000/شهرياً
+            - paragraph [ref=e184]: شركه المحور
+            - link "المزيد من التفاصيل" [ref=e185]:
+              - /url: /ar/jobs/19
+              - text: المزيد من التفاصيل
+              - img
+          - generic [ref=e188] [cursor=pointer]:
+            - generic [ref=e189]: Nursing & Healthcare
+            - generic [ref=e190]:
+              - heading "Totam nobis exercita" [level=3] [ref=e191]
+              - paragraph [ref=e192]: Full-time
+            - paragraph [ref=e193]: $3000 – $5000/شهرياً
+            - paragraph [ref=e197]: شركه المحور
+            - link "المزيد من التفاصيل" [ref=e198]:
+              - /url: /ar/jobs/17
+              - text: المزيد من التفاصيل
+              - img
+          - generic [ref=e201] [cursor=pointer]:
+            - generic [ref=e202]: Development
+            - generic [ref=e203]:
+              - heading "In deserunt rerum qu" [level=3] [ref=e204]
+              - paragraph [ref=e205]: Full-time
+            - paragraph [ref=e206]: $10000 – $12000/شهرياً
+            - paragraph [ref=e210]: شركه المحور
+            - link "المزيد من التفاصيل" [ref=e211]:
+              - /url: /ar/jobs/16
+              - text: المزيد من التفاصيل
+              - img
+          - generic [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]: Business & Marketing
+            - generic [ref=e216]:
+              - heading "Illum quia amet ma" [level=3] [ref=e217]
+              - paragraph [ref=e218]: Full-time
+            - paragraph [ref=e219]: $8000 – $10000/شهرياً
+            - paragraph [ref=e223]: شركه المحور
+            - link "المزيد من التفاصيل" [ref=e224]:
+              - /url: /ar/jobs/15
+              - text: المزيد من التفاصيل
+              - img
+          - generic [ref=e227] [cursor=pointer]:
+            - generic [ref=e228]: Nursing & Healthcare
+            - generic [ref=e229]:
+              - heading "مطور لارافل محترف" [level=3] [ref=e230]
+              - paragraph [ref=e231]: Full-time
+            - paragraph [ref=e232]: $5000 – $8000/شهرياً
+            - paragraph [ref=e236]: adham
+            - link "المزيد من التفاصيل" [ref=e237]:
+              - /url: /ar/jobs/9
+              - text: المزيد من التفاصيل
+              - img
+          - generic [ref=e240] [cursor=pointer]:
+            - generic [ref=e241]: Nursing & Healthcare
+            - generic [ref=e242]:
+              - heading "مطور لارافل محترف" [level=3] [ref=e243]
+              - paragraph [ref=e244]: Full-time
+            - paragraph [ref=e245]: $5000 – $8000/شهرياً
+            - paragraph [ref=e249]: adham
+            - link "المزيد من التفاصيل" [ref=e250]:
+              - /url: /ar/jobs/8
+              - text: المزيد من التفاصيل
+              - img
+        - link "عرض كل الوظائف" [ref=e253] [cursor=pointer]:
+          - /url: /ar/jobs
+      - region [ref=e257]:
+        - generic [ref=e258]:
+          - generic [ref=e259]:
+            - paragraph [ref=e261]:
+              - img [ref=e262]
+              - text: أثر حقيقي
+            - generic [ref=e265]:
+              - heading "قصص نجاح من مجتمعنا" [level=2] [ref=e267]
+              - paragraph [ref=e269]: اكتشف كيف مكّنا كلاً من المواهب وأصحاب العمل من الازدهار.
+          - generic [ref=e271]:
+            - button "التالي" [ref=e272] [cursor=pointer]:
+              - img [ref=e273]
+            - button "السابق" [ref=e275] [cursor=pointer]:
+              - img [ref=e276]
+        - generic [ref=e280]:
+          - group [ref=e281]:
+            - article [ref=e282]:
+              - generic [ref=e283]:
+                - img "مودي" [ref=e284]
+                - generic:
+                  - generic:
+                    - generic:
+                      - paragraph: “Elit perspiciatis Elit perspiciatis Elit perspiciatis Elit perspiciatis Elit perspiciatis Recusandae Doloribu”
+                      - generic:
+                        - generic:
+                          - generic: Elit
+                          - generic: Ut consequat Dolor
+                        - paragraph: مودي
+          - group [ref=e285]:
+            - article [ref=e286]:
+              - generic [ref=e287]:
+                - img "Recusandae Ducimus" [ref=e288]
+                - generic:
+                  - generic:
+                    - generic:
+                      - paragraph: “Molestias in tempora”
+                      - generic:
+                        - generic:
+                          - generic: Sed amet occaecat r
+                          - generic: Iure officia quod re
+                        - paragraph: Recusandae Ducimus
+          - group [ref=e289]:
+            - article [ref=e290]:
+              - generic [ref=e291]:
+                - img "Harum voluptatibus l" [ref=e292]
+                - generic:
+                  - generic:
+                    - generic:
+                      - paragraph: “Modi et debitis sed”
+                      - generic:
+                        - generic:
+                          - generic: Mollitia labore eum
+                          - generic: Quod facilis excepte
+                        - paragraph: Harum voluptatibus l
+          - group [ref=e293]:
+            - article [ref=e294]:
+              - generic [ref=e295]:
+                - img "Duis nihil soluta cu" [ref=e296]
+                - generic:
+                  - generic:
+                    - generic:
+                      - paragraph: “Id voluptatibus ex d”
+                      - generic:
+                        - generic:
+                          - generic: Tempore eiusmod arc
+                          - generic: Amet dignissimos do
+                        - paragraph: Duis nihil soluta cu
+          - group [ref=e297]:
+            - article [ref=e298]:
+              - generic [ref=e299]:
+                - img "Fugit harum volupta" [ref=e300]
+                - generic:
+                  - generic:
+                    - generic:
+                      - paragraph: “Eum excepturi quas f”
+                      - generic:
+                        - generic:
+                          - generic: Fugiat veniam eius
+                          - generic: Cumque molestiae rem
+                        - paragraph: Fugit harum volupta
+          - group [ref=e301]:
+            - article [ref=e302]:
+              - generic [ref=e303]:
+                - img "جين دو" [ref=e304]
+                - generic:
+                  - generic:
+                    - generic:
+                      - paragraph: “هذه تجربة رائعة.”
+                      - generic:
+                        - generic:
+                          - generic: مهندسة برمجيات
+                          - generic: برلين
+                        - paragraph: جين دو
+      - generic [ref=e306]:
+        - generic [ref=e307]:
+          - generic [ref=e309]:
+            - img [ref=e310]
+            - text: ابقَ على اطلاع
+          - heading "أحدث الأخبار والرؤى" [level=2] [ref=e315]
+          - paragraph [ref=e317]: ابق على اطلاع بأحدث الاتجاهات في سوق العمل الألماني.
+        - generic [ref=e318]:
+          - article [ref=e320]:
+            - img "Doloribus quia bland" [ref=e322]
+            - generic [ref=e323]:
+              - heading "Doloribus quia bland" [level=3] [ref=e324]
+              - paragraph [ref=e325]: Voluptates architect
+              - link "اقرأ المزيد" [ref=e326] [cursor=pointer]:
+                - /url: /ar/news/4
+                - img
+                - generic [ref=e327]: اقرأ المزيد
+          - generic [ref=e328]:
+            - link [ref=e329] [cursor=pointer]:
+              - /url: /ar/news/5
+              - article [ref=e330]:
+                - img "Ut maxime est impedi" [ref=e331]
+                - generic [ref=e332]:
+                  - generic [ref=e333]:
+                    - heading "Ut maxime est impedi" [level=3] [ref=e334]
+                    - paragraph [ref=e335]: Voluptatibus elit r
+                  - paragraph [ref=e336]:
+                    - img [ref=e337]
+                    - text: ٢٣ مايو ٢٠٢٦
+            - link [ref=e344] [cursor=pointer]:
+              - /url: /ar/news/6
+              - article [ref=e345]:
+                - img "Ab facere nihil et p" [ref=e346]
+                - generic [ref=e347]:
+                  - generic [ref=e348]:
+                    - heading "Ab facere nihil et p" [level=3] [ref=e349]
+                    - paragraph [ref=e350]: Dolore sequi sunt ma
+                  - paragraph [ref=e351]:
+                    - img [ref=e352]
+                    - text: ٢٤ مايو ٢٠٢٦
+            - link [ref=e359] [cursor=pointer]:
+              - /url: /ar/news/7
+              - article [ref=e360]:
+                - img "Blanditiis minus nul" [ref=e361]
+                - generic [ref=e362]:
+                  - generic [ref=e363]:
+                    - heading "Blanditiis minus nul" [level=3] [ref=e364]
+                    - paragraph [ref=e365]: Ea ea culpa quos do
+                  - paragraph [ref=e366]:
+                    - img [ref=e367]
+                    - text: ٢٤ مايو ٢٠٢٦
+        - link "عرض كل الأخبار" [ref=e376] [cursor=pointer]:
+          - /url: /ar/news
+      - generic [ref=e380]:
+        - generic [ref=e381]:
+          - img [ref=e382]
+          - generic [ref=e383]: دائمًا بجانبك
+        - generic [ref=e384]:
+          - heading "جد الدور المثالي" [level=2] [ref=e385]
+          - paragraph [ref=e386]: ...النص العربي هنا
+        - generic [ref=e387]:
+          - link "تواصل معنا" [ref=e388] [cursor=pointer]:
+            - /url: /ar/contact
+            - generic [ref=e389]: تواصل معنا
+            - img [ref=e390]
+          - link "الأسئلة الشائعة" [ref=e391] [cursor=pointer]:
+            - /url: /ar/faqs
+            - generic [ref=e392]: الأسئلة الشائعة
+            - img [ref=e393]
+  - contentinfo [ref=e394]:
+    - generic [ref=e400]:
+      - generic [ref=e401]:
+        - generic [ref=e402]:
+          - link "تالنت سيكر" [ref=e403] [cursor=pointer]:
+            - /url: /ar
+            - img "تالنت سيكر" [ref=e404]
+          - paragraph [ref=e405]: نص تجريبي للتصميم. نحن هنا لدعمك في كل خطوة من رحلتك المهنية نحو سوق العمل في ألمانيا.
+          - generic [ref=e406]:
+            - link "Instagram" [ref=e407] [cursor=pointer]:
+              - /url: "#"
+            - link "Telegram" [ref=e408] [cursor=pointer]:
+              - /url: "#"
+            - link "YouTube" [ref=e409] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=e410]:
+          - heading "روابط سريعة" [level=3] [ref=e411]
+          - navigation [ref=e412]:
+            - link "من نحن" [ref=e413] [cursor=pointer]:
+              - /url: /ar/about
+            - link "الوظائف" [ref=e414] [cursor=pointer]:
+              - /url: /ar/jobs
+            - link "الخدمات" [ref=e415] [cursor=pointer]:
+              - /url: /ar/services
+            - link "تواصل معنا" [ref=e416] [cursor=pointer]:
+              - /url: /ar/contact
+        - generic [ref=e417]:
+          - heading "تواصل معنا" [level=3] [ref=e418]
+          - generic [ref=e419]:
+            - generic [ref=e421]: +49 (0) 15156350852
+            - generic [ref=e423]: info@talent-sc.com
+            - generic [ref=e425]: Stein Str. 81-83, 35390 Gießen
+      - generic [ref=e426]:
+        - generic [ref=e427]:
+          - generic [ref=e428]: "2026"
+          - generic [ref=e429]: Jobs-Tsc
+          - generic [ref=e430]: . All rights Reserved
+        - generic [ref=e431]:
+          - link "شروط الخدمة" [ref=e432] [cursor=pointer]:
+            - /url: /ar/terms
+          - link "الأسئلة الشائعة" [ref=e434] [cursor=pointer]:
+            - /url: /ar/faqs
+          - link "سياسة الخصوصية" [ref=e436] [cursor=pointer]:
+            - /url: /ar/privacy
+  - button "Open Next.js Dev Tools" [ref=e442] [cursor=pointer]:
+    - img [ref=e443]

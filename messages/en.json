@@ -532,32 +532,6 @@
       }
     }
   },
-  "LegalPages": {
-    "terms": {
-      "eyebrow": "Terms of Service",
-      "title": "Terms and Conditions",
-      "description": "Read the rules and policies guiding our platform and how we support your use of Talent Seeker.",
-      "privacyAction": "View Privacy Policy",
-      "contactAction": "Contact Support"
-    },
-    "privacy": {
-      "eyebrow": "Privacy Policy",
-      "title": "How We Use Your Data",
-      "description": "Understand how we collect, store, and use your information to improve your career and hiring experience.",
-      "termsAction": "View Terms of Service",
-      "contactAction": "Contact Support"
-    }
-  },
-  "Pages": {
-    "legal": {
-      "faq": {
-        "eyebrow": "Frequently Asked Questions",
-        "title": "Legal and Support FAQs",
-        "description": "Find answers to the most common questions about our services, legal terms, and next steps.",
-        "contactAction": "Contact Support"
-      }
-    }
-  },
   "CompanyJobs": {
     "title": "Create Job",
     "listTitle": "My Jobs",
@@ -675,6 +649,48 @@
       "imageCompress": "Could not process this image. Try another file."
     },
     "removeImage": "Remove"
+  },
+  "LegalPages": {
+    "privacy": {
+      "eyebrow": "Privacy",
+      "title": "Privacy Policy",
+      "description": "We collect the information needed to provide onboarding, matching, and account support.",
+      "termsAction": "Terms of Service",
+      "contactAction": "Contact Us"
+    },
+    "terms": {
+      "eyebrow": "Terms",
+      "title": "Terms of Service",
+      "description": "Use of the platform is subject to these terms.",
+      "privacyAction": "Privacy Policy",
+      "contactAction": "Contact Us"
+    }
+  },
+  "Pages": {
+    "legal": {
+      "faq": {
+        "faq": {
+          "eyebrow": "Help",
+          "title": "Frequently Asked Questions",
+          "description": "Common questions about using the platform.",
+          "contactAction": "Contact Us"
+        },
+        "items": {
+          "one": {
+            "q": "How do I apply?",
+            "a": "You can apply via the job details page."
+          },
+          "two": {
+            "q": "Do you support relocation?",
+            "a": "Yes, we provide relocation support."
+          }
+        }
+      }
+    }
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "description": "Platform overview and management tools"
   },
   "Admin": {
     "dashboard": {
@@ -879,6 +895,9 @@
         "sectionFooterDescription": "Support section description",
         "stepTitle": "Step title",
         "stepIcon": "Icon path",
+        "uploadIcon": "Upload icon file",
+        "removeImage": "Remove",
+        "preview": "Preview",
         "stepDescription": "Step description"
       },
       "sectionLabels": {

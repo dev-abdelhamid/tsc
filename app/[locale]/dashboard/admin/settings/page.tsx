@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { getTranslations } from "next-intl/server"
+import { getTranslations, setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { getAdminSettings } from "@/lib/api/services/settings.service"
 import { AdminSettingsPanel } from "@/features/admin/components/admin-settings-panel"
@@ -11,6 +11,7 @@ export default async function AdminSettingsPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  setRequestLocale(locale)
   const session = await getSession()
   const t = await getTranslations("Admin.settings")
 

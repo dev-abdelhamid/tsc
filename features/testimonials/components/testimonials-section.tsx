@@ -1,4 +1,4 @@
-import { getLocale, getTranslations } from "next-intl/server"
+import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import type { SuccessStory } from "@/lib/api/types"
 import { getSuccessStories } from "@/lib/api/services/success-stories.service"
 import { TestimonialsCarousel } from "@/features/testimonials/components/testimonials-carousel"
@@ -26,6 +26,7 @@ function buildFallbackStories(
 
 export async function TestimonialsSection({ override }: TestimonialsSectionProps) {
   const locale = await getLocale()
+  setRequestLocale(locale)
   const t = await getTranslations("Landing.testimonials")
   const isRtl = locale === "ar"
 

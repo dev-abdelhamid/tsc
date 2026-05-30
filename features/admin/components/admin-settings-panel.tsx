@@ -13,6 +13,10 @@ function settingDisplayValue(value: SiteSetting["value"]): string {
   return String(value ?? "")
 }
 
+function isHeroStatsSetting(key: string): boolean {
+  return key === "hero_stats"
+}
+
 export function AdminSettingsPanel({
   settings,
   locale,
@@ -21,23 +25,42 @@ export function AdminSettingsPanel({
   locale: string
 }) {
   const t = useTranslations("Admin.settings")
+  const safeT = (key: string, fallback = key) => {
+    try {
+      return t(key)
+    } catch {
+      return fallback
+    }
+  }
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [editingKey, setEditingKey] = useState<string | null>(null)
   const [settingValue, setSettingValue] = useState("")
+  const [heroStatsEdit, setHeroStatsEdit] = useState<{
+    total: string
+    unit: string
+  } | null>(null)
 
   function saveSetting(key: string) {
     const fd = new FormData()
-    fd.append("value", settingValue)
+    
+    // Special handling for hero_stats
+    if (isHeroStatsSetting(key) && heroStatsEdit) {
+      fd.append("value", JSON.stringify(heroStatsEdit))
+    } else {
+      fd.append("value", settingValue)
+    }
+    
     fd.append("type", "json")
     fd.append("is_public", "1")
     startTransition(async () => {
       const result = await saveSettingAction(key, fd, locale)
       if (!result.ok) {
-        setError(result.message ?? t("error"))
+        setError(result.message ?? safeT("error", "Error"))
       } else {
         setEditingKey(null)
+        setHeroStatsEdit(null)
         router.refresh()
       }
     })
@@ -53,7 +76,7 @@ export function AdminSettingsPanel({
 
       <div className="space-y-4">
         {settings.length === 0 ? (
-          <p className="text-sm text-[#6B7280]">{t("settingsEmpty")}</p>
+          <p className="text-sm text-[#6B7280]">{safeT("settingsEmpty", "No settings")}</p>
         ) : (
           settings.map((s) => (
             <div
@@ -68,18 +91,77 @@ export function AdminSettingsPanel({
                 <button
                   type="button"
                   onClick={() => {
-                    setEditingKey(s.key)
-                    setSettingValue(settingDisplayValue(s.value))
+                    if (isHeroStatsSetting(s.key)) {
+                      const value = s.value as Record<string, unknown> || {}
+                      setHeroStatsEdit({
+                        total: String(value.total ?? "13k+"),
+                        unit: String(value.unit ?? ""),
+                      })
+                    } else {
+                      setEditingKey(s.key)
+                      setSettingValue(settingDisplayValue(s.value))
+                    }
                   }}
                   className="text-xs font-semibold text-[#006EA8] hover:underline"
                 >
-                  {t("edit")}
+                  {safeT("edit", "Edit")}
                 </button>
               </div>
-              {editingKey === s.key ? (
+              {isHeroStatsSetting(s.key) && heroStatsEdit ? (
+                <div className="mt-3 space-y-3 border-t pt-3">
+                  <div>
+                    <label className="block text-xs font-medium text-[#374151]">Total</label>
+                    <input
+                      type="text"
+                      value={heroStatsEdit?.total ?? ""}
+                      onChange={(e) =>
+                        setHeroStatsEdit((prev) => ({
+                          ...(prev ?? { total: "", unit: "" }),
+                          total: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g., 13k+, 50000"
+                      className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#374151]">Unit</label>
+                    <input
+                      type="text"
+                      value={heroStatsEdit?.unit ?? ""}
+                      onChange={(e) =>
+                        setHeroStatsEdit((prev) => ({
+                          ...(prev ?? { total: "", unit: "" }),
+                          unit: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g., positions"
+                      className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <PrimaryButton
+                      type="button"
+                      disabled={pending}
+                      onClick={() => saveSetting(s.key)}
+                      className="h-8 rounded-lg px-3 text-xs font-semibold"
+                    >
+                      {pending ? safeT("saving", "Saving...") : safeT("save", "Save")}
+                    </PrimaryButton>
+                    <button
+                      type="button"
+                      onClick={() => setHeroStatsEdit(null)}
+                      className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                </div>
+              ) : editingKey === s.key ? (
                 <div className="mt-3 space-y-2">
                   <textarea
                     rows={6}
+                    placeholder="JSON or string value"
                     className="w-full rounded-lg border border-[#E5E7EB] px-3 py-2 font-mono text-xs focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
                     value={settingValue}
                     onChange={(e) => setSettingValue(e.target.value)}
@@ -91,7 +173,7 @@ export function AdminSettingsPanel({
                       onClick={() => saveSetting(s.key)}
                       className="h-8 rounded-lg px-3 text-xs font-semibold"
                     >
-                      {pending ? t("saving") : t("save")}
+                      {pending ? safeT("saving", "Saving...") : safeT("save", "Save")}
                     </PrimaryButton>
                     <button
                       type="button"

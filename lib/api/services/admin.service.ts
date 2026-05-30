@@ -165,13 +165,71 @@ export async function getAdminStats(
   total_jobs: number
   pending_jobs: number
 }> {
-  const response = await api.get<
-    ApiResponse<{
-      total_users: number
-      total_companies: number
-      total_jobs: number
-      pending_jobs: number
-    }>
-  >("/admin/stats", { token, locale })
-  return response.data
+  // Try the dedicated admin endpoint first. If it does not exist on the backend
+  // (common in early integrations), fall back to deriving values from public
+  // endpoints such as /users and /jobs.
+  try {
+    const response = await api.get<
+      ApiResponse<{
+        total_users: number
+        total_companies: number
+        total_jobs: number
+        pending_jobs: number
+      }>
+    >("/admin/stats", { token, locale })
+    return response.data
+  } catch (err) {
+    console.warn("/admin/stats not available, falling back to derived stats", err)
+
+    function parseTotalFromResponse(resp: unknown): number {
+      if (!resp) return 0
+      if (Array.isArray(resp)) return resp.length
+      try {
+        const asObj = resp as Record<string, unknown>
+        if (asObj.meta && typeof (asObj.meta as any).total === "number") return (asObj.meta as any).total
+        if (asObj.data && Array.isArray(asObj.data)) return (asObj.data as any).length
+        if (typeof asObj.total === "number") return asObj.total as number
+      } catch {
+        // ignore
+      }
+      return 0
+    }
+
+    try {
+      const [usersResp, jobsResp] = await Promise.all([
+        api.get<unknown>("/users?page=1&per_page=1", { token, locale }),
+        api.get<unknown>("/jobs?page=1&per_page=1", { token, locale }),
+      ])
+
+      const totalUsers = parseTotalFromResponse(usersResp)
+      const totalJobs = parseTotalFromResponse(jobsResp)
+
+      let pendingJobs = 0
+      try {
+        const pendingResp = await api.get<unknown>("/jobs?status=pending&page=1&per_page=1", { token, locale })
+        pendingJobs = parseTotalFromResponse(pendingResp)
+      } catch {
+        pendingJobs = 0
+      }
+
+      let totalCompanies = 0
+      try {
+        // Some backends expose companies as users with role=company
+        const companiesResp = await api.get<unknown>("/users?role=company&page=1&per_page=1", { token, locale })
+        totalCompanies = parseTotalFromResponse(companiesResp)
+      } catch {
+        totalCompanies = 0
+      }
+
+      return {
+        total_users: Number(totalUsers || 0),
+        total_companies: Number(totalCompanies || 0),
+        total_jobs: Number(totalJobs || 0),
+        pending_jobs: Number(pendingJobs || 0),
+      }
+    } catch (err2) {
+      console.error("[Admin Service] getAdminStats fallback error:", err2)
+      return { total_users: 0, total_companies: 0, total_jobs: 0, pending_jobs: 0 }
+    }
+  }
 }

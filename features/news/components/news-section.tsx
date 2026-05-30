@@ -1,6 +1,6 @@
 import Image from "next/image"
 import { Link } from "@/i18n/navigation"
-import { getLocale, getTranslations } from "next-intl/server"
+import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home"
 import { getNewsForLocale } from "@/features/news/lib/news-fallback"
 import { formatNewsDate } from "@/features/news/lib/format-news-date"
@@ -18,6 +18,7 @@ type NewsSectionProps = {
 
 export async function NewsSection({ override }: NewsSectionProps) {
   const locale = await getLocale()
+  setRequestLocale(locale)
   const t = await getTranslations("Landing.news")
   const items = await getNewsForLocale(locale, t, { per_page: 4 })
 
@@ -85,6 +86,7 @@ export async function NewsSection({ override }: NewsSectionProps) {
             return (
               <Link
                 key={item.id}
+                locale={locale}
                 href={`/news/${item.slug}`}
                 className="group block overflow-visible rounded-2xl transition-opacity hover:opacity-95"
               >
@@ -121,6 +123,7 @@ export async function NewsSection({ override }: NewsSectionProps) {
       <StaggerInView className="mt-8 flex justify-center lg:justify-start">
         <StaggerItem>
           <Link
+            locale={locale}
             href="/news"
             className={cn(
               "inline-flex items-center gap-2 text-[16px] font-medium text-[#006EA8] underline-offset-4 hover:underline"

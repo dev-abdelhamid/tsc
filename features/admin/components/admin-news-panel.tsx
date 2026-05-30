@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "@/i18n/navigation"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import type { News } from "@/lib/api/types"
 import { deleteNewsAction, saveNewsAction } from "@/features/admin/actions/admin-actions"
 import { AdminTableCell, AdminTableRow, AdminTableShell } from "./admin-table-shell"
@@ -12,14 +12,9 @@ import Image from "next/image"
 const LOCALES = ["ar", "en", "de"] as const
 type LocaleKey = (typeof LOCALES)[number]
 
-export function AdminNewsPanel({
-  news,
-  locale,
-}: {
-  news: News[]
-  locale: string
-}) {
-  const t = useTranslations("Admin.settings") // reuse translation prefix or custom
+export function AdminNewsPanel({ news }: { news: News[] }) {
+  const t = useTranslations("Admin.settings")
+  const locale = useLocale()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -63,7 +58,7 @@ export function AdminNewsPanel({
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-[#111827]">
-          {locale === "ar" ? "إدارة الأخبار والمقالات" : "Manage News & Articles"}
+          {t("addNews")}
         </h2>
         <PrimaryButton
           type="button"
@@ -74,13 +69,7 @@ export function AdminNewsPanel({
           }}
           className="h-10 rounded-lg px-4 text-sm font-semibold"
         >
-          {showNewsForm
-            ? locale === "ar"
-              ? "إلغاء"
-              : "Cancel"
-            : locale === "ar"
-              ? "+ إضافة خبر جديد"
-              : "+ Add New Article"}
+          {showNewsForm ? (locale === "ar" ? "إلغاء" : "Cancel") : t("addNews")}
         </PrimaryButton>
       </div>
 
@@ -106,7 +95,7 @@ export function AdminNewsPanel({
               <div key={loc} className="space-y-3 rounded-lg border border-[#E5E7EB] bg-white p-4">
                 <p className="text-xs font-bold uppercase tracking-wider text-[#006EA8]">{loc}</p>
                 <label className="block text-sm text-[#374151]">
-                  <span className="font-medium">العنوان ({loc})</span>
+                  <span className="font-medium">{t("newsTitle")} ({loc})</span>
                   <input
                     placeholder={t("newsTitle")}
                     className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none"
@@ -116,7 +105,7 @@ export function AdminNewsPanel({
                   />
                 </label>
                 <label className="block text-sm text-[#374151]">
-                  <span className="font-medium">المحتوى / الوصف ({loc})</span>
+                  <span className="font-medium">{t("newsDesc")} ({loc})</span>
                   <textarea
                     placeholder={t("newsDesc")}
                     rows={4}
@@ -150,7 +139,7 @@ export function AdminNewsPanel({
 
       <AdminTableShell
         columns={[
-          { key: "image", label: locale === "ar" ? "الصورة" : "Image", className: "w-[15%]" },
+          { key: "image", label: t("newsImage"), className: "w-[15%]" },
           { key: "title", label: t("newsColTitle"), className: "w-[50%]" },
           { key: "date", label: t("newsColDate"), className: "w-[20%]" },
           { key: "actions", label: t("newsColActions"), className: "w-[15%]" },

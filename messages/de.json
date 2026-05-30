@@ -532,32 +532,6 @@
       }
     }
   },
-  "LegalPages": {
-    "terms": {
-      "eyebrow": "Nutzungsbedingungen",
-      "title": "Bedingungen und Konditionen",
-      "description": "Lesen Sie die Regeln und Richtlinien, die unsere Plattform leiten und wie wir Ihre Nutzung von Talent Seeker unterstützen.",
-      "privacyAction": "Datenschutzerklärung anzeigen",
-      "contactAction": "Support kontaktieren"
-    },
-    "privacy": {
-      "eyebrow": "Datenschutzerklärung",
-      "title": "Wie wir Ihre Daten verwenden",
-      "description": "Verstehen Sie, wie wir Ihre Informationen sammeln, speichern und nutzen, um Ihre Karriere- und Einstellungserfahrung zu verbessern.",
-      "termsAction": "Nutzungsbedingungen anzeigen",
-      "contactAction": "Support kontaktieren"
-    }
-  },
-  "Pages": {
-    "legal": {
-      "faq": {
-        "eyebrow": "Häufig gestellte Fragen",
-        "title": "Rechtliche FAQ und Support",
-        "description": "Finden Sie Antworten auf die häufigsten Fragen zu unseren Diensten, rechtlichen Bedingungen und den nächsten Schritten.",
-        "contactAction": "Support kontaktieren"
-      }
-    }
-  },
   "CompanyJobs": {
     "title": "Stelle erstellen",
     "listTitle": "Meine Stellen",
@@ -675,6 +649,48 @@
       "imageCompress": "Bild konnte nicht verarbeitet werden. Bitte andere Datei wählen."
     },
     "removeImage": "Entfernen"
+  },
+  "LegalPages": {
+    "privacy": {
+      "eyebrow": "Datenschutz",
+      "title": "Datenschutzerklärung",
+      "description": "Wir erfassen die Informationen, die zur Bereitstellung von Onboarding, Matching und Kontounterstützung erforderlich sind.",
+      "termsAction": "Nutzungsbedingungen",
+      "contactAction": "Kontaktieren Sie uns"
+    },
+    "terms": {
+      "eyebrow": "Bedingungen",
+      "title": "Nutzungsbedingungen",
+      "description": "Die Nutzung der Plattform unterliegt diesen Bedingungen.",
+      "privacyAction": "Datenschutzerklärung",
+      "contactAction": "Kontaktieren Sie uns"
+    }
+  },
+  "Pages": {
+    "legal": {
+      "faq": {
+        "faq": {
+          "eyebrow": "Hilfe",
+          "title": "Häufig gestellte Fragen",
+          "description": "Häufige Fragen zur Nutzung der Plattform.",
+          "contactAction": "Kontaktieren Sie uns"
+        },
+        "items": {
+          "one": {
+            "q": "Wie bewerbe ich mich?",
+            "a": "Sie können sich über die Seite mit den Jobdetails bewerben."
+          },
+          "two": {
+            "q": "Unterstützen Sie Umzüge?",
+            "a": "Ja, wir bieten Unterstützung beim Umzug."
+          }
+        }
+      }
+    }
+  },
+  "admin": {
+    "title": "Admin-Bereich",
+    "description": "Plattform-Übersicht und Verwaltungswerkzeuge"
   },
   "Admin": {
     "dashboard": {
@@ -879,6 +895,9 @@
         "sectionFooterDescription": "Beschreibung des Support-Abschnitts",
         "stepTitle": "Titel des Schritts",
         "stepIcon": "Symbolpfad",
+        "uploadIcon": "Symboldatei hochladen",
+        "removeImage": "Entfernen",
+        "preview": "Vorschau",
         "stepDescription": "Beschreibung des Schritts"
       },
       "sectionLabels": {

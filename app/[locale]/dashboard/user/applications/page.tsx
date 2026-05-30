@@ -1,5 +1,6 @@
 // app/[locale]/dashboard/user/applications/page.tsx
 import { redirect } from "next/navigation"
+import { setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { getMyApplications } from "@/lib/api/services/user.service"
 import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
@@ -30,6 +31,7 @@ export default async function UserApplicationsPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  setRequestLocale(locale)
   const session = await getSession()
   const isAr = locale === "ar"
 
@@ -91,7 +93,7 @@ export default async function UserApplicationsPage({
             iconSrc="/dashboard/jobs.svg"
             title={labels.total}
             value={applications.length}
-            viewAllHref={`/${locale}/dashboard/user/applications`}
+            viewAllHref="/dashboard/user/applications"
             viewAllLabel={labels.viewAll}
             isRTL={isAr}
           />
@@ -99,7 +101,7 @@ export default async function UserApplicationsPage({
             iconSrc="/dashboard/favourites.svg"
             title={labels.pending}
             value={statusCounts.pending}
-            viewAllHref={`/${locale}/dashboard/user/applications`}
+            viewAllHref="/dashboard/user/applications"
             viewAllLabel={labels.viewAll}
             isRTL={isAr}
           />
@@ -107,7 +109,7 @@ export default async function UserApplicationsPage({
             iconSrc="/dashboard/tickets.svg"
             title={labels.accepted}
             value={statusCounts.accepted}
-            viewAllHref={`/${locale}/dashboard/user/applications`}
+            viewAllHref="/dashboard/user/applications"
             viewAllLabel={labels.viewAll}
             isRTL={isAr}
           />
@@ -115,7 +117,7 @@ export default async function UserApplicationsPage({
             iconSrc="/dashboard/jobs.svg"
             title={labels.rejected}
             value={statusCounts.rejected}
-            viewAllHref={`/${locale}/dashboard/user/applications`}
+            viewAllHref="/dashboard/user/applications"
             viewAllLabel={labels.viewAll}
             isRTL={isAr}
           />

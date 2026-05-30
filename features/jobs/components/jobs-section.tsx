@@ -1,4 +1,4 @@
-import { getLocale, getTranslations } from "next-intl/server"
+import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { getCategoriesForForm } from "@/lib/api/services/categories.service"
 import { getJobsForLocale } from "@/features/jobs/lib/jobs-for-locale"
 import { JobsSectionClient } from "@/features/jobs/components/jobs-section-client"
@@ -12,6 +12,7 @@ type JobsSectionProps = {
 
 export async function JobsSection({ override }: JobsSectionProps) {
   const locale = await getLocale()
+  setRequestLocale(locale)
   const t = await getTranslations("Landing.jobs")
 
   const [{ jobs }, categories] = await Promise.all([

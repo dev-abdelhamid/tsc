@@ -6,17 +6,18 @@ import { PrimaryButton } from "@/components/ui/primary-button"
 type NewsReadMoreButtonProps = {
   href: string
   label: string
+  locale?: string
   className?: string
 }
 
-export function NewsReadMoreButton({ href, label, className }: NewsReadMoreButtonProps) {
+export function NewsReadMoreButton({ href, label, locale, className }: NewsReadMoreButtonProps) {
   return (
     <PrimaryButton
       asChild
       className={cn("flex items-center justify-center  h-[52px] w-[220px] ",        className
       )}
     >
-      <Link href={href} className="inline-flex items-center justify-center gap-2">
+      <Link locale={locale} href={href} className="inline-flex items-center justify-center gap-2">
         <NewsExportIcon />
         <span>{label}</span>
       </Link>

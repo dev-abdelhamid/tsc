@@ -1,5 +1,5 @@
 import Image from "next/image"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 
 const ICON_GRADIENT_FILTER =
@@ -14,6 +14,7 @@ type DashboardStatCardProps = {
   unit?: string
   viewAllHref: string
   viewAllLabel?: string
+  locale?: string
   isRTL?: boolean
 }
 
@@ -24,6 +25,7 @@ export function DashboardStatCard({
   unit,
   viewAllHref,
   viewAllLabel = "View All",
+  locale,
   isRTL,
 }: DashboardStatCardProps) {
   return (
@@ -46,17 +48,12 @@ export function DashboardStatCard({
 
       {/* View All */}
       <Link
+        locale={locale}
         href={viewAllHref}
         className="inline-flex items-center gap-2.5 rounded-full py-1.5 group"
       >
         <span
-          className="text-base font-medium leading-[150%]"
-          style={{
-            backgroundImage: GRADIENT_TEXT,
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            color: "transparent",
-          }}
+          className="text-base font-medium leading-[150%] bg-gradient-to-r from-[#006EA8] to-[#005685] bg-clip-text text-transparent"
         >
           {viewAllLabel}
         </span>

@@ -128,7 +128,7 @@ export function JobDetailSidebar({
           asChild
           className="mt-8 h-[44px] w-full rounded-[12px] text-[16px] font-medium"
         >
-          <Link href={applyHref}>{labels.applyForJob}</Link>
+          <Link locale={locale} href={applyHref}>{labels.applyForJob}</Link>
         </PrimaryButton>
       </div>
 

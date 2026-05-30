@@ -1,60 +1,43 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { PrimaryButton } from "@/components/ui/primary-button";
+import { compressImageFile as compressImageLib } from "@/lib/images/compress-image";
 import type { HomePageContent } from "@/lib/api/services/home-page.service";
 import { saveHomeContentAction } from "@/features/admin/actions/admin-actions";
 
 type SectionKey = "categories" | "jobs" | "success_stories" | "news" | "footer";
 type TabKey = "hero" | SectionKey | "process";
 
-const LOCALES = ["ar", "en", "de"] as const;
-
-type LocaleKey = (typeof LOCALES)[number];
-
-type LocalizedString = Record<LocaleKey, string>;
-
 type SectionForm = {
-  title: LocalizedString;
-  description: LocalizedString;
+  title: string;
+  description: string;
 };
 
 type StepForm = {
   id?: number;
-  title: LocalizedString;
-  description: LocalizedString;
+  title: string;
+  description: string;
   icon?: string;
-  order: number;
+  order?: number;
 };
 
 type FormState = {
-  heroTitle: LocalizedString;
-  heroDescription: LocalizedString;
+  heroTitle: string;
+  heroDescription: string;
   sections: Record<SectionKey, SectionForm>;
   steps: StepForm[];
 };
 
 type FallbackCopy = {
-  heroTitle: LocalizedString;
-  heroDescription: LocalizedString;
+  heroTitle: string;
+  heroDescription: string;
   sections: Record<SectionKey, SectionForm>;
   steps: StepForm[];
 };
-
-function emptyLocale(): LocalizedString {
-  return { ar: "", en: "", de: "" };
-}
-
-function emptySection(): SectionForm {
-  return { title: emptyLocale(), description: emptyLocale() };
-}
-
-function emptyStep(): StepForm {
-  return { title: emptyLocale(), description: emptyLocale(), order: 1 };
-}
 
 const SECTION_KEYS: SectionKey[] = [
   "categories",
@@ -69,6 +52,14 @@ const DEFAULT_STEP_ICONS = [
   "/process/info.svg",
   "/process/job.svg",
 ];
+
+function emptySection(): SectionForm {
+  return { title: "", description: "" };
+}
+
+function emptyStep(): StepForm {
+  return { title: "", description: "", order: 1 };
+}
 
 function getSectionOverride(content: HomePageContent | null, key: SectionKey) {
   if (!content) {
@@ -97,48 +88,45 @@ function buildFallbackCopy(
   supportT: ReturnType<typeof useTranslations>,
   processT: ReturnType<typeof useTranslations>,
 ): FallbackCopy {
-  const heroTitle = heroT("title");
-  const heroDescription = heroT("description");
-
   return {
-    heroTitle: { ar: heroTitle, en: heroTitle, de: heroTitle },
-    heroDescription: { ar: heroDescription, en: heroDescription, de: heroDescription },
+    heroTitle: heroT("title"),
+    heroDescription: heroT("description"),
     sections: {
       categories: {
-        title: { ar: categoriesT("title"), en: categoriesT("title"), de: categoriesT("title") },
-        description: { ar: categoriesT("description"), en: categoriesT("description"), de: categoriesT("description") },
+        title: categoriesT("title"),
+        description: categoriesT("description"),
       },
       jobs: {
-        title: { ar: jobsT("title"), en: jobsT("title"), de: jobsT("title") },
-        description: { ar: jobsT("description"), en: jobsT("description"), de: jobsT("description") },
+        title: jobsT("title"),
+        description: jobsT("description"),
       },
       success_stories: {
-        title: { ar: testimonialsT("title"), en: testimonialsT("title"), de: testimonialsT("title") },
-        description: { ar: testimonialsT("description"), en: testimonialsT("description"), de: testimonialsT("description") },
+        title: testimonialsT("title"),
+        description: testimonialsT("description"),
       },
       news: {
-        title: { ar: newsT("title"), en: newsT("title"), de: newsT("title") },
-        description: { ar: newsT("description"), en: newsT("description"), de: newsT("description") },
+        title: newsT("title"),
+        description: newsT("description"),
       },
       footer: {
-        title: { ar: supportT("title"), en: supportT("title"), de: supportT("title") },
-        description: { ar: supportT("description"), en: supportT("description"), de: supportT("description") },
+        title: supportT("title"),
+        description: supportT("description"),
       },
     },
     steps: [
       {
-        title: { ar: processT("steps.createAccount.title"), en: processT("steps.createAccount.title"), de: processT("steps.createAccount.title") },
-        description: { ar: processT("steps.createAccount.description"), en: processT("steps.createAccount.description"), de: processT("steps.createAccount.description") },
+        title: processT("steps.createAccount.title"),
+        description: processT("steps.createAccount.description"),
         order: 1,
       },
       {
-        title: { ar: processT("steps.completeProfile.title"), en: processT("steps.completeProfile.title"), de: processT("steps.completeProfile.title") },
-        description: { ar: processT("steps.completeProfile.description"), en: processT("steps.completeProfile.description"), de: processT("steps.completeProfile.description") },
+        title: processT("steps.completeProfile.title"),
+        description: processT("steps.completeProfile.description"),
         order: 2,
       },
       {
-        title: { ar: processT("steps.apply.title"), en: processT("steps.apply.title"), de: processT("steps.apply.title") },
-        description: { ar: processT("steps.apply.description"), en: processT("steps.apply.description"), de: processT("steps.apply.description") },
+        title: processT("steps.apply.title"),
+        description: processT("steps.apply.description"),
         order: 3,
       },
     ],
@@ -153,16 +141,14 @@ function mapContentToForm(
     (acc, key) => {
       const override = getSectionOverride(content, key);
       acc[key] = {
-        title: {
-          ar: resolveSectionValue(override?.title, fallback.sections[key].title.ar),
-          en: resolveSectionValue(override?.title, fallback.sections[key].title.en),
-          de: resolveSectionValue(override?.title, fallback.sections[key].title.de),
-        },
-        description: {
-          ar: resolveSectionValue(override?.description, fallback.sections[key].description.ar),
-          en: resolveSectionValue(override?.description, fallback.sections[key].description.en),
-          de: resolveSectionValue(override?.description, fallback.sections[key].description.de),
-        },
+        title: resolveSectionValue(
+          override?.title,
+          fallback.sections[key].title,
+        ),
+        description: resolveSectionValue(
+          override?.description,
+          fallback.sections[key].description,
+        ),
       };
       return acc;
     },
@@ -179,67 +165,21 @@ function mapContentToForm(
     content?.processSteps?.length ? content.processSteps : fallback.steps
   )
     .slice(0, MAX_STEPS)
-    .map((step, index) => {
-      const titleSource = typeof step.title === "string" ? step.title : step.title;
-      const descriptionSource =
-        typeof step.description === "string" ? step.description : step.description;
-
-      return {
-        ...step,
-        title: {
-          ar: resolveSectionValue(
-            typeof titleSource === "string" ? titleSource : titleSource.ar,
-            fallback.steps[index].title.ar,
-          ),
-          en: resolveSectionValue(
-            typeof titleSource === "string" ? titleSource : titleSource.en,
-            fallback.steps[index].title.en,
-          ),
-          de: resolveSectionValue(
-            typeof titleSource === "string" ? titleSource : titleSource.de,
-            fallback.steps[index].title.de,
-          ),
-        },
-        description: {
-          ar: resolveSectionValue(
-            typeof descriptionSource === "string"
-              ? descriptionSource
-              : descriptionSource.ar,
-            fallback.steps[index].description.ar,
-          ),
-          en: resolveSectionValue(
-            typeof descriptionSource === "string"
-              ? descriptionSource
-              : descriptionSource.en,
-            fallback.steps[index].description.en,
-          ),
-          de: resolveSectionValue(
-            typeof descriptionSource === "string"
-              ? descriptionSource
-              : descriptionSource.de,
-            fallback.steps[index].description.de,
-          ),
-        },
-        icon: step.icon?.trim() ? step.icon : DEFAULT_STEP_ICONS[index],
-        order: step.order ?? index + 1,
-      };
-    });
+    .map((step, index) => ({
+      ...step,
+      icon: step.icon?.trim() ? step.icon : DEFAULT_STEP_ICONS[index],
+    }));
 
   while (steps.length < MAX_STEPS) {
     steps.push({ ...emptyStep(), icon: DEFAULT_STEP_ICONS[steps.length] });
   }
 
   return {
-    heroTitle: {
-      ar: resolveSectionValue(content?.hero.title, fallback.heroTitle.ar),
-      en: resolveSectionValue(content?.hero.title, fallback.heroTitle.en),
-      de: resolveSectionValue(content?.hero.title, fallback.heroTitle.de),
-    },
-    heroDescription: {
-      ar: resolveSectionValue(content?.hero.description, fallback.heroDescription.ar),
-      en: resolveSectionValue(content?.hero.description, fallback.heroDescription.en),
-      de: resolveSectionValue(content?.hero.description, fallback.heroDescription.de),
-    },
+    heroTitle: resolveSectionValue(content?.hero.title, fallback.heroTitle),
+    heroDescription: resolveSectionValue(
+      content?.hero.description,
+      fallback.heroDescription,
+    ),
     sections,
     steps,
   };
@@ -248,13 +188,12 @@ function mapContentToForm(
 function appendLocalized(
   formData: FormData,
   key: string,
-  values: LocalizedString,
+  value: string,
+  locale: string,
 ) {
-  for (const lang of LOCALES) {
-    const trimmed = values[lang].trim();
-    if (trimmed) {
-      formData.append(`${key}[${lang}]`, trimmed);
-    }
+  const trimmed = value.trim();
+  if (trimmed) {
+    formData.append(`${key}[${locale}]`, trimmed);
   }
 }
 
@@ -295,65 +234,120 @@ export function AdminHomePanel({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("hero");
-  const [form, setForm] = useState<FormState>(() =>
-    mapContentToForm(
-      content,
-      buildFallbackCopy(
-        heroT,
-        categoriesT,
-        jobsT,
-        testimonialsT,
-        newsT,
-        supportT,
-        processT,
-      ),
-    ),
-  );
+
+  // Supported locales for editing translations
+  const SUPPORTED_LOCALES = ["ar", "en", "de"] as const
+  type LocaleCode = (typeof SUPPORTED_LOCALES)[number]
+
+  // content may include a helper field `__allLocales` attached by the server
+  const allLocalesContent = (content as unknown as {
+    __allLocales?: Record<LocaleCode, HomePageContent | null>
+  })?.__allLocales
+
+  // Build a fallback copy (same for all locales here)
+  const fallback = buildFallbackCopy(
+    heroT,
+    categoriesT,
+    jobsT,
+    testimonialsT,
+    newsT,
+    supportT,
+    processT,
+  )
+
+  // Initialize translations state for each supported locale using provided content
+  const initialTranslations = useMemo(() => {
+    return {
+      ar: mapContentToForm(allLocalesContent?.["ar"] ?? content, fallback),
+      en: mapContentToForm(allLocalesContent?.["en"] ?? content, fallback),
+      de: mapContentToForm(allLocalesContent?.["de"] ?? content, fallback),
+    } as Record<LocaleCode, FormState>
+  }, [content, allLocalesContent, fallback])
+
+  const [translations, setTranslations] = useState<Record<LocaleCode, FormState>>(initialTranslations)
+  const [editLocale, setEditLocale] = useState<LocaleCode>(locale as LocaleCode)
+
+  // Uploaded icon files for steps (shared across locales)
+  const [stepFiles, setStepFiles] = useState<Record<number, File | null>>({})
+  const [stepPreviews, setStepPreviews] = useState<Record<number, string | null>>({})
+
+  // NOTE: `AdminHomePanel` is mounted with a `key` derived from the server
+  // `content` prop (see page.tsx). When the server content changes we rely on
+  // remounting to reset the component state. This avoids syncing state from
+  // props inside an effect which can cause cascading renders.
+
+  const currentForm = translations[editLocale] ?? translations["ar"]
 
   function updateSection(
     key: SectionKey,
     field: "title" | "description",
-    lang: LocaleKey,
     value: string,
   ) {
-    setForm((prev) => ({
+    setTranslations((prev) => ({
       ...prev,
-      sections: {
-        ...prev.sections,
-        [key]: {
-          ...prev.sections[key],
-          [field]: {
-            ...prev.sections[key][field],
-            [lang]: value,
+      [editLocale]: {
+        ...prev[editLocale],
+        sections: {
+          ...prev[editLocale].sections,
+          [key]: {
+            ...prev[editLocale].sections[key],
+            [field]: value,
           },
         },
       },
-    }));
+    }))
   }
 
   function updateStep(
     index: number,
     field: "title" | "description" | "icon",
-    lang: LocaleKey | null,
     value: string,
   ) {
-    setForm((prev) => ({
+    setTranslations((prev) => ({
       ...prev,
-      steps: prev.steps.map((step, currentIndex) =>
-        currentIndex === index
-          ? {
-              ...step,
-              [field]:
-                field === "icon"
-                  ? value
-                  : {
-                      ...step[field],
-                      [lang as LocaleKey]: value,
-                    },
-            }
-          : step,
-      ),
-    }));
+      [editLocale]: {
+        ...prev[editLocale],
+        steps: prev[editLocale].steps.map((step: StepForm, currentIndex: number) =>
+          currentIndex === index ? { ...step, [field]: value } : step,
+        ),
+      },
+    }))
+  }
+
+  function isSvgFile(file: File) {
+    return file.type === "image/svg+xml" || /\.svg$/i.test(file.name)
+  }
+
+  
+
+  async function handleStepFileSelect(index: number, file?: File | null) {
+    // remove
+    if (!file) {
+      const prev = stepPreviews[index]
+      if (prev) URL.revokeObjectURL(prev)
+      setStepFiles((s) => {
+        const copy = { ...s }
+        delete copy[index]
+        return copy
+      })
+      setStepPreviews((p) => {
+        const copy = { ...p }
+        delete copy[index]
+        return copy
+      })
+      return
+    }
+    // Skip compressing vector images
+    const compressed = isSvgFile(file)
+      ? file
+      : await compressImageLib(file, { maxWidth: 800, quality: 0.8, maxBytes: 400 * 1024, mimeType: "image/jpeg" })
+    setStepFiles((s) => ({ ...s, [index]: compressed }))
+    const url = URL.createObjectURL(compressed)
+    setStepPreviews((p) => {
+      const prev = p[index]
+      if (prev) URL.revokeObjectURL(prev)
+      return { ...p, [index]: url }
+    })
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -362,45 +356,86 @@ export function AdminHomePanel({
     setSuccess(null);
 
     const formData = new FormData();
-    appendLocalized(formData, "title", form.heroTitle);
-    appendLocalized(formData, "description", form.heroDescription);
 
+    // Append hero translations for all locales
+    const emptySections: Record<SectionKey, SectionForm> = {
+      categories: emptySection(),
+      jobs: emptySection(),
+      success_stories: emptySection(),
+      news: emptySection(),
+      footer: emptySection(),
+    }
+
+    const defaultEmptyForm: FormState = {
+      heroTitle: "",
+      heroDescription: "",
+      sections: emptySections,
+      steps: Array.from({ length: MAX_STEPS }, () => ({ title: "", description: "", order: 1 })),
+    }
+
+    for (const loc of SUPPORTED_LOCALES) {
+      const tf = translations[loc] || defaultEmptyForm
+      appendLocalized(formData, "title", tf.heroTitle, loc)
+      appendLocalized(formData, "description", tf.heroDescription, loc)
+    }
+
+    // Sections: append section_key once per index, then localized values
     SECTION_KEYS.forEach((key, index) => {
-      const entry = form.sections[key];
-      const hasTitle = LOCALES.some((lang) => entry.title[lang].trim());
-      const hasDescription = LOCALES.some((lang) => entry.description[lang].trim());
+      const hasAny = SUPPORTED_LOCALES.some((loc) => {
+        const s = translations[loc]
+        if (!s) return false
+        const entry = s.sections[key]
+        return Boolean(entry?.title?.trim() || entry?.description?.trim())
+      })
+      if (!hasAny) return
 
-      if (!hasTitle && !hasDescription) {
-        return;
+      formData.append(`sections[${index}][section_key]`, key)
+
+      for (const loc of SUPPORTED_LOCALES) {
+        const entry = translations[loc]?.sections[key]
+        if (!entry) continue
+        appendLocalized(formData, `sections[${index}][title]`, entry.title, loc)
+        appendLocalized(formData, `sections[${index}][description]`, entry.description, loc)
+      }
+    })
+
+    // Steps: gather icon/id/order from first available locale, append localized titles/descriptions
+    for (let index = 0; index < MAX_STEPS; index++) {
+      const anyStep = SUPPORTED_LOCALES.some((loc) => {
+        const s = translations[loc]
+        if (!s) return false
+        const st = s.steps[index]
+        return Boolean(st && (st.title.trim() || st.description.trim() || st.icon?.trim()))
+      })
+      if (!anyStep) continue
+
+      // id and order/icon: prefer primary (ar) then others
+      let chosenId: number | undefined
+      let chosenOrder: number | undefined
+      let chosenIcon: string | undefined
+      for (const loc of SUPPORTED_LOCALES) {
+        const st = translations[loc]?.steps[index]
+        if (!st) continue
+        if (chosenId === undefined && typeof st.id === "number") chosenId = st.id
+        if (chosenOrder === undefined && typeof st.order === "number") chosenOrder = st.order
+        if (!chosenIcon && st.icon?.trim()) chosenIcon = st.icon
       }
 
-      formData.append(`sections[${index}][section_key]`, key);
-      appendLocalized(formData, `sections[${index}][title]`, entry.title);
-      appendLocalized(formData, `sections[${index}][description]`, entry.description);
-    });
+      if (chosenId !== undefined) formData.append(`steps[${index}][id]`, String(chosenId))
+      if (chosenOrder !== undefined) formData.append(`steps[${index}][order]`, String(chosenOrder))
+      if (chosenIcon) formData.append(`steps[${index}][icon]`, chosenIcon)
 
-    form.steps.forEach((step, index) => {
-      const hasTitle = LOCALES.some((lang) => step.title[lang].trim());
-      const hasDescription = LOCALES.some((lang) => step.description[lang].trim());
-      const hasContent = Boolean(hasTitle || hasDescription || step.icon?.trim());
-      if (!hasContent) {
-        return;
+      if (stepFiles[index]) {
+        formData.append(`steps[${index}][icon_file]`, stepFiles[index] as Blob)
       }
 
-      if (step.id) {
-        formData.append(`steps[${index}][id]`, String(step.id));
+      for (const loc of SUPPORTED_LOCALES) {
+        const st = translations[loc]?.steps[index]
+        if (!st) continue
+        appendLocalized(formData, `steps[${index}][title]`, st.title, loc)
+        appendLocalized(formData, `steps[${index}][description]`, st.description, loc)
       }
-      if (step.order !== undefined && step.order !== null) {
-        formData.append(`steps[${index}][order]`, String(step.order));
-      }
-
-      appendLocalized(formData, `steps[${index}][title]`, step.title);
-      appendLocalized(formData, `steps[${index}][description]`, step.description);
-
-      if (step.icon?.trim()) {
-        formData.append(`steps[${index}][icon]`, step.icon.trim());
-      }
-    });
+    }
 
     startTransition(async () => {
       const result = await saveHomeContentAction(formData, locale);
@@ -441,155 +476,155 @@ export function AdminHomePanel({
   ];
 
   const sectionContent = (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {activeTab === "hero" && (
-        <div className="grid gap-4 lg:grid-cols-3">
-          {LOCALES.map((lang) => (
-            <div
-              key={lang}
-              className="rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] p-4"
-            >
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#006EA8]">
-                {lang.toUpperCase()}
-              </p>
-              <InputLabel label={t("fields.heroTitle")}> 
-                <input
-                  value={form.heroTitle[lang]}
-                  placeholder={t("fields.heroTitle")}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      heroTitle: { ...prev.heroTitle, [lang]: e.target.value },
-                    }))
-                  }
-                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
-                />
-              </InputLabel>
-              <InputLabel label={t("fields.heroDescription")}> 
-                <textarea
-                  rows={4}
-                  value={form.heroDescription[lang]}
-                  placeholder={t("fields.heroDescription")}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      heroDescription: {
-                        ...prev.heroDescription,
-                        [lang]: e.target.value,
-                      },
-                    }))
-                  }
-                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
-                />
-              </InputLabel>
-            </div>
-          ))}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <InputLabel label={t("fields.heroTitle")}>
+            <input
+              value={currentForm.heroTitle}
+              placeholder={t("fields.heroTitle")}
+              onChange={(e) =>
+                setTranslations((prev) => ({
+                  ...prev,
+                  [editLocale]: { ...prev[editLocale], heroTitle: e.target.value },
+                }))
+              }
+              className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+            />
+          </InputLabel>
+
+          <InputLabel label={t("fields.heroDescription")}>
+            <textarea
+              rows={5}
+              placeholder={t("fields.heroDescription")}
+              value={currentForm.heroDescription}
+              onChange={(e) =>
+                setTranslations((prev) => ({
+                  ...prev,
+                  [editLocale]: { ...prev[editLocale], heroDescription: e.target.value },
+                }))
+              }
+              className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+            />
+          </InputLabel>
         </div>
       )}
 
-      {activeTab === "categories" && (
-        <div className="grid gap-4 lg:grid-cols-3">
-          {LOCALES.map((lang) => (
-            <div
-              key={lang}
-              className="rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] p-4"
-            >
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#006EA8]">
-                {lang.toUpperCase()}
-              </p>
-              <InputLabel label={t("fields.sectionCategoriesTitle")}>
-                <input
-                  value={form.sections.categories.title[lang]}
-                  placeholder={t("fields.sectionCategoriesTitle")}
-                  onChange={(e) =>
-                    updateSection("categories", "title", lang, e.target.value)
-                  }
-                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
-                />
-              </InputLabel>
-              <InputLabel label={t("fields.sectionCategoriesDescription")}>
-                <textarea
-                  rows={4}
-                  value={form.sections.categories.description[lang]}
-                  placeholder={t("fields.sectionCategoriesDescription")}
-                  onChange={(e) =>
-                    updateSection("categories", "description", lang, e.target.value)
-                  }
-                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
-                />
-              </InputLabel>
-            </div>
-          ))}
+          {activeTab === "categories" && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <InputLabel label={t("fields.sectionCategoriesTitle")}>
+            <input
+                  value={currentForm.sections.categories.title}
+              placeholder={t("fields.sectionCategoriesTitle")}
+                  onChange={(e) => updateSection("categories", "title", e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+            />
+          </InputLabel>
+
+          <InputLabel label={t("fields.sectionCategoriesDescription")}>
+            <textarea
+              rows={5}
+              placeholder={t("fields.sectionCategoriesDescription")}
+              value={currentForm.sections.categories.description}
+              onChange={(e) => updateSection("categories", "description", e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+            />
+          </InputLabel>
         </div>
       )}
 
       {activeTab === "process" && (
-        <div className="space-y-4">
-          {form.steps.map((step, index) => (
+        <div className="grid gap-4 lg:grid-cols-3">
+          {currentForm.steps.map((step: StepForm, index: number) => (
             <div
               key={`${step.id ?? index}-${index}`}
               className="rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] p-4"
             >
-              <div className="mb-4 flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
-                  <Image
-                    src={step.icon?.trim() || DEFAULT_STEP_ICONS[index]}
-                    alt=""
-                    width={24}
-                    height={24}
-                    className="object-contain"
-                    unoptimized={Boolean(step.icon?.trim()?.startsWith("http"))}
-                  />
+                  {stepPreviews[index] ? (
+                    // preview from uploaded file
+                    // use native img for blob/object URLs
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={stepPreviews[index] ?? undefined} alt="" width={24} height={24} className="object-contain" />
+                  ) : (
+                    <Image
+                      src={step.icon?.trim() || DEFAULT_STEP_ICONS[index]}
+                      alt=""
+                      width={24}
+                      height={24}
+                      className="object-contain"
+                      unoptimized={Boolean((step.icon || DEFAULT_STEP_ICONS[index])?.startsWith("http"))}
+                    />
+                  )}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#111827]">
-                    {t("labels.processStep")} {index + 1}
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6B7280]">
+                    {t("labels.processStep")}
                   </p>
-                  <p className="text-xs text-[#6B7280]">
+                  <p className="text-sm text-[#4B5563]">
                     {t("helper.processIcon")}
                   </p>
                 </div>
               </div>
+              <div className="mt-4 space-y-3">
+                <InputLabel label={t("fields.stepTitle")}>
+                  <input
+                    value={step.title}
+                    placeholder={t("fields.stepTitle")}
+                    onChange={(e) => updateStep(index, "title", e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                  />
+                </InputLabel>
 
-              <div className="grid gap-4 lg:grid-cols-3">
-                {LOCALES.map((lang) => (
-                  <div key={lang} className="rounded-[10px] border border-[#E5E7EB] bg-white p-3">
-                    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#006EA8]">
-                      {lang.toUpperCase()}
-                    </p>
-                    <InputLabel label={t("fields.stepTitle")}>
+                <InputLabel label={t("fields.stepIcon")}>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      value={step.icon ?? ""}
+                      placeholder="/process/profile.svg"
+                      onChange={(e) => updateStep(index, "icon", e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                    />
+
+                    <div className="flex items-center gap-3">
                       <input
-                        value={step.title[lang]}
-                        placeholder={t("fields.stepTitle")}
-                        onChange={(e) =>
-                          updateStep(index, "title", lang, e.target.value)
-                        }
-                        className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                        type="file"
+                        accept="image/*,image/svg+xml"
+                        title={t("fields.uploadIcon") || "Upload icon file"}
+                        aria-label={t("fields.uploadIcon") || "Upload icon file"}
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0]
+                          if (!f) return
+                          await handleStepFileSelect(index, f)
+                        }}
+                        className="text-sm"
                       />
-                    </InputLabel>
-                    <InputLabel label={t("fields.stepDescription")}>
-                      <textarea
-                        rows={3}
-                        value={step.description[lang]}
-                        placeholder={t("fields.stepDescription")}
-                        onChange={(e) =>
-                          updateStep(index, "description", lang, e.target.value)
-                        }
-                        className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
-                      />
-                    </InputLabel>
-                  </div>
-                ))}
-              </div>
 
-              <InputLabel label={t("fields.stepIcon")}>
-                <input
-                  value={step.icon ?? ""}
-                  placeholder="/process/profile.svg"
-                  onChange={(e) => updateStep(index, "icon", null, e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
-                />
-              </InputLabel>
+                      <button
+                        type="button"
+                        onClick={() => handleStepFileSelect(index, undefined)}
+                        className="text-xs text-[#6B7280] underline"
+                      >
+                        {t("fields.removeImage") || "Remove"}
+                      </button>
+                    </div>
+
+                    {stepPreviews[index] && (
+                      <p className="text-xs text-[#6B7280]">{t("fields.preview") || "Preview"}</p>
+                    )}
+                  </div>
+                </InputLabel>
+
+                <InputLabel label={t("fields.stepDescription")}>
+                  <textarea
+                    rows={4}
+                    placeholder={t("fields.stepDescription")}
+                    value={step.description}
+                    onChange={(e) => updateStep(index, "description", e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                  />
+                </InputLabel>
+              </div>
             </div>
           ))}
         </div>
@@ -599,73 +634,98 @@ export function AdminHomePanel({
         activeTab === "success_stories" ||
         activeTab === "news" ||
         activeTab === "footer") && (
-        <div className="grid gap-4 lg:grid-cols-3">
-          {LOCALES.map((lang) => {
-            const sectionKey = activeTab === "success_stories" ? "success_stories" : activeTab;
-            return (
-              <div
-                key={lang}
-                className="rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] p-4"
-              >
-                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#006EA8]">
-                  {lang.toUpperCase()}
-                </p>
-                <InputLabel label={
-                  activeTab === "jobs"
-                    ? t("fields.sectionJobsTitle")
-                    : activeTab === "success_stories"
-                    ? t("fields.sectionTestimonialsTitle")
-                    : activeTab === "news"
-                    ? t("fields.sectionNewsTitle")
-                    : t("fields.sectionFooterTitle")
-                }>
-                  <input
-                    value={form.sections[sectionKey].title[lang]}
-                    placeholder={
-                      activeTab === "jobs"
-                        ? t("fields.sectionJobsTitle")
-                        : activeTab === "success_stories"
-                        ? t("fields.sectionTestimonialsTitle")
-                        : activeTab === "news"
-                        ? t("fields.sectionNewsTitle")
-                        : t("fields.sectionFooterTitle")
-                    }
-                    onChange={(e) =>
-                      updateSection(sectionKey, "title", lang, e.target.value)
-                    }
-                    className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
-                  />
-                </InputLabel>
-                <InputLabel label={
-                  activeTab === "jobs"
-                    ? t("fields.sectionJobsDescription")
-                    : activeTab === "success_stories"
-                    ? t("fields.sectionTestimonialsDescription")
-                    : activeTab === "news"
-                    ? t("fields.sectionNewsDescription")
-                    : t("fields.sectionFooterDescription")
-                }>
-                  <textarea
-                    rows={4}
-                    value={form.sections[sectionKey].description[lang]}
-                    placeholder={
-                      activeTab === "jobs"
-                        ? t("fields.sectionJobsDescription")
-                        : activeTab === "success_stories"
-                        ? t("fields.sectionTestimonialsDescription")
-                        : activeTab === "news"
-                        ? t("fields.sectionNewsDescription")
-                        : t("fields.sectionFooterDescription")
-                    }
-                    onChange={(e) =>
-                      updateSection(sectionKey, "description", lang, e.target.value)
-                    }
-                    className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
-                  />
-                </InputLabel>
-              </div>
-            );
-          })}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {activeTab === "jobs" && (
+            <>
+              <InputLabel label={t("fields.sectionJobsTitle")}>
+                <input
+                  value={currentForm.sections.jobs.title}
+                  placeholder={t("fields.sectionJobsTitle")}
+                  onChange={(e) => updateSection("jobs", "title", e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                />
+              </InputLabel>
+
+              <InputLabel label={t("fields.sectionJobsDescription")}>
+                <textarea
+                  rows={5}
+                  placeholder={t("fields.sectionJobsDescription")}
+                  value={currentForm.sections.jobs.description}
+                  onChange={(e) => updateSection("jobs", "description", e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                />
+              </InputLabel>
+            </>
+          )}
+
+          {activeTab === "success_stories" && (
+            <>
+              <InputLabel label={t("fields.sectionTestimonialsTitle")}>
+                <input
+                  value={currentForm.sections.success_stories.title}
+                  placeholder={t("fields.sectionTestimonialsTitle")}
+                  onChange={(e) => updateSection("success_stories", "title", e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                />
+              </InputLabel>
+
+              <InputLabel label={t("fields.sectionTestimonialsDescription")}>
+                <textarea
+                  rows={5}
+                  placeholder={t("fields.sectionTestimonialsDescription")}
+                  value={currentForm.sections.success_stories.description}
+                  onChange={(e) => updateSection("success_stories", "description", e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                />
+              </InputLabel>
+            </>
+          )}
+
+          {activeTab === "news" && (
+            <>
+              <InputLabel label={t("fields.sectionNewsTitle")}>
+                <input
+                  value={currentForm.sections.news.title}
+                  placeholder={t("fields.sectionNewsTitle")}
+                  onChange={(e) => updateSection("news", "title", e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                />
+              </InputLabel>
+
+              <InputLabel label={t("fields.sectionNewsDescription")}>
+                <textarea
+                  rows={5}
+                  placeholder={t("fields.sectionNewsDescription")}
+                  value={currentForm.sections.news.description}
+                  onChange={(e) => updateSection("news", "description", e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                />
+              </InputLabel>
+            </>
+          )}
+
+          {activeTab === "footer" && (
+            <>
+              <InputLabel label={t("fields.sectionFooterTitle")}>
+                <input
+                  value={currentForm.sections.footer.title}
+                  placeholder={t("fields.sectionFooterTitle")}
+                  onChange={(e) => updateSection("footer", "title", e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                />
+              </InputLabel>
+
+              <InputLabel label={t("fields.sectionFooterDescription")}>
+                <textarea
+                  rows={5}
+                  placeholder={t("fields.sectionFooterDescription")}
+                  value={currentForm.sections.footer.description}
+                  onChange={(e) => updateSection("footer", "description", e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                />
+              </InputLabel>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -698,8 +758,9 @@ export function AdminHomePanel({
       )}
 
       <div className="overflow-x-auto">
-        <div className="flex min-w-max gap-2 rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] p-1">
-          {tabs.map((tab) => {
+        <div className="flex items-center justify-between gap-2 rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] p-1">
+          <div className="flex min-w-max gap-2">
+            {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
               <button
@@ -715,7 +776,23 @@ export function AdminHomePanel({
                 {tab.label}
               </button>
             );
-          })}
+            })}
+          </div>
+
+          <div className="flex gap-2">
+            {SUPPORTED_LOCALES.map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setEditLocale(l)}
+                className={`rounded px-2 py-1 text-xs font-semibold ${
+                  editLocale === l ? "bg-[#006EA8] text-white" : "bg-white text-[#6B7280] border"
+                }`}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

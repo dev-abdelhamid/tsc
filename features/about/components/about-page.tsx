@@ -1,4 +1,4 @@
-import { getLocale, getTranslations } from "next-intl/server"
+import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { ProcessSection } from "@/features/process"
 import { SupportSection } from "@/features/support"
 import { getAbout } from "@/lib/api/services/about.service"
@@ -8,6 +8,7 @@ import { AboutFeaturesSection } from "./about-features-section"
 
 export async function AboutPage() {
   const locale = await getLocale()
+  setRequestLocale(locale)
   const [aboutT, aboutContent] = await Promise.all([
     getTranslations("Landing.about"),
     getAbout(locale),

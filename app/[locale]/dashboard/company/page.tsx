@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation"
 import { redirect } from "next/navigation"
+import { setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { getCompanyJobs, getCompanyStats } from "@/lib/api/services/company.service"
 import { DashboardStatCard } from "@/features/dashboard/components/dashboard-stat-card"
@@ -12,8 +13,9 @@ export default async function CompanyDashboardPage({
 }: {
   params: Promise<{ locale: string }>
 }) {
-  const session = await getSession()
   const { locale } = await params
+  setRequestLocale(locale)
+  const session = await getSession()
 
   if (!session.isLoggedIn || !session.user) {
     redirect(`/${locale}/sign-in`)
@@ -55,7 +57,7 @@ export default async function CompanyDashboardPage({
       column2: job.applications_count ?? 0,
       deadline: deadline ? new Date(deadline).toLocaleDateString("en-GB") : "—",
       status,
-      detailsHref: `/${locale}/dashboard/company/jobs/${job.id}`,
+      detailsHref: `/dashboard/company/jobs/${job.id}`,
     }
   })
 
@@ -67,7 +69,7 @@ export default async function CompanyDashboardPage({
           title={isAr ? "إجمالي الوظائف" : "Total Jobs"}
           value={stats.total_jobs}
           unit={isAr ? "Job" : "Job"}
-          viewAllHref={`/${locale}/dashboard/company/jobs`}
+          viewAllHref="/dashboard/company/jobs"
           viewAllLabel={isAr ? "عرض الكل" : "View All"}
           isRTL={isAr}
         />
@@ -76,7 +78,7 @@ export default async function CompanyDashboardPage({
           title={isAr ? "إجمالي المتقدمين" : "Total Job Applicants"}
           value={stats.total_applications}
           unit={isAr ? "application" : "application"}
-          viewAllHref={`/${locale}/dashboard/company/applicants`}
+          viewAllHref="/dashboard/company/applicants"
           viewAllLabel={isAr ? "عرض الكل" : "View All"}
           isRTL={isAr}
         />
@@ -85,7 +87,7 @@ export default async function CompanyDashboardPage({
           title={isAr ? "إجمالي التذاكر" : "Total Ticket"}
           value={stats.pending_applications}
           unit={isAr ? "ticket" : "ticket"}
-          viewAllHref={`/${locale}/dashboard/company/tickets`}
+          viewAllHref="/dashboard/company/tickets"
           viewAllLabel={isAr ? "عرض الكل" : "View All"}
           isRTL={isAr}
         />
@@ -108,6 +110,7 @@ export default async function CompanyDashboardPage({
         <p className="text-center text-sm text-gray-500">
           {isAr ? "لا توجد وظائف بعد — " : "No jobs yet — "}
           <Link
+            locale={locale}
             href="/dashboard/company/jobs/create"
             className="font-semibold text-[#006EA8] hover:underline"
           >
