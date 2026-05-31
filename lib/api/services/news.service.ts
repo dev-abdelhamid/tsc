@@ -160,7 +160,7 @@ export async function updateNewsItem(
   token: string,
   locale = "ar"
 ): Promise<News> {
-  const response = await api.post<unknown>(`/news/${id}`, formData, { token, locale })
+  const response = await api.post<unknown>(`/news/${id}?_method=PUT`, formData, { token, locale })
   const parsed = parseNewsResponse(response, locale)
   return parsed.data[0] ?? { id, title: "", slug: "", excerpt: "", content: "", published_at: "" }
 }
@@ -187,4 +187,21 @@ export async function getNewsItem(slug: string, locale = "ar"): Promise<News | n
   }
 
   return null
+}
+
+export async function getAdminNewsItem(
+  id: number | string,
+  token: string,
+  locale = "ar"
+): Promise<News | null> {
+  try {
+    const response = await api.get<unknown>(`/news/${id}`, { token, locale })
+    if (!response || typeof response !== "object") return null
+    const root = response as Record<string, unknown>
+    const item = root.data ?? response
+    return normalizeNews(item, 0, locale)
+  } catch (err) {
+    console.error("[getAdminNewsItem] error:", err)
+    return null
+  }
 }

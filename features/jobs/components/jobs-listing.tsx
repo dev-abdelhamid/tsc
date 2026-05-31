@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { FilterPanel, type FilterPanelProps } from "@/features/jobs/components/filter-panel"
 import { JobsFilterDrawer } from "@/features/jobs/components/jobs-filter-drawer"
 import { JobsFilterTrigger } from "@/features/jobs/components/jobs-filter-trigger"
@@ -42,6 +43,19 @@ type JobsListingProps = {
   categoryOptions: string[]
 }
 
+function matchField(field: unknown, q: string): boolean {
+  if (!field) return false
+  if (typeof field === "string") {
+    return field.toLowerCase().includes(q)
+  }
+  if (typeof field === "object") {
+    return Object.values(field as Record<string, unknown>).some(
+      (val) => typeof val === "string" && val.toLowerCase().includes(q)
+    )
+  }
+  return false
+}
+
 export function JobsListing({
   locale,
   jobs,
@@ -53,11 +67,35 @@ export function JobsListing({
   categoryOptions,
 }: JobsListingProps) {
   const isRtl = locale === "ar"
+  const searchParams = useSearchParams()
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false)
   const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false)
   const [activeStates, setActiveStates] = useState<number[]>([])
   const [activeCategories, setActiveCategories] = useState<number[]>([])
-  const [salaryValue, setSalaryValue] = useState(0)
+  const [salaryValue, setSalaryValue] = useState<[number, number]>([0, 100])
+  const [initialCategoryApplied, setInitialCategoryApplied] = useState(false)
+
+  // Auto-select category from URL query param (?category=ID)
+  useEffect(() => {
+    if (initialCategoryApplied) return
+    const categoryParam = searchParams.get("category")
+    if (!categoryParam) {
+      setInitialCategoryApplied(true)
+      return
+    }
+    const categoryId = Number(categoryParam)
+    if (!Number.isFinite(categoryId)) {
+      setInitialCategoryApplied(true)
+      return
+    }
+    const idx = categories.findIndex((c) => c.id === categoryId)
+    if (idx >= 0) {
+      setActiveCategories([idx])
+      setIsDesktopFilterOpen(true)
+    }
+    setInitialCategoryApplied(true)
+  }, [searchParams, categories, initialCategoryApplied])
+
 
   const filteredJobs = useMemo(() => {
     let list = jobs
@@ -65,10 +103,16 @@ export function JobsListing({
 
     if (q) {
       list = list.filter((job) => {
-        const title = getJobTitle(job, locale).toLowerCase()
-        const location = (job.state || job.city?.name || job.location || "").toLowerCase()
-        const company = (job.company?.name || "").toLowerCase()
-        return title.includes(q) || location.includes(q) || company.includes(q)
+        const matchesTitle = matchField(job.title, q)
+        const matchesLocation =
+          matchField(job.state, q) ||
+          matchField(job.location, q) ||
+          matchField(job.city?.name, q) ||
+          matchField(job.country?.name, q)
+        const matchesCompany = matchField(job.company?.name, q)
+        const matchesCategory = matchField(job.category?.name, q)
+
+        return matchesTitle || matchesLocation || matchesCompany || matchesCategory
       })
     }
 
@@ -99,12 +143,13 @@ export function JobsListing({
       })
     }
 
-    if (salaryValue > 0) {
-      const minSalary = salaryFromSliderPercent(salaryValue)
+    if (salaryValue[0] > 0 || salaryValue[1] < 100) {
+      const minSalary = salaryFromSliderPercent(salaryValue[0])
+      const maxSalary = salaryFromSliderPercent(salaryValue[1])
       list = list.filter((job) => {
         const from = job.salary_from ?? 0
         const to = job.salary_to ?? from
-        return to >= minSalary || from >= minSalary
+        return to >= minSalary && from <= maxSalary
       })
     }
 
@@ -122,7 +167,7 @@ export function JobsListing({
   ])
 
   const activeFilterCount =
-    activeStates.length + activeCategories.length + (salaryValue > 0 ? 1 : 0)
+    activeStates.length + activeCategories.length + (salaryValue[0] > 0 || salaryValue[1] < 100 ? 1 : 0)
 
   const countLabel = String(
     searchQuery || activeFilterCount > 0
@@ -145,10 +190,11 @@ export function JobsListing({
     activeStates,
     activeCategories,
     salaryValue,
+    locale,
     onClearAll: () => {
       setActiveStates([])
       setActiveCategories([])
-      setSalaryValue(0)
+      setSalaryValue([0, 100])
     },
     onToggleState: (index) =>
       setActiveStates((prev) =>
@@ -172,8 +218,8 @@ export function JobsListing({
   }
 
   return (
-    <StaggerInView className="mx-auto mt-[52px] pb-12 sm:pb-16 lg:pb-[82px] w-full max-w-[1312px] space-y-5 px-4 sm:px-6 lg:px-8">
-      <StaggerItem>
+    <div className="mx-auto mt-[52px] pb-12 sm:pb-16 lg:pb-[82px] w-full max-w-[1312px] space-y-5 px-4 sm:px-6 lg:px-8">
+      <StaggerInView>
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-[24px] leading-[1.16] font-semibold text-[#171717] sm:text-[32px] lg:text-[36px]">
             {labels.allJobs}{" "}
@@ -193,37 +239,37 @@ export function JobsListing({
             }}
           />
         </div>
-      </StaggerItem>
+      </StaggerInView>
 
-      <div className="flex flex-col items-start gap-6 lg:flex-row lg:gap-6 xl:gap-8">
-        <StaggerItem className="min-w-0 flex-1">
+      <div className="flex flex-col items-stretch lg:items-start gap-6 lg:flex-row lg:gap-6 xl:gap-8 w-full">
+        <div className="min-w-0 flex-1 w-full">
           {filteredJobs.length === 0 ? (
             <p className="rounded-[16px] border border-dashed border-[#78a3be] bg-[#f8fbff] px-6 py-16 text-center text-lg text-[#525252]">
               {labels.noResults}
             </p>
           ) : (
             <StaggerInView
+              immediate={true}
               className={cn(
-                "grid gap-6 justify-center",
-                "grid-cols-1 sm:grid-cols-2 md:max-lg:grid-cols-3",
-                isDesktopFilterOpen ? "lg:grid-cols-2" : "lg:grid-cols-3"
+                "grid gap-6 w-full",
+                isDesktopFilterOpen
+                  ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-2"
+                  : "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
               )}
             >
               {filteredJobs.map((job) => (
-                <StaggerItem key={job.id} className="h-full flex justify-center">
-                  <div className="w-full max-w-[420px]">
-                    <JobCard
-                      job={job}
-                      locale={locale}
-                      isRtl={isRtl}
-                      labels={cardLabels}
-                    />
-                  </div>
+                <StaggerItem key={job.id} immediate={true} className="h-full">
+                  <JobCard
+                    job={job}
+                    locale={locale}
+                    isRtl={isRtl}
+                    labels={cardLabels}
+                  />
                 </StaggerItem>
               ))}
             </StaggerInView>
           )}
-        </StaggerItem>
+        </div>
 
         {isDesktopFilterOpen ? (
           <aside className="hidden w-full shrink-0 lg:block lg:w-[min(100%,421px)] lg:sticky lg:top-24 lg:self-start">
@@ -239,6 +285,6 @@ export function JobsListing({
         closeLabel={labels.closeFilters}
         panelProps={{ ...filterPanelProps, variant: "drawer" }}
       />
-    </StaggerInView>
+    </div>
   )
 }

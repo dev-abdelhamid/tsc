@@ -1,7 +1,5 @@
 "use client"
 
-"use client"
-
 import * as React from "react"
 import type { User } from "@/lib/api/types"
 import { DashboardSidebar } from "@/features/dashboard/components/dashboard-sidebar"
@@ -43,6 +41,7 @@ export function DashboardShell({
 
   return (
     <div className="min-h-screen bg-[#F7F9FC]">
+     
       <div className="mx-auto w-full max-w-[1400px] px-3 pb-4 pt-4 sm:px-4 sm:pb-6 sm:pt-6 lg:px-8 lg:pt-8">
         <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:gap-6">
           <DashboardSidebar

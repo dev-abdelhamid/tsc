@@ -79,7 +79,7 @@ export async function AdminJobApplicationsPage({
       </div>
 
       <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)]">
-        <div className="border-b border-[#F0F4F8] bg-gradient-to-l from-[#032C44] to-[#41A0CA] px-4 py-4 text-white">
+        <div className={`border-b border-[#F0F4F8] text-white px-4 py-4 bg-gradient-to-${locale === "ar" ? "r" : "l"} from-[#032C44] to-[#41A0CA]`}>
           <p className="text-sm font-semibold">{t("applicationsPage.summary")}</p>
           <p className="mt-2 text-[24px] font-bold">{applications.length}</p>
         </div>

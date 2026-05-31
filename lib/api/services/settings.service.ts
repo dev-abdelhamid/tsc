@@ -23,7 +23,7 @@ function parseSettingsList(raw: unknown): SiteSetting[] {
 }
 
 export async function getSettings(locale = "ar"): Promise<SiteSetting[]> {
-  const response = await api.get<unknown>("/settings", { locale, cache: "no-store" })
+  const response = await api.get<unknown>("/settings", { locale, next: { revalidate: 60 } })
   return parseSettingsList(response)
 }
 

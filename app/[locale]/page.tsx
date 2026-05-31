@@ -27,7 +27,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         const total = statsValue.total || statsValue[locale] || "13k+"
         homeContent.sections.categories.heroStats = {
           total: String(total),
-          unit: String(statsValue.unit ?? ""),
+          unit: "",
         }
       } else if (typeof value === "string") {
         homeContent.sections.categories.heroStats = {

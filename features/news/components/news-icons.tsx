@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 type IconProps = { className?: string }
@@ -64,11 +65,13 @@ export function NewsCalendarIcon({ className }: IconProps) {
 
 export function NewsEyebrowGlobe({ className }: IconProps) {
   return (
-    <svg className={cn("h-4 w-4 shrink-0", className)} viewBox="0 0 16 16" fill="none" aria-hidden>
-      <circle cx="8" cy="8" r="7.75" stroke="currentColor" strokeWidth="0.5" />
-      <ellipse cx="8" cy="8" rx="3" ry="7" stroke="currentColor" strokeWidth="0.75" />
-      <path d="M1.5 8h13" stroke="currentColor" strokeWidth="0.75" />
-      <path d="M3 5h10M3 11h10" stroke="currentColor" strokeWidth="0.75" />
-    </svg>
+    <Image
+      src="/footer/icon-link.svg"
+      alt=""
+      width={16}
+      height={16}
+      className={cn("h-4 w-4 shrink-0", className)}
+      aria-hidden
+    />
   )
 }

@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home"
 import { PrimaryButton } from "@/components/ui/primary-button"
-import { NewsEyebrowGlobe } from "@/features/news/components/news-icons"
+import Image from "next/image"
 import { MoveUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Category, Job } from "@/lib/api/types"
@@ -91,12 +91,12 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
   }
 
   return (
-    <SectionShell id="jobs" stagger={false} className="overflow-hidden bg-white py-12 sm:py-16 lg:py-[82px]">
+    <SectionShell id="jobs" stagger={false} className="bg-white py-12 sm:py-16 lg:py-[82px]">
       {/* Header Section - بدون تغيير */}
       <StaggerInView className="mx-auto flex max-w-[1312px] flex-col items-center gap-6 text-center sm:gap-8">
         <StaggerItem>
           <p className="inline-flex items-center justify-center gap-2 rounded-lg bg-[rgba(64,160,202,0.25)] px-4 py-2 text-[12px] leading-[1.16] font-normal text-[#40A0CA]">
-            <NewsEyebrowGlobe className="text-[#40A0CA]" />
+            <Image src="/footer/icon-link.svg" alt="" width={16} height={16} className="text-[#40A0CA]" />
             {t("eyebrow")}
           </p>
         </StaggerItem>
@@ -156,14 +156,13 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
           key={activeFilter} // المفتاح الوحيد الذي يحل المشكلة
           className="mx-auto mt-10 w-full max-w-[1312px]"
         >
-          <div className="grid gap-6 overflow-hidden sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {visibleJobs.map((job) => (
-              <StaggerItem key={`${job.id}-${activeFilter}`} className="overflow-hidden p-2">
+              <StaggerItem key={`${job.id}-${activeFilter}`}>
                 <Card
                   className={cn(
                     "group mx-auto w-full  cursor-pointer overflow-hidden rounded-lg border border-[#78A3BE] bg-white transition-all duration-300",
-                    "hover:border-[#4BB7E7] hover:bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] hover:bg-size-[180px_180px,auto] hover:bg-blend-[plus-lighter,normal] hover:text-white",
-                    "hover:shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#E8F2FF,0_4px_5px_rgba(0,86,133,0.15),0_10px_13px_rgba(0,86,133,0.22),0_24px_32px_rgba(0,86,133,0.19)]"
+                    "hover:border-[#4BB7E7] hover:bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] hover:bg-size-[150px_150px,auto] hover:bg-blend-[plus-lighter,normal] hover:text-white hover:shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19)]"
                   )}
                 >
                   <CardContent className="space-y-4 p-5 sm:p-6">

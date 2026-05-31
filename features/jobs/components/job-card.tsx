@@ -1,13 +1,19 @@
-import Image from "next/image"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { Link } from "@/i18n/navigation"
 import { PrimaryButton } from "@/components/ui/primary-button"
+import Image from "next/image"
+import { MoveUpRight } from "lucide-react"
+import { cn } from "@/lib/utils"
 import type { Job } from "@/lib/api/types"
 import {
   formatJobEmploymentForCard,
   formatJobSalary,
-  formatPostedLabel,
   getJobTitle,
 } from "@/features/jobs/lib/job-display"
+
+const CARD_HOVER_SHADOW =
+  "hover:border-[#4BB7E7] hover:bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] hover:bg-size-[150px_150px,auto] hover:bg-blend-[plus-lighter,normal] hover:text-white hover:shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19)]"
 
 export type JobCardLabels = {
   department: string
@@ -28,81 +34,60 @@ type JobCardProps = {
 
 export function JobCard({ job, locale, isRtl, labels }: JobCardProps) {
   const title = getJobTitle(job, locale)
-  const industry =
-    job.company?.company_type?.name ||
-    job.category?.name ||
-    labels.companySubLabel
-  const location = job.state || job.city?.name || job.location || industry
-  const postedLabel = formatPostedLabel(job, locale, labels.postedAgo)
   const employmentLabel = formatJobEmploymentForCard(
     job.employment_type ?? job.gender,
     labels.employmentDefault
   )
 
   return (
-    <article className="flex h-full flex-col rounded-[8px] border border-[#78a3be] bg-white p-6 shadow-[0_1px_2px_rgba(0,43,70,0.04)]">
-      <div className="flex items-start justify-between gap-3">
-        <span className="inline-flex rounded-[64px] bg-[linear-gradient(270deg,#032C44_0%,#41A0CA_100%)] px-4 py-2 text-[12px] leading-[1.16] text-white">
+    <Card
+      className={cn(
+        "group mx-auto w-full cursor-pointer overflow-hidden rounded-lg border border-[#78A3BE] bg-white transition-all duration-300",
+        CARD_HOVER_SHADOW
+      )}
+    >
+      <CardContent className="space-y-4 p-5 sm:p-6">
+        <Badge className="w-fit rounded-full bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] px-3 py-1 text-[12px] text-white group-hover:border group-hover:border-white/30 group-hover:bg-white/15">
           {job.category?.name ?? labels.department}
-        </span>
-        <p className="shrink-0 text-[16px] leading-[1.16] text-[#525252]">{postedLabel}</p>
-      </div>
-
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <h3 className="text-start text-[20px] font-bold leading-[1.16] text-[#262626]">
-          {title}
-        </h3>
-        <p className="shrink-0 text-end text-[16px] leading-[1.16] text-[#525252]">
-          {employmentLabel}
-        </p>
-      </div>
-
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <p className="text-[16px] font-semibold leading-[1.16] text-[#002B46]">
+        </Badge>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-start text-[18px] font-bold leading-[1.16] text-[#262626] group-hover:text-white sm:text-[20px]">
+            {title}
+          </h3>
+          <p className="shrink-0 text-end text-[14px] font-medium leading-[1.16] text-[#002B46] group-hover:text-white sm:text-[16px]">
+            {employmentLabel}
+          </p>
+        </div>
+        <p className="text-start text-[16px] font-medium leading-[1.16] text-[#40A0CA] group-hover:text-[#E8F2FF]">
           {formatJobSalary(job, labels.salaryPeriod)}
         </p>
-      </div>
-
-      <div className="mt-4 flex items-center gap-2 text-start">
-        <div className="relative size-[38px] shrink-0 overflow-hidden rounded-full border border-[#78a3be] bg-[#e8f2ff]">
-          {job.company?.logo ? (
-            <Image
-              src={job.company.logo}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="38px"
-            />
-          ) : (
-            <span className="absolute inset-0 grid place-items-center text-[10px] font-semibold text-[#006EA8]">
-              {(job.company?.name ?? labels.companyName).slice(0, 2).toUpperCase()}
-            </span>
-          )}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-[16px] font-bold leading-[1.16] text-[#262626]">
+        <div className="flex items-center gap-2">
+          <div className="grid size-8 shrink-0 place-items-center rounded-full border border-[#78A3BE] group-hover:border-white/60">
+            {job.company?.logo ? (
+              <Image
+                src={job.company.logo}
+                alt=""
+                width={32}
+                height={32}
+                className="rounded-full object-cover"
+              />
+            ) : (
+              <span className="text-[10px] font-semibold text-[#006EA8] group-hover:text-white/80">
+                {(job.company?.name ?? labels.companyName).slice(0, 2).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <p className="text-start text-[14px] leading-[1.16] text-[#525252] group-hover:text-[#e8f2ff] sm:text-[16px]">
             {job.company?.name ?? labels.companyName}
           </p>
-          <p className="truncate text-[12px] leading-[1.16] text-[#525252]">{location}</p>
         </div>
-      </div>
-
-      <PrimaryButton
-        asChild
-        className="mt-6 h-[44px] w-full rounded-[12px] text-[16px] font-medium"
-      >
-        <Link locale={locale} href={`/jobs/${job.id}`} className="inline-flex items-center justify-center gap-2">
-          {labels.moreDetails}
-          <Image
-            src="/more.svg"
-            alt=""
-            width={19}
-            height={21}
-            aria-hidden
-            className={isRtl ? "-scale-x-100" : ""}
-          />
-        </Link>
-      </PrimaryButton>
-    </article>
+        <PrimaryButton asChild className="h-11 rounded-[10px] text-[16px] font-medium sm:text-[18px]">
+          <Link locale={locale} href={`/jobs/${job.id}`}>
+            {labels.moreDetails}
+            <MoveUpRight className="size-5 shrink-0 rtl:-scale-x-100" />
+          </Link>
+        </PrimaryButton>
+      </CardContent>
+    </Card>
   )
 }

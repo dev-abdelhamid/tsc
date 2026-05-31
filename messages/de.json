@@ -131,6 +131,7 @@
       "description": "Wir vernetzen dich mit führenden deutschen Unternehmen aus wichtigen Branchen. Wähle dein Fachgebiet und entdecke passende Chancen.",
       "metricLabel": "Bereits veröffentlichte Jobs",
       "showMore": "Mehr anzeigen",
+      "vacancies": "offene Stellen",
       "items": {
         "business": {
           "label": "Business & Marketing",
@@ -279,8 +280,8 @@
         "salary": "Gehalt",
         "salaryMin": "$1",
         "salaryMax": "$10k",
-        "from": "$ von",
-        "to": "$ bis",
+        "from": "Von",
+        "to": "Bis",
         "stateOptions": {
           "hassan": "Hassan",
           "alle": "Alle"
@@ -494,7 +495,10 @@
         "subjectPlaceholder": "Betreff eingeben",
         "messageLabel": "Nachricht",
         "messagePlaceholder": "Schreiben Sie Ihre Nachricht",
-        "send": "Senden"
+        "send": "Senden",
+        "sending": "Wird gesendet...",
+        "success": "Ihre Nachricht wurde erfolgreich gesendet!",
+        "error": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
       },
       "info": {
         "phoneLabel": "Telefonnummer",
@@ -614,6 +618,10 @@
       "details": "Details",
       "empty": "Noch keine Bewerbungen für diese Stelle.",
       "unknownCandidate": "Bewerber",
+      "processing": "Wird verarbeitet...",
+      "approvedSuccess": "Bewerbung erfolgreich genehmigt",
+      "rejectedSuccess": "Bewerbung abgelehnt",
+      "errorGeneral": "Fehler bei der Verarbeitung der Bewerbung",
       "status": {
         "pending": "Ausstehend",
         "accepted": "Genehmigt",

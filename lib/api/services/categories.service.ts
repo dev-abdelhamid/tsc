@@ -86,7 +86,11 @@ function parseCategory(raw: Record<string, unknown>, locale: string): Category |
         ? Number(raw.jobs_count)
         : raw.jobsCount != null
           ? Number(raw.jobsCount)
-          : undefined,
+          : raw.vacancyCount != null
+            ? Number(raw.vacancyCount)
+            : raw.vacancy_count != null
+              ? Number(raw.vacancy_count)
+              : undefined,
     sub_categories: sub_categories?.length ? sub_categories : undefined,
   }
 }
@@ -119,7 +123,7 @@ async function fetchCategoriesFromEndpoint(
   const response = await api.get<unknown>(endpoint, {
     locale,
     token,
-    cache: "no-store",
+    next: { revalidate: 60 },
   })
   return parseCategoriesResponse(response, locale)
 }
@@ -144,7 +148,7 @@ export async function getCategories(
     const response = await api.get<ApiResponse<unknown>>("/public/categories", {
       locale,
       token,
-      cache: "no-store",
+      next: { revalidate: 60 },
     })
     const parsed = parseCategoriesResponse(response, locale)
     if (parsed.length > 0) return parsed
@@ -173,4 +177,32 @@ export async function getCategoriesForForm(
   }
 
   return []
+}
+
+/** Admin: create a new category */
+export async function createCategoryAdmin(
+  formData: FormData,
+  token: string,
+  locale = "ar"
+): Promise<void> {
+  await api.post<unknown>("/categories", formData, { token, locale })
+}
+
+/** Admin: update an existing category */
+export async function updateCategoryAdmin(
+  id: number,
+  formData: FormData,
+  token: string,
+  locale = "ar"
+): Promise<void> {
+  await api.post<unknown>(`/categories/${id}?_method=PUT`, formData, { token, locale })
+}
+
+/** Admin: delete a category */
+export async function deleteCategoryAdmin(
+  id: number,
+  token: string,
+  locale = "ar"
+): Promise<void> {
+  await api.delete(`/categories/${id}`, { token, locale })
 }

@@ -363,100 +363,80 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
         {/* ==================== COMPANY BASIC INFO CARD ==================== */}
         <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
           <div className="px-8 pt-8 pb-4">
-            <h2
-              className="text-[22px] font-bold italic text-start"
-              style={{
-                background: "linear-gradient(270deg, #032C44 0%, #41A0CA 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
+            <h2 className="text-[22px] font-bold italic text-start bg-gradient-to-r from-[#032C44] via-[#0e5f83] to-[#41A0CA] bg-clip-text text-transparent">
               {isAr ? "بيانات الشركة الأساسية" : "Company Basic Info"}
             </h2>
           </div>
 
           {/* Cover + Avatar */}
           <div className="px-8">
-            <div className="relative w-full rounded-xl overflow-hidden" style={{ height: "260px" }}>
-              {coverUrl ? (
-                <img src={coverUrl} alt="Cover Banner" className="h-full w-full object-cover" />
-              ) : (
-                <div
-                  className="h-full w-full flex items-center justify-center"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #0a1628 0%, #1a3a5c 40%, #2a4a6c 60%, #1a3a5c 100%)",
-                  }}
-                >
-                  {/* City skyline placeholder SVG (اختصاراً) */}
-                  <svg
-                    viewBox="0 0 800 260"
-                    className="absolute inset-0 w-full h-full opacity-30"
-                    preserveAspectRatio="xMidYMax slice"
-                  >
-                    <defs>
-                      <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#40A0CA" stopOpacity="0.2" />
-                        <stop offset="100%" stopColor="#006EA8" stopOpacity="0.6" />
-                      </linearGradient>
-                    </defs>
-                    <rect x="50" y="100" width="40" height="160" fill="url(#skyGrad)" rx="2" />
-                    <rect x="100" y="60" width="50" height="200" fill="url(#skyGrad)" rx="2" />
-                    <rect x="160" y="120" width="35" height="140" fill="url(#skyGrad)" rx="2" />
-                    <rect x="205" y="80" width="45" height="180" fill="url(#skyGrad)" rx="2" />
-                    <rect x="260" y="40" width="55" height="220" fill="url(#skyGrad)" rx="2" />
-                    <rect x="325" y="90" width="40" height="170" fill="url(#skyGrad)" rx="2" />
-                    <rect x="375" y="50" width="60" height="210" fill="url(#skyGrad)" rx="2" />
-                    <rect x="445" y="110" width="35" height="150" fill="url(#skyGrad)" rx="2" />
-                    <rect x="490" y="70" width="50" height="190" fill="url(#skyGrad)" rx="2" />
-                    <rect x="550" y="30" width="45" height="230" fill="url(#skyGrad)" rx="2" />
-                    <rect x="605" y="100" width="40" height="160" fill="url(#skyGrad)" rx="2" />
-                    <rect x="655" y="60" width="55" height="200" fill="url(#skyGrad)" rx="2" />
-                    <rect x="720" y="90" width="35" height="170" fill="url(#skyGrad)" rx="2" />
-                  </svg>
-                </div>
-              )}
-              {/* Replace Cover button */}
-              <label className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-pointer">
+            <div className="relative w-full rounded-xl h-[260px]">
+              <div className="absolute inset-0 overflow-hidden rounded-xl">
+                {coverUrl ? (
+                  <img src={coverUrl} alt="Cover Banner" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center bg-[linear-gradient(135deg,_#0a1628_0%,_#1a3a5c_40%,_#2a4a6c_60%,_#1a3a5c_100%)]">
+                    {/* City skyline placeholder SVG (اختصاراً) */}
+                    <svg
+                      viewBox="0 0 800 260"
+                      className="absolute inset-0 w-full h-full opacity-30"
+                      preserveAspectRatio="xMidYMax slice"
+                    >
+                      <defs>
+                        <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#40A0CA" stopOpacity="0.2" />
+                          <stop offset="100%" stopColor="#006EA8" stopOpacity="0.6" />
+                        </linearGradient>
+                      </defs>
+                      <rect x="50" y="100" width="40" height="160" fill="url(#skyGrad)" rx="2" />
+                      <rect x="100" y="60" width="50" height="200" fill="url(#skyGrad)" rx="2" />
+                      <rect x="160" y="120" width="35" height="140" fill="url(#skyGrad)" rx="2" />
+                      <rect x="205" y="80" width="45" height="180" fill="url(#skyGrad)" rx="2" />
+                      <rect x="260" y="40" width="55" height="220" fill="url(#skyGrad)" rx="2" />
+                      <rect x="325" y="90" width="40" height="170" fill="url(#skyGrad)" rx="2" />
+                      <rect x="375" y="50" width="60" height="210" fill="url(#skyGrad)" rx="2" />
+                      <rect x="445" y="110" width="35" height="150" fill="url(#skyGrad)" rx="2" />
+                      <rect x="490" y="70" width="50" height="190" fill="url(#skyGrad)" rx="2" />
+                      <rect x="550" y="30" width="45" height="230" fill="url(#skyGrad)" rx="2" />
+                      <rect x="605" y="100" width="40" height="160" fill="url(#skyGrad)" rx="2" />
+                      <rect x="655" y="60" width="55" height="200" fill="url(#skyGrad)" rx="2" />
+                      <rect x="720" y="90" width="35" height="170" fill="url(#skyGrad)" rx="2" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+
+              <label className="absolute inset-x-0 top-1/2 flex justify-center -translate-y-1/2 cursor-pointer z-20">
                 <span
-                  className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 active:scale-95"
-                  style={{
-                    background: "linear-gradient(180deg, #006EA8 0%, #005685 100%)",
-                    boxShadow: "0 4px 14px rgba(0,110,168,0.3), inset 0 1px 2px rgba(255,255,255,0.2)",
-                  }}
+                  className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(0,110,168,0.3),_inset_0_1px_2px_rgba(255,255,255,0.2)] bg-gradient-to-b from-[#006EA8] to-[#005685] transition-all hover:scale-105 active:scale-95"
                 >
                   <Camera className="h-4 w-4" />
                   {isAr ? "تغيير الغلاف" : "Replace Cover"}
                 </span>
-                <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
+                <input type="file" accept="image/*" aria-label={isAr ? "تحميل صورة الغلاف" : "Upload cover image"} className="hidden" onChange={handleCoverChange} />
               </label>
 
-              {/* Avatar */}
-              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
-                <div className="relative h-[100px] w-[100px] rounded-full border-4 border-white bg-white shadow-lg overflow-hidden">
+              <div className="absolute left-1/2 top-full z-30 -translate-x-1/2 -translate-y-10">
+                <div className="relative h-[120px] w-[120px] rounded-full border-4 border-white bg-white shadow-[0_25px_60px_rgba(15,23,42,0.18)] overflow-hidden">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Company logo" className="h-full w-full object-cover" />
                   ) : (
                     <div className="h-full w-full bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center text-[#006EA8]">
-                      <Globe className="h-10 w-10 stroke-[1.5]" />
+                      <Globe className="h-12 w-12 stroke-[1.5]" />
                     </div>
                   )}
                   <label
-                    className="absolute bottom-1 right-1 h-7 w-7 rounded-full flex items-center justify-center cursor-pointer shadow-md transition-transform hover:scale-110"
-                    style={{
-                      background: "linear-gradient(180deg, #006EA8 0%, #005685 100%)",
-                    }}
+                    className="absolute bottom-2 right-2 h-9 w-9 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-transform hover:scale-105 bg-gradient-to-b from-[#006EA8] to-[#005685]"
                   >
-                    <Camera className="h-3.5 w-3.5 text-white" />
-                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                    <Camera className="h-4 w-4 text-white" />
+                    <input type="file" accept="image/*" aria-label={isAr ? "تحميل صورة الشعار" : "Upload avatar image"} className="hidden" onChange={handleAvatarChange} />
                   </label>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="h-16" /> {/* spacer for avatar */}
+          <div className="h-20" /> {/* spacer for avatar */}
 
           {/* Form fields grid */}
           <div className="px-8 pb-8">
@@ -644,15 +624,7 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
         {/* ==================== SOCIAL LINKS CARD ==================== */}
         <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
           <div className="px-8 pt-8 pb-4">
-            <h2
-              className="text-[22px] font-bold italic text-start"
-              style={{
-                background: "linear-gradient(270deg, #032C44 0%, #41A0CA 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
+            <h2 className="text-[22px] font-bold italic text-start bg-gradient-to-r from-[#032C44] via-[#0e5f83] to-[#41A0CA] bg-clip-text text-transparent">
               {isAr ? "روابط التواصل الاجتماعي" : "Company Social Links"}
             </h2>
           </div>
@@ -663,25 +635,25 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
               <SocialLinkButton
                 icon={<FontAwesomeIcon icon={faFacebook} className="h-4 w-4" />}
                 label="Facebook"
-                bgActive="#1877F2"
+                variant="facebook"
                 isActive={!!watch("facebook")}
               />
               <SocialLinkButton
                 icon={<FontAwesomeIcon icon={faLinkedin} className="h-4 w-4" />}
                 label="LinkedIn"
-                bgActive="#0A66C2"
+                variant="linkedin"
                 isActive={!!watch("linkedin")}
               />
               <SocialLinkButton
                 icon={<FontAwesomeIcon icon={faTwitter} className="h-4 w-4" />}
                 label="X"
-                bgActive="#000000"
+                variant="twitter"
                 isActive={!!watch("twitter_x")}
               />
               <SocialLinkButton
                 icon={<FontAwesomeIcon icon={faPinterest} className="h-4 w-4" />}
                 label="Pinterest"
-                bgActive="#E60023"
+                variant="pinterest"
                 isActive={!!watch("pinterest")}
               />
             </div>
@@ -749,30 +721,27 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
 function SocialLinkButton({
   icon,
   label,
-  bgActive,
+  variant,
   isActive,
 }: {
   icon: React.ReactNode;
   label: string;
-  bgActive: string;
+  variant: "facebook" | "linkedin" | "twitter" | "pinterest";
   isActive: boolean;
 }) {
+  const activeClasses = isActive
+    ? variant === "facebook"
+      ? "bg-[#1877F2] text-white shadow-[0_2px_8px_rgba(24,119,242,0.25)]"
+      : variant === "linkedin"
+      ? "bg-[#0A66C2] text-white shadow-[0_2px_8px_rgba(10,102,194,0.25)]"
+      : variant === "twitter"
+      ? "bg-black text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+      : "bg-[#E60023] text-white shadow-[0_2px_8px_rgba(230,0,35,0.25)]"
+    : "bg-[#F5F5F5] text-[#737373] border border-[#E5E7EB]";
+
   return (
     <div
-      className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200"
-      style={
-        isActive
-          ? {
-              background: bgActive,
-              color: "#FFFFFF",
-              boxShadow: `0 2px 8px ${bgActive}40`,
-            }
-          : {
-              background: "#F5F5F5",
-              color: "#737373",
-              border: "1px solid #E5E7EB",
-            }
-      }
+      className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 ${activeClasses}`}
     >
       {icon}
       <span>{label}</span>

@@ -6,7 +6,7 @@ import { getNewsItem } from "@/lib/api/services/news.service"
 import { getNewsForLocale } from "@/features/news/lib/news-fallback"
 import { formatNewsDate } from "@/features/news/lib/format-news-date"
 import { resolveNewsImageUrl } from "@/features/news/lib/resolve-news-image"
-import { NewsCalendarIcon, NewsEyebrowGlobe } from "@/features/news/components/news-icons"
+import { NewsCalendarIcon } from "@/features/news/components/news-icons"
 import { NewsDetailSidebar } from "@/features/news/components/news-detail-sidebar"
 import { RelatedNewsCard } from "@/features/news/components/related-news-card"
 import { JobDetailShare } from "@/features/jobs/components/job-detail-share"
@@ -93,7 +93,7 @@ export async function NewsDetailPage({ slug, locale: propLocale }: NewsDetailPag
 
               <div className="flex flex-col gap-8">
                 <div className="inline-flex items-center gap-2 rounded-lg bg-[rgba(64,160,202,0.25)] px-4 py-2 text-[12px] leading-[1.16] text-[#002B46] w-fit">
-                  <NewsEyebrowGlobe />
+                  <Image src="/footer/icon-link.svg" alt="" width={16} height={16} className="h-4 w-4 shrink-0" />
                   {newsT("eyebrow")}
                 </div>
                 <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">

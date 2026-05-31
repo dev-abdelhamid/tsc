@@ -1,15 +1,60 @@
-"use client"
-
 import Image from "next/image"
 import styles from "./site-footer.module.css"
-import { useTranslations, useLocale } from "next-intl"
+import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
+import { getLocale } from "next-intl/server"
+import { getSettings } from "@/lib/api/services/settings.service"
 
-export function SiteFooter() {
-  const t = useTranslations("Landing.footer")
-  const contactT = useTranslations("Landing.contact")
-  const locale = useLocale()
+export async function SiteFooter() {
+  const locale = await getLocale()
+  const t = await getTranslations("Landing.footer")
+  const contactT = await getTranslations("Landing.contact")
   const isRTL = locale === "ar"
+
+  // Fetch contact settings from API
+  let contactPhone = ""
+  let contactEmail = ""
+  let contactAddress = ""
+  let facebookUrl = "#"
+  let linkedinUrl = "#"
+  let instagramUrl = "#"
+  let footerDescription = ""
+
+  try {
+    const settings = await getSettings(locale)
+    contactPhone = String(settings.find((s) => s.key === "contact_phone")?.value || "")
+    contactEmail = String(settings.find((s) => s.key === "contact_email")?.value || "")
+    contactAddress = String(settings.find((s) => s.key === "contact_address")?.value || "")
+    facebookUrl = String(settings.find((s) => s.key === "facebook_url")?.value || "#")
+    linkedinUrl = String(settings.find((s) => s.key === "linkedin_url")?.value || "#")
+    instagramUrl = String(settings.find((s) => s.key === "instagram_url")?.value || "#")
+
+    const footerDescSetting = settings.find((s) => s.key === "footer_description")?.value
+    if (footerDescSetting) {
+      if (typeof footerDescSetting === "object" && footerDescSetting !== null) {
+        const obj = footerDescSetting as Record<string, string>
+        footerDescription = obj[locale] || obj.en || obj.ar || ""
+      } else if (typeof footerDescSetting === "string") {
+        try {
+          const parsed = JSON.parse(footerDescSetting)
+          footerDescription = parsed[locale] || parsed.en || parsed.ar || footerDescSetting
+        } catch {
+          footerDescription = footerDescSetting
+        }
+      }
+    }
+  } catch {
+    // Use translation fallbacks
+  }
+
+  const displayPhone = contactPhone || t("contact.phone")
+  const displayEmail = contactEmail || t("contact.email")
+  const displayAddress = contactAddress || t("contact.address")
+  const displayDescription = footerDescription || contactT("footerDescription")
+
+  if (!facebookUrl || facebookUrl === "") facebookUrl = "#"
+  if (!linkedinUrl || linkedinUrl === "") linkedinUrl = "#"
+  if (!instagramUrl || instagramUrl === "") instagramUrl = "#"
 
   return (
     <footer dir={isRTL ? "rtl" : "ltr"} className="relative w-full overflow-hidden bg-[#001222] text-white">
@@ -21,7 +66,6 @@ export function SiteFooter() {
         <div className={`absolute inset-0 ${styles.bgLinear}`} />
         <div className={`absolute inset-0 ${styles.bgRadial}`} />
         <div className={`absolute inset-0 opacity-[0.06] ${styles.noiseBg}`} />
-        {/* Full-bleed decorative background image */}
         <div className="absolute inset-0 z-0" aria-hidden>
           <div className="absolute inset-0 relative">
             <Image
@@ -31,38 +75,54 @@ export function SiteFooter() {
               className="object-cover opacity-40 mix-blend-overlay pointer-events-none"
             />
           </div>
-    
         </div>
       </div>
 
       <div className="relative z-10 mx-auto max-w-[1512px] px-6 py-14 lg:px-[100px] lg:pt-14 lg:pb-8">
-     
         {/* Top Section */}
         <div className="flex flex-col justify-between gap-10 border-b border-[#003F64] pb-10 lg:flex-row lg:gap-20">
           {/* Column 1: Brand & Desc */}
           <div className="flex flex-col gap-6 lg:max-w-[474px]">
             <Link locale={locale} href="/">
-              <Image 
-                src="/footer/footer-logo.svg" 
-                alt={t("brand")} 
-                width={93} 
-                height={124} 
+              <Image
+                src="/footer/footer-logo.svg"
+                alt={t("brand")}
+                width={93}
+                height={124}
                 className="h-[124px] w-[93px] object-contain"
               />
             </Link>
             <p className="text-[16px] leading-normal font-normal text-[#F5F5F5]">
-              {contactT("footerDescription")}
+              {displayDescription}
             </p>
             <div className="flex items-center gap-6">
-              <Link href="#" className="flex size-10 items-center justify-center transition-transform hover:scale-110" aria-label="Instagram">
+              <a
+                href={instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex size-10 items-center justify-center transition-transform hover:scale-110"
+                aria-label="Instagram"
+              >
                 <Image src="/footer/social-instagram.svg" alt="" width={40} height={40} className="size-10 object-contain" />
-              </Link>
-              <Link href="#" className="flex size-10 items-center justify-center transition-transform hover:scale-110" aria-label="Telegram">
+              </a>
+              <a
+                href={linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex size-10 items-center justify-center transition-transform hover:scale-110"
+                aria-label="LinkedIn"
+              >
                 <Image src="/footer/social-telegram.svg" alt="" width={40} height={40} className="size-10 object-contain" />
-              </Link>
-              <Link href="#" className="flex size-10 items-center justify-center transition-transform hover:scale-110" aria-label="YouTube">
+              </a>
+              <a
+                href={facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex size-10 items-center justify-center transition-transform hover:scale-110"
+                aria-label="Facebook"
+              >
                 <Image src="/footer/social-youtube.svg" alt="" width={40} height={40} className="size-10 object-contain" />
-              </Link>
+              </a>
             </div>
           </div>
 
@@ -73,16 +133,22 @@ export function SiteFooter() {
             </h3>
             <nav className="flex flex-col gap-5">
               {["about", "jobs", "services", "contact"].map((item) => (
-                <Link 
-                  key={item}                   locale={locale}                  href={`/${item}`} 
+                <Link
+                  key={item}
+                  locale={locale}
+                  href={`/${item}`}
                   className="group flex items-center gap-3 text-[16px] leading-[1.16] text-[#F5F5F5] transition-colors hover:text-[#40A0CA]"
                 >
-                  <Image src="/footer/icon-link.svg" alt="" width={16} height={16} className="transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
+                  <Image
+                    src="/footer/icon-link.svg"
+                    alt=""
+                    width={16}
+                    height={16}
+                    className="transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1"
+                  />
                   {t(`quickLinks.items.${item}`)}
                 </Link>
               ))}
-
-              {/* Admin links removed (per design request) */}
             </nav>
           </div>
 
@@ -92,18 +158,28 @@ export function SiteFooter() {
               {t("contact.title")}
             </h3>
             <div className="flex flex-col gap-5">
-              <div className="flex items-center gap-3 text-[16px] leading-[1.16] text-[#F5F5F5]">
-                <Image src="/footer/icon-phone.svg" alt="" width={24} height={24} />
-                <span dir="ltr">{t("contact.phone")}</span>
-              </div>
-              <div className="flex items-center gap-3 text-[16px] leading-[1.16] text-[#F5F5F5]">
-                <Image src="/footer/icon-mail.svg" alt="" width={24} height={24} />
-                <span>{t("contact.email")}</span>
-              </div>
-              <div className="flex items-center gap-3 text-[16px] leading-[1.16] text-[#F5F5F5]">
-                <Image src="/footer/icon-location.svg" alt="" width={24} height={24} />
-                <span className="max-w-[250px]">{t("contact.address")}</span>
-              </div>
+              {displayPhone && (
+                <div className="flex items-center gap-3 text-[16px] leading-[1.16] text-[#F5F5F5]">
+                  <Image src="/footer/icon-phone.svg" alt="" width={24} height={24} />
+                  <a href={`tel:${displayPhone}`} dir="ltr" className="hover:text-[#40A0CA] transition-colors">
+                    {displayPhone}
+                  </a>
+                </div>
+              )}
+              {displayEmail && (
+                <div className="flex items-center gap-3 text-[16px] leading-[1.16] text-[#F5F5F5]">
+                  <Image src="/footer/icon-mail.svg" alt="" width={24} height={24} />
+                  <a href={`mailto:${displayEmail}`} className="hover:text-[#40A0CA] transition-colors">
+                    {displayEmail}
+                  </a>
+                </div>
+              )}
+              {displayAddress && (
+                <div className="flex items-start gap-3 text-[16px] leading-[1.16] text-[#F5F5F5]">
+                  <Image src="/footer/icon-location.svg" alt="" width={24} height={24} className="mt-0.5 shrink-0" />
+                  <span className="max-w-[250px]">{displayAddress}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -131,7 +207,6 @@ export function SiteFooter() {
             </Link>
           </div>
         </div>
-        
       </div>
     </footer>
   )

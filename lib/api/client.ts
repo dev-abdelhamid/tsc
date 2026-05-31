@@ -106,7 +106,11 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
     endpointWithLocale.startsWith("http://") || endpointWithLocale.startsWith("https://")
       ? endpointWithLocale
       : `${BASE_URL}${endpointWithLocale}`
-  const cacheOption = (fetchOptions as unknown as { cache?: RequestCache }).cache ?? "no-store"
+  
+  const nextOption = (fetchOptions as any).next
+  const cacheOption =
+    (fetchOptions as unknown as { cache?: RequestCache }).cache ??
+    (nextOption ? undefined : "no-store")
 
   // Debug: log key request info on the server to diagnose locale propagation
   if (!isBrowser) {
@@ -114,7 +118,7 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
       // Avoid logging sensitive tokens; only indicate presence
       const hasAuth = !!headers["Authorization"]
       // eslint-disable-next-line no-console
-      console.debug(`[api] ${fetchOptions.method ?? "GET"} ${requestUrl} Accept-Language=${headers["Accept-Language"]} X-Requested-Locale=${headers["X-Requested-Locale"]} locale_query=${locale} auth=${hasAuth}`)
+      console.debug(`[api] ${fetchOptions.method ?? "GET"} ${requestUrl} Accept-Language=${headers["Accept-Language"]} X-Requested-Locale=${headers["X-Requested-Locale"]} locale_query=${locale} auth=${hasAuth} cache=${cacheOption ?? "default"}`)
     } catch (e) {
       // ignore
     }
@@ -144,8 +148,15 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
 }
 
 export const api = {
-  get: <T>(endpoint: string, opts?: { locale?: string; token?: string; cache?: RequestCache }) =>
-    fetchApi<T>(endpoint, { method: "GET", ...opts }),
+  get: <T>(
+    endpoint: string,
+    opts?: {
+      locale?: string
+      token?: string
+      cache?: RequestCache
+      next?: { revalidate?: number; tags?: string[] }
+    }
+  ) => fetchApi<T>(endpoint, { method: "GET", ...opts }),
 
   post: <T>(endpoint: string, body?: FormData | Record<string, unknown>, opts?: { locale?: string; token?: string }) =>
     fetchApi<T>(endpoint, {

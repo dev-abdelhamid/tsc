@@ -7,6 +7,7 @@ import { PrimaryButton } from "@/components/ui/primary-button"
 import { StaggerInView, StaggerItem } from "@/features/shared-home"
 import { JobsListing } from "@/features/jobs/components/jobs-listing"
 import type { Category, Job } from "@/lib/api/types"
+import { Search } from "lucide-react"
 
 type JobsPageClientProps = {
   locale: string
@@ -62,23 +63,24 @@ export function JobsPageClient({
                 {hero.description}
               </p>
               <form
-                className="mt-2 flex w-full max-w-[644px] flex-col gap-4 sm:flex-row items-center justify-center"
+                className="mt-2 flex w-full max-w-[644px] items-center justify-center"
                 onSubmit={handleSearch}
               >
-                <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
+                <div className="flex w-full flex-row items-center gap-2">
                   <Input
                     name="search"
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder={hero.searchPlaceholder}
-                    className="h-[44px] flex-1 rounded-[8px] border border-[#E8F2FF] bg-white px-4 text-[#737373] placeholder:text-[#737373] text-[14px] font-normal shadow-[0_1px_18px_2px_#E8F2FF_inset] focus:border-[#40A0CA] focus:bg-white/95"
-                    style={{background:'linear-gradient(180deg,rgba(0,110,168,0.15) 0%,rgba(0,86,133,0.15) 100%)'}}
+                    className="h-[44px] flex-1 min-w-0 rounded-[12px] border border-[#40A0CA] px-4 text-[#171717] placeholder:text-[#737373]/80 text-[14px] font-normal focus:border-[#006EA8] focus:ring-1 focus:ring-[#006EA8] shadow-sm transition-colors"
+                    style={{background:'linear-gradient(180deg,rgba(0,110,168,0.12) 0%,rgba(0,86,133,0.12) 100%)'}}
                   />
                   <PrimaryButton
                     type="submit"
-                    className="h-[44px] w-full sm:w-[150px] rounded-[12px] text-[16px] font-medium"
+                    className="h-[44px] shrink-0 w-11 sm:w-[150px] px-0 sm:px-4 rounded-[12px] flex items-center justify-center gap-2 text-[14px] sm:text-[16px] font-medium"
                   >
-                    {hero.search}
+                    <Search className="size-5 shrink-0" />
+                    <span className="hidden sm:inline">{hero.search}</span>
                   </PrimaryButton>
                 </div>
               </form>

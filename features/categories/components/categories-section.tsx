@@ -6,9 +6,9 @@ import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home
 import { getCategories } from "@/lib/api/services/categories.service"
 import { Link } from "@/i18n/navigation"
 import { CategoryIconFor } from "@/features/categories/components/category-icons"
-import { cn } from "@/lib/utils"
+import { cn, resolveImageUrl } from "@/lib/utils"
 import { MoveUpRight } from "lucide-react"
-import { NewsEyebrowGlobe } from "@/features/news/components/news-icons"
+import Image from "next/image"
 
 const CARD_HOVER_SHADOW =
   "hover:border-[#4BB7E7] hover:bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] hover:bg-size-[150px_150px,auto] hover:bg-blend-[plus-lighter,normal] hover:text-white hover:shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19)]"
@@ -46,7 +46,7 @@ export async function CategoriesSection({ override }: CategoriesSectionProps) {
         >
           <StaggerItem>
             <div className="inline-flex items-center gap-2 rounded-lg bg-[rgba(64,160,202,0.25)] px-4 py-2 text-[12px] leading-[1.16] font-normal text-[#40A0CA]">
-              <NewsEyebrowGlobe className="h-4 w-4 shrink-0 text-[#40A0CA]" />
+              <Image src="/footer/icon-link.svg" alt="" width={16} height={16} className="h-4 w-4 shrink-0" />
               {t("eyebrow")}
             </div>
           </StaggerItem>
@@ -75,7 +75,7 @@ export async function CategoriesSection({ override }: CategoriesSectionProps) {
               const slug = cat.slug || String(cat.id)
               return (
                 <StaggerItem key={slug} className="overflow-hidden p-1">
-                  <Link locale={locale} href={`/jobs?category=${encodeURIComponent(slug)}`} className="block">
+                  <Link locale={locale} href={`/jobs?category=${cat.id}`} className="block">
                     <Card
                       className={cn(
                         "group relative min-h-[236px] cursor-pointer overflow-hidden rounded-lg border border-[#d4d4d4] bg-white transition-all duration-300",
@@ -84,17 +84,34 @@ export async function CategoriesSection({ override }: CategoriesSectionProps) {
                     >
                       <CardContent className="flex h-full min-h-[236px] flex-col items-start gap-6 overflow-hidden px-6 py-8">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#40A0CA] bg-white transition-colors group-hover:border-white group-hover:bg-white">
-                          <CategoryIconFor
-                            categoryKey={slug}
-                            className="text-[#40A0CA] transition-colors group-hover:text-[#2D7494]"
-                          />
+                          {cat.icon && resolveImageUrl(cat.icon) ? (
+                            <Image
+                              src={resolveImageUrl(cat.icon)}
+                              alt={cat.name || ""}
+                              width={36}
+                              height={36}
+                              className="h-9 w-9 object-contain"
+                              unoptimized
+                            />
+                          ) : (
+                            <CategoryIconFor
+                              categoryKey={slug}
+                              className="h-7 w-7 text-[#40A0CA] transition-colors group-hover:text-[#2D7494]"
+                            />
+                          )}
                         </div>
                         <div className="mt-auto space-y-2 text-start">
                           <p className="text-[20px] font-bold leading-[1.16] text-[#262626] transition-colors group-hover:text-white">
                             {cat.name || t(`items.${slug}.label`)}
                           </p>
                           <p className="text-[12px] font-medium leading-[1.16] text-[#525252] transition-colors group-hover:text-[#FAFAFA]">
-                            {cat.jobs_count != null ? `${cat.jobs_count} ${t("vacancies")}` : t(`items.${slug}.vacancy`)}
+                            {(() => {
+                              try {
+                                return cat.jobs_count != null ? `${cat.jobs_count} ${t("vacancies")}` : t(`items.${slug}.vacancy`)
+                              } catch (err) {
+                                return cat.jobs_count != null ? `${cat.jobs_count} ${t("vacancies")}` : t("vacancy")
+                              }
+                            })()}
                           </p>
                         </div>
                       </CardContent>

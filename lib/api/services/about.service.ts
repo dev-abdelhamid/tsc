@@ -188,7 +188,7 @@ export async function getAbout(locale = "ar"): Promise<AboutPageContent | null> 
     try {
       const response = await api.get<unknown>(endpoint, {
         locale,
-        cache: "no-store",
+        next: { revalidate: 60 },
       })
       const normalized = normalizeAbout(response, locale)
       if (normalized) return normalized

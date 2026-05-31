@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import { DirectionProvider } from "@/components/ui/direction"
 import { routing } from "@/i18n/routing"
 import { SiteChrome } from "@/features/shared-home"
+import { SiteFooter } from "@/features/shared-home/components/site-footer"
 import { getSession } from "@/lib/session"
 import "../globals.css"
 
@@ -88,7 +89,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <NextIntlClientProvider locale={locale} messages={messages}>
           <DirectionProvider dir={direction} direction={direction}>
             {/* ✅ تمرير Plain Object فقط */}
-            <SiteChrome session={sessionData}>
+            <SiteChrome session={sessionData} footer={<SiteFooter />}>
               {children}
             </SiteChrome>
           </DirectionProvider>

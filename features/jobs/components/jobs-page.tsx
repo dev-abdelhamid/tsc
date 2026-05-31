@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { SectionShell } from "@/features/shared-home"
 import { getCategoriesForForm } from "@/lib/api/services/categories.service"
@@ -33,43 +34,45 @@ export async function JobsPage({ locale: propLocale }: { locale?: string } = {})
   return (
     <main className="flex-1 bg-white">
       <SectionShell stagger={false} className="relative py-0">
-        <JobsPageClient
-          locale={locale}
-          jobs={jobs}
-          total={total}
-          categories={categories}
-          hero={{
-            eyebrow: jobsT("eyebrow"),
-            title: jobsT("title"),
-            description: jobsT("description"),
-            searchPlaceholder: t("searchPlaceholder"),
-            search: t("search"),
-          }}
-          listingLabels={{
-            allJobs: t("allJobs"),
-            filter: t("filter"),
-            department: t("department"),
-            postedAgo: t("postedAgo"),
-            salaryPeriod: t("salaryPeriod"),
-            employmentFullTime: t("employmentFullTime"),
-            companyName: t("companyName"),
-            companySubLabel: t("companySubLabel"),
-            moreDetails: jobsT("moreDetails"),
-            filterPanelTitle: t("filterPanel.title"),
-            clearAll: t("filterPanel.clearAll"),
-            state: t("filterPanel.state"),
-            categories: t("filterPanel.categories"),
-            salary: t("filterPanel.salary"),
-            salaryMin: t("filterPanel.salaryMin"),
-            salaryMax: t("filterPanel.salaryMax"),
-            from: t("filterPanel.from"),
-            to: t("filterPanel.to"),
-            noResults: t("noResults"),
-            closeFilters: t("closeFilters"),
-          }}
-          stateOptions={[...GERMAN_STATES]}
-          categoryOptions={categoryOptions}
-        />
+        <Suspense>
+          <JobsPageClient
+            locale={locale}
+            jobs={jobs}
+            total={total}
+            categories={categories}
+            hero={{
+              eyebrow: jobsT("eyebrow"),
+              title: jobsT("title"),
+              description: jobsT("description"),
+              searchPlaceholder: t("searchPlaceholder"),
+              search: t("search"),
+            }}
+            listingLabels={{
+              allJobs: t("allJobs"),
+              filter: t("filter"),
+              department: t("department"),
+              postedAgo: t("postedAgo"),
+              salaryPeriod: t("salaryPeriod"),
+              employmentFullTime: t("employmentFullTime"),
+              companyName: t("companyName"),
+              companySubLabel: t("companySubLabel"),
+              moreDetails: jobsT("moreDetails"),
+              filterPanelTitle: t("filterPanel.title"),
+              clearAll: t("filterPanel.clearAll"),
+              state: t("filterPanel.state"),
+              categories: t("filterPanel.categories"),
+              salary: t("filterPanel.salary"),
+              salaryMin: t("filterPanel.salaryMin"),
+              salaryMax: t("filterPanel.salaryMax"),
+              from: t("filterPanel.from"),
+              to: t("filterPanel.to"),
+              noResults: t("noResults"),
+              closeFilters: t("closeFilters"),
+            }}
+            stateOptions={[...GERMAN_STATES]}
+            categoryOptions={categoryOptions}
+          />
+        </Suspense>
       </SectionShell>
     </main>
   )

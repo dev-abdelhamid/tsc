@@ -1,10 +1,20 @@
 import { api } from "../client"
 
+export interface ServiceFeature {
+  id: number
+  title: string
+  description: string
+  icon?: string
+  sortOrder?: number
+}
+
 export interface Service {
   id: number
   title: string
   description: string
   icon?: string
+  image?: string
+  features: ServiceFeature[]
 }
 
 function pickLocalizedString(value: unknown, locale = "ar"): string {
@@ -26,7 +36,7 @@ function pickLocalizedString(value: unknown, locale = "ar"): string {
   return ""
 }
 
-function normalizeService(item: unknown, locale = "ar"): Service | null {
+function normalizeFeature(item: unknown, locale = "ar"): ServiceFeature | null {
   if (!item || typeof item !== "object") return null
 
   const row = item as Record<string, unknown>
@@ -40,6 +50,40 @@ function normalizeService(item: unknown, locale = "ar"): Service | null {
     title,
     description,
     icon: typeof row.icon === "string" ? row.icon : undefined,
+    sortOrder:
+      typeof row.sortOrder === "number"
+        ? row.sortOrder
+        : typeof row.sort_order === "number"
+          ? row.sort_order
+          : undefined,
+  }
+}
+
+function normalizeService(item: unknown, locale = "ar"): Service | null {
+  if (!item || typeof item !== "object") return null
+
+  const row = item as Record<string, unknown>
+  const title = pickLocalizedString(row.title, locale)
+  const description = pickLocalizedString(row.description ?? row.content, locale)
+
+  if (!title) return null
+
+  const rawFeatures = row.features
+  const features: ServiceFeature[] = []
+  if (Array.isArray(rawFeatures)) {
+    for (const f of rawFeatures) {
+      const parsed = normalizeFeature(f, locale)
+      if (parsed) features.push(parsed)
+    }
+  }
+
+  return {
+    id: typeof row.id === "number" ? row.id : 0,
+    title,
+    description,
+    icon: typeof row.icon === "string" ? row.icon : undefined,
+    image: typeof row.image === "string" ? row.image : undefined,
+    features,
   }
 }
 
@@ -58,4 +102,30 @@ export async function getServices(locale = "ar"): Promise<Service[]> {
     console.error("[getServices] error:", err)
     return []
   }
+}
+
+export async function createServiceAdmin(
+  formData: FormData,
+  token: string,
+  locale = "ar"
+): Promise<void> {
+  await api.post<unknown>("/service", formData, { token, locale })
+}
+
+export async function updateServiceAdmin(
+  id: number,
+  formData: FormData,
+  token: string,
+  locale = "ar"
+): Promise<void> {
+  // Laravel requires _method=PUT for form-data updates
+  await api.post<unknown>(`/service/${id}?_method=PUT`, formData, { token, locale })
+}
+
+export async function deleteServiceAdmin(
+  id: number,
+  token: string,
+  locale = "ar"
+): Promise<void> {
+  await api.delete(`/service/${id}`, { token, locale })
 }

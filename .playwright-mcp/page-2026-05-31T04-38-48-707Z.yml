@@ -1,0 +1,44 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - main [ref=e3]:
+      - generic [ref=e5]:
+        - link "رجوع" [ref=e6] [cursor=pointer]:
+          - /url: /ar
+          - img [ref=e7]
+          - generic [ref=e8]: رجوع
+        - generic [ref=e9]:
+          - generic [ref=e10]:
+            - img "شعار تالنت سيكر" [ref=e11]
+            - generic [ref=e12]:
+              - generic [ref=e13]:
+                - heading "مرحبًا بك في تالنت سيكر" [level=1] [ref=e14]
+                - paragraph [ref=e15]: سجّل الدخول إلى حسابك لإدارة رحلتك المهنية أو التوظيف
+              - tablist "نوع الحساب" [ref=e16]:
+                - tab "مستخدم" [selected] [ref=e17]:
+                  - img [ref=e18]
+                  - generic [ref=e19]: مستخدم
+                - tab "شركة" [ref=e20]:
+                  - img [ref=e21]
+                  - generic [ref=e22]: شركة
+          - generic [ref=e24]:
+            - generic [ref=e25]:
+              - generic [ref=e27]:
+                - img [ref=e28]
+                - textbox [ref=e29]:
+                  - /placeholder: البريد الإلكتروني
+              - generic [ref=e31]:
+                - generic [ref=e32]:
+                  - img [ref=e33]
+                  - textbox [ref=e34]:
+                    - /placeholder: كلمة المرور
+                - button [ref=e35] [cursor=pointer]:
+                  - img [ref=e36]
+            - button "تسجيل الدخول" [ref=e37]
+          - link "نسيت كلمة المرور" [ref=e38] [cursor=pointer]:
+            - /url: /ar/forgot-password
+          - generic [ref=e40]:
+            - generic [ref=e41]: ليس لديك حساب؟
+            - link "إنشاء حساب" [ref=e42] [cursor=pointer]:
+              - /url: /ar/sign-up
+  - button "Open Next.js Dev Tools" [ref=e48] [cursor=pointer]:
+    - img [ref=e49]

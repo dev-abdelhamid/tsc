@@ -2,7 +2,7 @@ import Image from "next/image"
 import { Link } from "@/i18n/navigation"
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { PrimaryButton } from "@/components/ui/primary-button"
-import { NewsEyebrowGlobe } from "@/features/news/components/news-icons"
+
 import { SectionShell } from "@/features/shared-home"
 
 type SupportSectionProps = {
@@ -29,7 +29,7 @@ export async function SupportSection({ override }: SupportSectionProps) {
 
         <div className="relative z-[1] flex flex-col items-center gap-6 text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-[13px] font-semibold tracking-[0.06em] text-white/95">
-            <NewsEyebrowGlobe className="h-4 w-4" aria-hidden />
+            <Image src="/footer/icon-link.svg" alt="" width={16} height={16} className="h-4 w-4" aria-hidden />
             <span>{t("eyebrow")}</span>
           </div>
 
@@ -42,23 +42,23 @@ export async function SupportSection({ override }: SupportSectionProps) {
             </p>
           </div>
 
-          <div className="mt-6 flex w-full items-center justify-center gap-4 flex-col sm:flex-row">
-            <PrimaryButton asChild className="h-[44px] w-full max-w-[180px] rounded-xl sm:w-auto">
+          <div className="mt-6 flex flex-row items-center justify-center gap-3 w-full max-w-md mx-auto flex-nowrap px-2 sm:gap-4">
+            <PrimaryButton asChild className="h-10 w-fit px-3 rounded-lg text-[12px] font-medium sm:h-11 sm:px-5 sm:text-base flex-shrink-0">
               <Link locale={locale} href="/contact" className="inline-flex items-center justify-center gap-2">
                 <span>{t("actions.contact")}</span>
-                <Image src="/contact.svg" alt="" width={20} height={20} aria-hidden />
+                <Image src="/contact.svg" alt="" width={16} height={16} aria-hidden className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" />
               </Link>
             </PrimaryButton>
 
             <Link
               locale={locale}
               href="/faqs"
-              className="inline-flex h-[44px] w-full max-w-[180px] items-center justify-center gap-2 rounded-xl bg-white px-6 text-[16px] font-medium shadow-[inset_0_1px_4px_2px_#C2DDFF] sm:w-auto transition-transform hover:scale-105"
+              className="inline-flex h-10 w-fit items-center justify-center gap-2 rounded-lg bg-white px-3 text-[12px] font-medium shadow-[inset_0_1px_4px_2px_#C2DDFF] transition-transform hover:scale-105 sm:h-11 sm:px-5 sm:text-base flex-shrink-0"
             >
               <span className="bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] bg-clip-text text-transparent">
                 {t("actions.faqs")}
               </span>
-              <Image src="/faqs.svg" alt="" width={20} height={20} aria-hidden />
+              <Image src="/faqs.svg" alt="" width={16} height={16} aria-hidden className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" />
             </Link>
           </div>
         </div>

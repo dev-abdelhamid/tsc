@@ -23,12 +23,5 @@ export default async function AdminNewsPage({
   // Fetch news using the admin news service
   const newsResult = await getAdminNews(token, { per_page: 50 }, locale).catch(() => ({ data: [] }))
 
-  return (
-    <AdminPageLayout
-      title={locale === "ar" ? "الأخبار والمقالات" : "News & Articles"}
-      description={locale === "ar" ? "إضافة وتعديل وحذف الأخبار والمقالات" : "Manage, create, and delete news articles"}
-    >
-      <AdminNewsPanel news={newsResult.data} />
-    </AdminPageLayout>
-  )
+  return <AdminNewsPanel news={newsResult.data} locale={locale} />
 }

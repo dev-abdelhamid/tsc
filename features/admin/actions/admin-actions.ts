@@ -20,8 +20,19 @@ import {
   markAllAsRead,
   markAsRead,
 } from "@/lib/api/services/notifications.service"
+import {
+  createServiceAdmin,
+  updateServiceAdmin,
+  deleteServiceAdmin,
+} from "@/lib/api/services/services.service"
+import {
+  createCategoryAdmin,
+  updateCategoryAdmin,
+  deleteCategoryAdmin,
+} from "@/lib/api/services/categories.service"
 import { ApiError } from "@/lib/api/client"
 import { getSession } from "@/lib/session"
+import { deleteContactMessage } from "@/lib/api/services/contact-messages.service"
 
 async function requireAdmin(locale: string) {
   const session = await getSession()
@@ -212,5 +223,93 @@ export async function deleteNotificationAction(id: number, locale: string) {
     return { ok: true as const }
   } catch {
     return { ok: false as const, message: "Failed" }
+  }
+}
+
+// ─── Services ─────────────────────────────────────────────────────────────
+
+export async function saveServiceAction(
+  formData: FormData,
+  locale: string,
+  serviceId?: number
+) {
+  try {
+    const { token } = await requireAdmin(locale)
+    if (serviceId) {
+      await updateServiceAdmin(serviceId, formData, token, locale)
+    } else {
+      await createServiceAdmin(formData, token, locale)
+    }
+    revalidatePath(`/${locale}/services`)
+    revalidatePath(`/${locale}/dashboard/admin/services`)
+    return { ok: true as const }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to save service"
+    return { ok: false as const, message }
+  }
+}
+
+export async function deleteServiceAction(id: number, locale: string) {
+  try {
+    const { token } = await requireAdmin(locale)
+    await deleteServiceAdmin(id, token, locale)
+    revalidatePath(`/${locale}/services`)
+    revalidatePath(`/${locale}/dashboard/admin/services`)
+    return { ok: true as const }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to delete service"
+    return { ok: false as const, message }
+  }
+}
+
+// ─── Categories ───────────────────────────────────────────────────────────
+
+export async function saveCategoryAction(
+  formData: FormData,
+  locale: string,
+  categoryId?: number
+) {
+  try {
+    const { token } = await requireAdmin(locale)
+    if (categoryId) {
+      await updateCategoryAdmin(categoryId, formData, token, locale)
+    } else {
+      await createCategoryAdmin(formData, token, locale)
+    }
+    revalidatePath(`/${locale}`)
+    revalidatePath(`/${locale}/jobs`)
+    revalidatePath(`/${locale}/dashboard/admin/categories`)
+    return { ok: true as const }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to save category"
+    return { ok: false as const, message }
+  }
+}
+
+export async function deleteCategoryAction(id: number, locale: string) {
+  try {
+    const { token } = await requireAdmin(locale)
+    await deleteCategoryAdmin(id, token, locale)
+    revalidatePath(`/${locale}`)
+    revalidatePath(`/${locale}/jobs`)
+    revalidatePath(`/${locale}/dashboard/admin/categories`)
+    return { ok: true as const }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to delete category"
+    return { ok: false as const, message }
+  }
+}
+
+// ─── Contact Messages ──────────────────────────────────────────────────────
+
+export async function deleteContactMessageAction(id: number, locale: string) {
+  try {
+    const { token } = await requireAdmin(locale)
+    await deleteContactMessage(id, token, locale)
+    revalidatePath(`/${locale}/dashboard/admin/contact`)
+    return { ok: true as const }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to delete message"
+    return { ok: false as const, message }
   }
 }

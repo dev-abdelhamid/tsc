@@ -1,25 +1,15 @@
 "use client"
 
 import Image from "next/image"
-import { useMemo, useState, useTransition } from "react"
+import { useMemo, useRef, useState, useTransition } from "react"
 import { useRouter } from "@/i18n/navigation"
-import { useTranslations } from "next-intl"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import type { AboutPageContent, AboutFeature } from "@/lib/api/services/about.service"
 import { saveAboutAction } from "@/features/admin/actions/admin-actions"
+import { Upload, X, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 
 const LOCALES = ["ar", "en", "de"] as const
-
 type LocaleKey = (typeof LOCALES)[number]
-
-type FormState = {
-  title: Record<LocaleKey, string>
-  descriptionLeft: Record<LocaleKey, string>
-  descriptionRight: Record<LocaleKey, string>
-  secondTitle: Record<LocaleKey, string>
-  secondDescription: Record<LocaleKey, string>
-  videoUrl: string
-}
 
 type FeatureForm = {
   id?: number | string
@@ -27,50 +17,35 @@ type FeatureForm = {
   description: Record<LocaleKey, string>
 }
 
+type MainFormState = {
+  title: Record<LocaleKey, string>
+  descriptionLeft: Record<LocaleKey, string>
+  descriptionRight: Record<LocaleKey, string>
+}
+
+type SecondFormState = {
+  secondTitle: Record<LocaleKey, string>
+  secondDescription: Record<LocaleKey, string>
+}
+
 function emptyLocale(): Record<LocaleKey, string> {
   return { ar: "", en: "", de: "" }
 }
 
-function emptyForm(): FormState {
+function mapContentToMainForm(content: AboutPageContent | null): MainFormState {
+  if (!content) return { title: emptyLocale(), descriptionLeft: emptyLocale(), descriptionRight: emptyLocale() }
   return {
-    title: emptyLocale(),
-    descriptionLeft: emptyLocale(),
-    descriptionRight: emptyLocale(),
-    secondTitle: emptyLocale(),
-    secondDescription: emptyLocale(),
-    videoUrl: "",
+    title: { ar: content.title, en: content.title, de: content.title },
+    descriptionLeft: { ar: content.descriptionLeft, en: content.descriptionLeft, de: content.descriptionLeft },
+    descriptionRight: { ar: content.descriptionRight, en: content.descriptionRight, de: content.descriptionRight },
   }
 }
 
-function emptyFeature(): FeatureForm {
-  return { title: emptyLocale(), description: emptyLocale() }
-}
-
-function mapContentToForm(content: AboutPageContent | null): FormState {
-  if (!content) return emptyForm()
+function mapContentToSecondForm(content: AboutPageContent | null): SecondFormState {
+  if (!content) return { secondTitle: emptyLocale(), secondDescription: emptyLocale() }
   return {
-    title: { ar: content.title, en: content.title, de: content.title },
-    descriptionLeft: {
-      ar: content.descriptionLeft,
-      en: content.descriptionLeft,
-      de: content.descriptionLeft,
-    },
-    descriptionRight: {
-      ar: content.descriptionRight,
-      en: content.descriptionRight,
-      de: content.descriptionRight,
-    },
-    secondTitle: {
-      ar: content.secondTitle,
-      en: content.secondTitle,
-      de: content.secondTitle,
-    },
-    secondDescription: {
-      ar: content.secondDescription,
-      en: content.secondDescription,
-      de: content.secondDescription,
-    },
-    videoUrl: content.video || "",
+    secondTitle: { ar: content.secondTitle, en: content.secondTitle, de: content.secondTitle },
+    secondDescription: { ar: content.secondDescription, en: content.secondDescription, de: content.secondDescription },
   }
 }
 
@@ -82,22 +57,11 @@ function mapFeaturesToForm(features: AboutFeature[]): FeatureForm[] {
   }))
 }
 
-// ---------- sub-components ----------
-
 function LocaleCard({
-  lang,
-  label,
-  value,
-  onChange,
-  multiline = false,
-  rows = 3,
+  lang, label, value, onChange, multiline = false, rows = 3,
 }: {
-  lang: string
-  label: string
-  value: string
-  onChange: (v: string) => void
-  multiline?: boolean
-  rows?: number
+  lang: string; label: string; value: string
+  onChange: (v: string) => void; multiline?: boolean; rows?: number
 }) {
   return (
     <label className="block text-sm text-[#374151]">
@@ -126,7 +90,64 @@ function LocaleCard({
   )
 }
 
-// ---------- Main Component ----------
+function ImageUploadBox({
+  label, file, preview, existingUrl, onFile, onClear,
+}: {
+  label: string; file: File | null; preview: string | null
+  existingUrl?: string | null; onFile: (f: File) => void; onClear: () => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const displaySrc = preview || existingUrl
+
+  return (
+    <div className="rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-3 space-y-2">
+      <p className="text-xs font-bold uppercase tracking-widest text-[#006EA8]">{label}</p>
+      <div className="flex items-start gap-3">
+        {displaySrc ? (
+          <div className="relative h-24 w-36 flex-shrink-0 rounded-lg overflow-hidden border border-[#E5E7EB]">
+            <Image src={displaySrc} alt={label} fill className="object-cover" unoptimized />
+          </div>
+        ) : (
+          <div className="flex h-24 w-36 flex-shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-[#78A3BE] bg-white">
+            <Upload className="h-6 w-6 text-[#78A3BE]" />
+          </div>
+        )}
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-lg border border-[#006EA8] px-3 py-1.5 text-sm font-medium text-[#006EA8] hover:bg-[#006EA8]/10 transition-colors"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            {displaySrc ? "تغيير" : "رفع صورة"}
+          </button>
+          {(preview || file) && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="inline-flex items-center gap-1 text-xs text-red-500 hover:underline"
+            >
+              <X className="h-3 w-3" />
+              إزالة
+            </button>
+          )}
+          {file && (
+            <p className="text-xs text-[#6B7280] truncate max-w-[160px]">{file.name}</p>
+          )}
+        </div>
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f) }}
+      />
+    </div>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export function AdminAboutPanel({
   content,
@@ -135,53 +156,64 @@ export function AdminAboutPanel({
   content: AboutPageContent | null
   locale: string
 }) {
-  const t = useTranslations("Admin.about")
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [activeTab, setActiveTab] = useState<"main" | "second" | "features">("main")
 
-  const [form, setForm] = useState<FormState>(() => mapContentToForm(content))
-  const [features, setFeatures] = useState<FeatureForm[]>(() =>
-    mapFeaturesToForm(content?.features ?? [])
-  )
+  const [mainForm, setMainForm] = useState<MainFormState>(() => mapContentToMainForm(content))
+  const [secondForm, setSecondForm] = useState<SecondFormState>(() => mapContentToSecondForm(content))
+  const [features, setFeatures] = useState<FeatureForm[]>(() => mapFeaturesToForm(content?.features ?? []))
+
+  // Image files
   const [primaryImage, setPrimaryImage] = useState<File | null>(null)
+  const [primaryPreview, setPrimaryPreview] = useState<string | null>(null)
   const [secondaryImage, setSecondaryImage] = useState<File | null>(null)
+  const [secondaryPreview, setSecondaryPreview] = useState<string | null>(null)
 
-  const hasCurrentImages = useMemo(
-    () => !!content?.image || !!content?.secondImage,
-    [content]
-  )
+  // Video file (must be a file, not a URL string)
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [videoPreview, setVideoPreview] = useState<string | null>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
 
-  // ---- features helpers ----
+  const isRTL = locale === "ar"
+
+  function handlePrimaryImage(f: File) {
+    setPrimaryImage(f)
+    setPrimaryPreview(URL.createObjectURL(f))
+  }
+  function handleSecondaryImage(f: File) {
+    setSecondaryImage(f)
+    setSecondaryPreview(URL.createObjectURL(f))
+  }
+  function handleVideoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setVideoFile(f)
+    setVideoPreview(URL.createObjectURL(f))
+  }
+
+  // Features helpers
   function addFeature() {
-    setFeatures((prev) => [...prev, emptyFeature()])
+    setFeatures((prev) => [
+      ...prev,
+      { title: emptyLocale(), description: emptyLocale() },
+    ])
   }
   function removeFeature(idx: number) {
     setFeatures((prev) => prev.filter((_, i) => i !== idx))
   }
-  function updateFeatureField(
-    idx: number,
-    field: "title" | "description",
-    lang: LocaleKey,
-    value: string
-  ) {
+  function updateFeatureField(idx: number, field: "title" | "description", lang: LocaleKey, value: string) {
     setFeatures((prev) =>
-      prev.map((f, i) =>
-        i === idx ? { ...f, [field]: { ...f[field], [lang]: value } } : f
-      )
+      prev.map((f, i) => (i === idx ? { ...f, [field]: { ...f[field], [lang]: value } } : f))
     )
   }
 
-  function appendLocalized(
-    formData: FormData,
-    key: string,
-    values: Record<LocaleKey, string>
-  ) {
+  function appendLocalized(fd: FormData, key: string, values: Record<LocaleKey, string>) {
     for (const lang of LOCALES) {
-      const value = values[lang]?.trim()
-      if (value) formData.append(`${key}[${lang}]`, value)
+      const v = values[lang]?.trim()
+      if (v) fd.append(`${key}[${lang}]`, v)
     }
   }
 
@@ -190,30 +222,33 @@ export function AdminAboutPanel({
     setError(null)
     setSuccess(false)
 
-    const formData = new FormData()
-    appendLocalized(formData, "title", form.title)
-    appendLocalized(formData, "description_left", form.descriptionLeft)
-    appendLocalized(formData, "description_right", form.descriptionRight)
-    appendLocalized(formData, "second_title", form.secondTitle)
-    appendLocalized(formData, "second_description", form.secondDescription)
-    if (form.videoUrl) {
-      formData.append("video", form.videoUrl)
-    }
+    const fd = new FormData()
+
+    // Main section
+    appendLocalized(fd, "title", mainForm.title)
+    appendLocalized(fd, "description_left", mainForm.descriptionLeft)
+    appendLocalized(fd, "description_right", mainForm.descriptionRight)
+
+    // Second section
+    appendLocalized(fd, "second_title", secondForm.secondTitle)
+    appendLocalized(fd, "second_description", secondForm.secondDescription)
+
+    // Images - only file uploads (never URL strings to avoid "حقل video يجب أن يكون ملفًا")
+    if (primaryImage) fd.append("image", primaryImage)
+    if (secondaryImage) fd.append("second_image", secondaryImage)
+    if (videoFile) fd.append("video", videoFile)
 
     // Features
     features.forEach((f, idx) => {
-      if (f.id) formData.append(`features[${idx}][id]`, String(f.id))
-      appendLocalized(formData, `features[${idx}][title]`, f.title)
-      appendLocalized(formData, `features[${idx}][description]`, f.description)
+      if (f.id) fd.append(`features[${idx}][id]`, String(f.id))
+      appendLocalized(fd, `features[${idx}][title]`, f.title)
+      appendLocalized(fd, `features[${idx}][description]`, f.description)
     })
 
-    if (primaryImage) formData.append("image", primaryImage)
-    if (secondaryImage) formData.append("second_image", secondaryImage)
-
     startTransition(async () => {
-      const result = await saveAboutAction(formData, locale)
+      const result = await saveAboutAction(fd, locale)
       if (!result.ok) {
-        setError(result.message ?? t("error"))
+        setError(result.message ?? "تعذر الحفظ")
         return
       }
       setSuccess(true)
@@ -222,10 +257,9 @@ export function AdminAboutPanel({
   }
 
   const tabClass = (tab: typeof activeTab) =>
-    `px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${
-      activeTab === tab
-        ? "border-b-2 border-[#006EA8] text-[#006EA8]"
-        : "text-[#6B7280] hover:text-[#111827]"
+    `px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${activeTab === tab
+      ? "border-b-2 border-[#006EA8] text-[#006EA8]"
+      : "text-[#6B7280] hover:text-[#111827]"
     }`
 
   return (
@@ -236,253 +270,186 @@ export function AdminAboutPanel({
       {/* Tabs */}
       <div className="flex flex-wrap gap-1 border-b border-[#E5E7EB]">
         <button type="button" className={tabClass("main")} onClick={() => setActiveTab("main")}>
-          {t("fields.title")} / وصف الهيدر
+          {isRTL ? "عنوان الهيدر / وصف الهيدر" : "Header / Description"}
         </button>
-        <button
-          type="button"
-          className={tabClass("second")}
-          onClick={() => setActiveTab("second")}
-        >
-          القسم الثاني
+        <button type="button" className={tabClass("second")} onClick={() => setActiveTab("second")}>
+          {isRTL ? "القسم الثاني" : "Second Section"}
         </button>
-        <button
-          type="button"
-          className={tabClass("features")}
-          onClick={() => setActiveTab("features")}
-        >
-          المزايا ({features.length})
+        <button type="button" className={tabClass("features")} onClick={() => setActiveTab("features")}>
+          {isRTL ? `المزايا (${features.length})` : `Features (${features.length})`}
         </button>
       </div>
 
       {/* Alert Messages */}
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
-          {error}
-        </p>
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">{error}</p>
       )}
       {success && (
         <p className="rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800">
-          ✓ تم الحفظ بنجاح
+          ✓ {isRTL ? "تم الحفظ بنجاح" : "Saved successfully"}
         </p>
       )}
 
-      {/* ---- Main section tab ---- */}
+      {/* ── TAB: Main ── */}
       {activeTab === "main" && (
-        <div className="space-y-4">
-          <p className="text-xs text-[#6B7280]">{t("summary")}</p>
+        <div className="space-y-5">
+
+
           <div className="grid gap-4 lg:grid-cols-3">
             {LOCALES.map((lang) => (
               <div key={lang} className="space-y-3 rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-[#006EA8]">{lang}</p>
-                <LocaleCard
-                  lang={lang}
-                  label={t("fields.title")}
-                  value={form.title[lang]}
-                  onChange={(v) =>
-                    setForm((s) => ({ ...s, title: { ...s.title, [lang]: v } }))
-                  }
+                <LocaleCard lang={lang} label={isRTL ? "العنوان" : "Title"}
+                  value={mainForm.title[lang]}
+                  onChange={(v) => setMainForm((s) => ({ ...s, title: { ...s.title, [lang]: v } }))}
                 />
-                <LocaleCard
-                  lang={lang}
-                  label={t("fields.descriptionLeft")}
-                  value={form.descriptionLeft[lang]}
-                  onChange={(v) =>
-                    setForm((s) => ({
-                      ...s,
-                      descriptionLeft: { ...s.descriptionLeft, [lang]: v },
-                    }))
-                  }
-                  multiline
+                <LocaleCard lang={lang} label={isRTL ? "الوصف الأيسر" : "Left Description"}
+                  value={mainForm.descriptionLeft[lang]} multiline
+                  onChange={(v) => setMainForm((s) => ({ ...s, descriptionLeft: { ...s.descriptionLeft, [lang]: v } }))}
                 />
-                <LocaleCard
-                  lang={lang}
-                  label={t("fields.descriptionRight")}
-                  value={form.descriptionRight[lang]}
-                  onChange={(v) =>
-                    setForm((s) => ({
-                      ...s,
-                      descriptionRight: { ...s.descriptionRight, [lang]: v },
-                    }))
-                  }
-                  multiline
+                <LocaleCard lang={lang} label={isRTL ? "الوصف الأيمن" : "Right Description"}
+                  value={mainForm.descriptionRight[lang]} multiline
+                  onChange={(v) => setMainForm((s) => ({ ...s, descriptionRight: { ...s.descriptionRight, [lang]: v } }))}
                 />
               </div>
             ))}
           </div>
 
-          {/* Image upload */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="text-sm text-[#374151]">
-              {t("fields.image")}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setPrimaryImage(e.target.files?.[0] ?? null)}
-                className="mt-1 block text-sm"
-              />
-            </label>
-          </div>
-
-          {hasCurrentImages && content?.image && (
-            <div className="rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-3">
-              <p className="mb-2 text-sm font-semibold text-[#111827]">{t("currentImage")}</p>
-              <Image
-                src={content.image}
-                alt=""
-                width={200}
-                height={120}
-                className="h-28 w-auto rounded-lg object-cover"
-                unoptimized={content.image.startsWith("http")}
-              />
-            </div>
-          )}
+          <ImageUploadBox
+            label={isRTL ? "الصورة الرئيسية" : "Primary Image"}
+            file={primaryImage}
+            preview={primaryPreview}
+            existingUrl={content?.image}
+            onFile={handlePrimaryImage}
+            onClear={() => { setPrimaryImage(null); setPrimaryPreview(null) }}
+          />
         </div>
       )}
 
-      {/* ---- Second section tab ---- */}
+      {/* ── TAB: Second Section ── */}
       {activeTab === "second" && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="grid gap-4 lg:grid-cols-3">
             {LOCALES.map((lang) => (
               <div key={lang} className="space-y-3 rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-[#006EA8]">{lang}</p>
-                <LocaleCard
-                  lang={lang}
-                  label={t("fields.secondTitle")}
-                  value={form.secondTitle[lang]}
-                  onChange={(v) =>
-                    setForm((s) => ({
-                      ...s,
-                      secondTitle: { ...s.secondTitle, [lang]: v },
-                    }))
-                  }
+                <LocaleCard lang={lang} label={isRTL ? "عنوان القسم الثاني" : "Second Section Title"}
+                  value={secondForm.secondTitle[lang]}
+                  onChange={(v) => setSecondForm((s) => ({ ...s, secondTitle: { ...s.secondTitle, [lang]: v } }))}
                 />
-                <LocaleCard
-                  lang={lang}
-                  label={t("fields.secondDescription")}
-                  value={form.secondDescription[lang]}
-                  onChange={(v) =>
-                    setForm((s) => ({
-                      ...s,
-                      secondDescription: { ...s.secondDescription, [lang]: v },
-                    }))
-                  }
-                  multiline
-                  rows={4}
+                <LocaleCard lang={lang} label={isRTL ? "وصف القسم الثاني" : "Second Section Description"}
+                  value={secondForm.secondDescription[lang]} multiline rows={4}
+                  onChange={(v) => setSecondForm((s) => ({ ...s, secondDescription: { ...s.secondDescription, [lang]: v } }))}
                 />
               </div>
             ))}
           </div>
-
-          <label className="block mt-4 text-sm text-[#374151]">
-            رابط الفيديو (YouTube)
-            <input
-              type="text"
-              value={form.videoUrl}
-              onChange={(e) => setForm((s) => ({ ...s, videoUrl: e.target.value }))}
-              placeholder="https://www.youtube.com/watch?v=..."
-              className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
-            />
-          </label>
 
           {/* Secondary Image */}
-          <label className="block text-sm text-[#374151]">
-            {t("fields.secondImage")}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setSecondaryImage(e.target.files?.[0] ?? null)}
-              className="mt-1 block text-sm"
-            />
-          </label>
+          <ImageUploadBox
+            label={isRTL ? "صورة القسم الثاني" : "Second Section Image"}
+            file={secondaryImage}
+            preview={secondaryPreview}
+            existingUrl={content?.secondImage}
+            onFile={handleSecondaryImage}
+            onClear={() => { setSecondaryImage(null); setSecondaryPreview(null) }}
+          />
 
-          {content?.secondImage && (
-            <div className="rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-3">
-              <p className="mb-2 text-sm font-semibold text-[#111827]">
-                {t("currentSecondaryImage")}
-              </p>
-              <Image
-                src={content.secondImage}
-                alt=""
-                width={200}
-                height={120}
-                className="h-28 w-auto rounded-lg object-cover"
-                unoptimized={content.secondImage.startsWith("http")}
-              />
+          {/* Video Upload - MUST be a file, NOT a URL string */}
+          <div className="rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-3 space-y-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#006EA8]">
+              {isRTL ? "الفيديو (ملف مرفوع فقط)" : "Video (File Upload Only)"}
+            </p>
+            <p className="text-xs text-[#9CA3AF]">
+              {isRTL
+                ? "⚠️ يجب رفع الفيديو كملف وليس رابط URL. الـ API يقبل ملفات الفيديو فقط."
+                : "⚠️ Video must be uploaded as a file, not a URL. The API only accepts file uploads."}
+            </p>
+            {videoPreview || content?.video ? (
+              <div className="space-y-2">
+                <video
+                  src={videoPreview || content?.video || ""}
+                  controls
+                  className="w-full max-h-48 rounded-lg border border-[#E5E7EB] bg-black"
+                />
+                {videoFile && (
+                  <p className="text-xs text-[#6B7280]">{videoFile.name}</p>
+                )}
+              </div>
+            ) : (
+              <div
+                className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#78A3BE] bg-white transition-colors hover:border-[#006EA8]"
+                onClick={() => videoInputRef.current?.click()}
+              >
+                <Upload className="h-6 w-6 text-[#78A3BE]" />
+                <p className="mt-1 text-xs text-[#9CA3AF]">
+                  {isRTL ? "اضغط لرفع فيديو (MP4, WebM)" : "Click to upload video (MP4, WebM)"}
+                </p>
+              </div>
+            )}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => videoInputRef.current?.click()}
+                className="inline-flex items-center gap-2 rounded-lg border border-[#006EA8] px-3 py-1.5 text-sm font-medium text-[#006EA8] hover:bg-[#006EA8]/10 transition-colors"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                {videoFile ? (isRTL ? "تغيير الفيديو" : "Change Video") : (isRTL ? "رفع فيديو" : "Upload Video")}
+              </button>
+              {videoFile && (
+                <button
+                  type="button"
+                  onClick={() => { setVideoFile(null); setVideoPreview(null) }}
+                  className="text-xs text-red-500 hover:underline"
+                >
+                  {isRTL ? "إزالة" : "Remove"}
+                </button>
+              )}
             </div>
-          )}
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*,video/mp4,video/webm"
+              className="hidden"
+              onChange={handleVideoFile}
+            />
+          </div>
         </div>
       )}
 
-      {/* ---- Features tab ---- */}
+      {/* ── TAB: Features ── */}
       {activeTab === "features" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-[#6B7280]">
-              أضف أو عدّل مزايا الصفحة (بثلاث لغات)
+              {isRTL ? "أضف أو عدّل مزايا صفحة من نحن" : "Add or edit About page features"}
             </p>
             <button
               type="button"
               onClick={addFeature}
-              className="rounded-lg bg-[#006EA8] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#005685]"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#006EA8] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#005685] transition-colors"
             >
-              + إضافة ميزة
+              <Plus className="h-4 w-4" />
+              {isRTL ? "إضافة ميزة" : "Add Feature"}
             </button>
           </div>
 
           {features.length === 0 && (
             <p className="rounded-lg bg-[#F9FAFB] py-8 text-center text-sm text-[#9CA3AF]">
-              لا توجد مزايا. اضغط &quot;+ إضافة ميزة&quot; للبدء.
+              {isRTL ? "لا توجد مزايا. اضغط \"إضافة ميزة\" للبدء." : "No features. Click \"Add Feature\" to start."}
             </p>
           )}
 
           <div className="space-y-4">
             {features.map((feature, idx) => (
-              <div
-                key={idx}
-                className="relative rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-4"
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#006EA8]">
-                    ميزة #{idx + 1}
-                    {feature.id ? ` (ID: ${feature.id})` : " (جديدة)"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removeFeature(idx)}
-                    className="text-xs font-semibold text-red-500 hover:text-red-700"
-                  >
-                    حذف
-                  </button>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {LOCALES.map((lang) => (
-                    <div key={lang} className="space-y-2 rounded border bg-white p-3">
-                      <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
-                        {lang.toUpperCase()}
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="العنوان"
-                        value={feature.title[lang]}
-                        onChange={(e) =>
-                          updateFeatureField(idx, "title", lang, e.target.value)
-                        }
-                        className="mt-1 w-full rounded border border-[#E5E7EB] px-2 py-1.5 text-sm focus:border-[#006EA8] focus:outline-none"
-                      />
-                      <textarea
-                        rows={2}
-                        placeholder="الوصف"
-                        value={feature.description[lang]}
-                        onChange={(e) =>
-                          updateFeatureField(idx, "description", lang, e.target.value)
-                        }
-                        className="w-full rounded border border-[#E5E7EB] px-2 py-1.5 text-sm focus:border-[#006EA8] focus:outline-none"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <FeatureCard
+                key={feature.id ?? `new-${idx}`}
+                feature={feature}
+                idx={idx}
+                isRTL={isRTL}
+                onUpdate={(field, lang, val) => updateFeatureField(idx, field, lang, val)}
+                onRemove={() => removeFeature(idx)}
+              />
             ))}
           </div>
         </div>
@@ -491,9 +458,72 @@ export function AdminAboutPanel({
       {/* Submit */}
       <div className="flex flex-wrap gap-3 border-t border-[#E5E7EB] pt-4">
         <PrimaryButton type="submit" disabled={pending} className="h-10 rounded-lg px-6 text-sm">
-          {pending ? t("saving") : t("save")}
+          {pending ? (locale === "ar" ? "جاري الحفظ..." : "Saving...") : (locale === "ar" ? "حفظ التغييرات" : "Save Changes")}
         </PrimaryButton>
       </div>
     </form>
+  )
+}
+
+// ─── Feature Card ─────────────────────────────────────────────────────────────
+
+function FeatureCard({
+  feature, idx, isRTL, onUpdate, onRemove,
+}: {
+  feature: FeatureForm; idx: number; isRTL: boolean
+  onUpdate: (field: "title" | "description", lang: LocaleKey, val: string) => void
+  onRemove: () => void
+}) {
+  const [open, setOpen] = useState(true)
+  const previewTitle = feature.title.ar || feature.title.en || `ميزة #${idx + 1}`
+
+  return (
+    <div className="rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E5E7EB]">
+        <button type="button" onClick={() => setOpen((v) => !v)} className="flex flex-1 items-center gap-2 text-start">
+          <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
+            #{idx + 1}
+            {feature.id ? ` · ID:${feature.id}` : ` · ${isRTL ? "جديدة" : "New"}`}
+          </span>
+          <span className="truncate text-sm font-semibold text-[#111827]">{previewTitle}</span>
+          {open ? <ChevronUp className="ms-auto h-4 w-4 text-[#9CA3AF]" /> : <ChevronDown className="ms-auto h-4 w-4 text-[#9CA3AF]" />}
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      {open && (
+        <div className="p-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {(["ar", "en", "de"] as LocaleKey[]).map((lang) => (
+              <div key={lang} className="space-y-2 rounded border bg-white p-3">
+                <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
+                  {lang.toUpperCase()}
+                </span>
+                <input
+                  type="text"
+                  placeholder={isRTL ? "العنوان" : "Title"}
+                  value={feature.title[lang]}
+                  onChange={(e) => onUpdate("title", lang, e.target.value)}
+                  className="mt-1 w-full rounded border border-[#E5E7EB] px-2 py-1.5 text-sm focus:border-[#006EA8] focus:outline-none"
+                />
+                <textarea
+                  rows={2}
+                  placeholder={isRTL ? "الوصف" : "Description"}
+                  value={feature.description[lang]}
+                  onChange={(e) => onUpdate("description", lang, e.target.value)}
+                  className="w-full rounded border border-[#E5E7EB] px-2 py-1.5 text-sm focus:border-[#006EA8] focus:outline-none"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

@@ -4,7 +4,6 @@
 import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import Image from "next/image"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
@@ -139,116 +138,232 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="p-6 max-w-[1120px] mx-auto">
-      <h1 className="text-3xl font-bold mb-6">ملفي الشخصي</h1>
+    <div className="w-full">
+      <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#111827]">البيانات الأساسية</h1>
+        </div>
 
-      {message && (
-        <div className="mb-4 p-4 bg-blue-50 text-blue-800 rounded-lg">{message}</div>
-      )}
+        {message && (
+          <div className="mb-4 p-4 bg-blue-50 text-blue-800 rounded-lg text-sm sm:text-base">
+            {message}
+          </div>
+        )}
 
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>البيانات الأساسية</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col lg:flex-row items-start gap-8">
-            <form onSubmit={handleSubmit} className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center gap-4 order-first lg:order-last">
+            <div className="relative">
+              <Avatar size="lg">
+                {avatarPreview ? (
+                  <AvatarImage src={avatarPreview} alt="avatar" />
+                ) : (
+                  <AvatarFallback>
+                    {(profile.first_name || profile.email || "").charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <label className="absolute bottom-0 right-0">
+                <input
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  type="file"
+                  className="hidden"
+                />
+                <span className="inline-flex items-center justify-center px-3 py-2 bg-white text-xs sm:text-sm rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50">
+                  رفع
+                </span>
+              </label>
+            </div>
+
+            {/* Linked Accounts */}
+            <div className="w-full">
+              <h4 className="text-xs sm:text-sm font-semibold text-[#111827] mb-3">
+                الحسابات المرتبطة
+              </h4>
+              <div className="flex gap-2 sm:gap-3">
+                <button className="flex-1 py-2 rounded text-xs sm:text-sm bg-[#1877F2] text-white hover:bg-[#1563D3] transition">
+                  Facebook
+                </button>
+                <button className="flex-1 py-2 rounded text-xs sm:text-sm border border-gray-300 hover:bg-gray-50 transition">
+                  LinkedIn
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Section */}
+          <form onSubmit={handleSubmit} className="flex-1 space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div>
-                <label className="block text-sm font-medium mb-1">الاسم الأول</label>
-                <Input name="first_name" value={profile.first_name} onChange={handleChange} placeholder="الاسم الأول" />
+                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                  الاسم الأول
+                </label>
+                <Input
+                  name="first_name"
+                  value={profile.first_name}
+                  onChange={handleChange}
+                  placeholder="الاسم الأول"
+                  className="text-sm"
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">اسم العائلة</label>
-                <Input name="last_name" value={profile.last_name} onChange={handleChange} placeholder="اسم العائلة" />
+                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                  اسم العائلة
+                </label>
+                <Input
+                  name="last_name"
+                  value={profile.last_name}
+                  onChange={handleChange}
+                  placeholder="اسم العائلة"
+                  className="text-sm"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">البريد الإلكتروني</label>
-                <Input name="email" value={profile.email} onChange={handleChange} placeholder="example@mail.com" />
+                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                  البريد الإلكتروني
+                </label>
+                <Input
+                  name="email"
+                  value={profile.email}
+                  onChange={handleChange}
+                  placeholder="example@mail.com"
+                  className="text-sm"
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">الجنس</label>
-                <select aria-label="gender" name="gender" value={profile.gender} onChange={handleChange} className="w-full border-b border-gray-200 py-2 bg-transparent">
+                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                  الجنس
+                </label>
+                <select
+                  aria-label="gender"
+                  name="gender"
+                  value={profile.gender}
+                  onChange={handleChange}
+                  className="w-full border-b border-gray-200 py-2 bg-transparent text-sm focus:outline-none"
+                >
                   <option value="">اختر</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
+                  <option value="male">ذكر</option>
+                  <option value="female">أنثى</option>
+                  <option value="other">آخر</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">تاريخ الميلاد</label>
-                <Input type="date" name="dob" value={profile.dob} onChange={handleChange} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">رقم الهاتف</label>
-                <Input name="phone" value={profile.phone} onChange={handleChange} placeholder="+20xxxxxxxxx" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">الدولة</label>
-                <Input name="country" value={profile.country} onChange={handleChange} placeholder="Country" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">الفئة</label>
-                <Input name="category" value={profile.category} onChange={handleChange} placeholder="Category" />
-              </div>
-
-              <div className="col-span-1 lg:col-span-2">
-                <div className="flex justify-center">
-                  <button type="submit" disabled={saving || loading} className="px-12 py-3 rounded-full bg-gradient-to-r from-[#006EA8] to-[#005685] text-white shadow-[0_24px_48px_rgba(0,86,133,0.16)]">
-                    {saving ? "جاري الحفظ..." : "تحديث"}
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            {/* Avatar + Upload */}
-            <div className="w-full lg:w-[260px] flex flex-col items-center gap-4">
-              <div className="relative">
-                <Avatar size="lg">
-                  {avatarPreview ? (
-                    // AvatarImage expects src prop
-                    <AvatarImage src={avatarPreview} alt="avatar" />
-                  ) : (
-                    <AvatarFallback>{(profile.first_name || profile.email || "").charAt(0).toUpperCase()}</AvatarFallback>
-                  )}
-                </Avatar>
-                <label className="absolute right-0 bottom-0">
-                  <input accept="image/*" onChange={handleAvatarChange} type="file" className="hidden" />
-                  <span className="inline-flex items-center justify-center px-3 py-2 bg-white text-sm rounded-full border">رفع</span>
+                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                  تاريخ الميلاد
                 </label>
+                <Input
+                  type="date"
+                  name="dob"
+                  value={profile.dob}
+                  onChange={handleChange}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                  رقم الهاتف
+                </label>
+                <Input
+                  name="phone"
+                  value={profile.phone}
+                  onChange={handleChange}
+                  placeholder="+20xxxxxxxxx"
+                  className="text-sm"
+                />
               </div>
 
-              <div className="w-full">
-                <h4 className="text-sm font-medium">Linked accounts</h4>
-                <div className="flex gap-3 mt-3">
-                  <button className="flex-1 py-2 rounded bg-[#1877F2] text-white">Facebook</button>
-                  <button className="flex-1 py-2 rounded border">LinkedIn</button>
-                </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                  الدولة
+                </label>
+                <Input
+                  name="country"
+                  value={profile.country}
+                  onChange={handleChange}
+                  placeholder="الدولة"
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                  الفئة
+                </label>
+                <Input
+                  name="category"
+                  value={profile.category}
+                  onChange={handleChange}
+                  placeholder="الفئة"
+                  className="text-sm"
+                />
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>تغيير كلمة المرور</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handlePasswordChange} className="grid grid-cols-1 gap-4">
-            <Input name="current_password" type="password" placeholder="كلمة المرور الحالية" />
-            <Input name="new_password" type="password" placeholder="كلمة المرور الجديدة" />
-            <Input name="new_password_confirmation" type="password" placeholder="تأكيد كلمة المرور" />
-            <div className="flex justify-center">
-              <button type="submit" disabled={saving || loading} className="px-12 py-3 rounded-full bg-gradient-to-r from-[#006EA8] to-[#005685] text-white">
-                {saving ? "جاري التحديث..." : "تحديث كلمة المرور"}
+            <div className="flex justify-center pt-4">
+              <button
+                type="submit"
+                disabled={saving || loading}
+                className="px-8 sm:px-12 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-[#006EA8] to-[#005685] text-white text-sm sm:text-base font-semibold shadow-[0_24px_48px_rgba(0,86,133,0.16)] hover:shadow-[0_24px_48px_rgba(0,86,133,0.24)] transition disabled:opacity-60"
+              >
+                {saving ? "جاري الحفظ..." : "تحديث"}
               </button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Password Change Card */}
+      <div className="mt-4 sm:mt-6 rounded-[16px] border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
+        <h2 className="text-lg sm:text-xl font-bold text-[#111827] mb-4 sm:mb-6">
+          تغيير كلمة المرور
+        </h2>
+        <form onSubmit={handlePasswordChange} className="space-y-4 sm:space-y-6">
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+              كلمة المرور الحالية
+            </label>
+            <Input
+              name="current_password"
+              type="password"
+              placeholder="كلمة المرور الحالية"
+              className="text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+              كلمة المرور الجديدة
+            </label>
+            <Input
+              name="new_password"
+              type="password"
+              placeholder="كلمة المرور الجديدة"
+              className="text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+              تأكيد كلمة المرور
+            </label>
+            <Input
+              name="new_password_confirmation"
+              type="password"
+              placeholder="تأكيد كلمة المرور"
+              className="text-sm"
+            />
+          </div>
+          <div className="flex justify-center pt-2">
+            <button
+              type="submit"
+              disabled={saving || loading}
+              className="px-8 sm:px-12 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-[#006EA8] to-[#005685] text-white text-sm sm:text-base font-semibold hover:shadow-[0_24px_48px_rgba(0,86,133,0.24)] transition disabled:opacity-60"
+            >
+              {saving ? "جاري التحديث..." : "تحديث كلمة المرور"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

@@ -31,13 +31,13 @@ export default async function AdminSuccessStoriesPage({
   }
 
   return (
-    <AdminPageLayout title={t("title")} description={t("description")}>
+    <>
       {loadError && (
         <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {loadError}
         </p>
       )}
-      <AdminSuccessStoriesPanel stories={stories} locale={locale} />
-    </AdminPageLayout>
+      <AdminSuccessStoriesPanel stories={stories} />
+    </>
   )
 }

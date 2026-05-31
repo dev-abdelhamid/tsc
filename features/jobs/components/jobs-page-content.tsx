@@ -60,7 +60,7 @@ export function JobsPageContent({
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
   const [activeStates, setActiveStates] = useState<number[]>([3, 7])
   const [activeCategories, setActiveCategories] = useState<number[]>([3])
-  const [salaryValue, setSalaryValue] = useState(45)
+  const [salaryValue, setSalaryValue] = useState<[number, number]>([0, 100])
 
   const jobCards = useMemo(() => jobs.slice(0, 4), [jobs])
 
@@ -132,7 +132,7 @@ export function JobsPageContent({
             onClearAll={() => {
               setActiveStates([])
               setActiveCategories([])
-              setSalaryValue(45)
+              setSalaryValue([0, 100])
             }}
             onToggleState={(index) =>
               setActiveStates((prev) => (prev.includes(index) ? prev.filter((item) => item !== index) : [...prev, index]))
@@ -168,7 +168,7 @@ export function JobsPageContent({
               onClearAll={() => {
                 setActiveStates([])
                 setActiveCategories([])
-                setSalaryValue(45)
+                setSalaryValue([0, 100])
               }}
               onToggleState={(index) =>
                 setActiveStates((prev) => (prev.includes(index) ? prev.filter((item) => item !== index) : [...prev, index]))

@@ -259,7 +259,7 @@ export async function getHomePageContent(locale = "ar"): Promise<HomePageContent
     try {
       const response = await api.get<unknown>(endpoint, {
         locale,
-        cache: "no-store",
+        next: { revalidate: 60 },
       })
       return normalizeHomePayload(response, locale)
     } catch {

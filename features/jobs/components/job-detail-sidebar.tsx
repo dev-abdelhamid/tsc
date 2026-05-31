@@ -10,6 +10,8 @@ import {
   formatJobSalaryRange,
 } from "@/features/jobs/lib/job-display"
 import { RelatedJobCard } from "@/features/jobs/components/related-job-card"
+import ApplyButton from "@/features/jobs/components/apply-button"
+
 
 type JobDetailSidebarProps = {
   job: Job
@@ -124,12 +126,17 @@ export function JobDetailSidebar({
           </>
         ) : null}
 
-        <PrimaryButton
-          asChild
-          className="mt-8 h-[44px] w-full rounded-[12px] text-[16px] font-medium"
-        >
-          <Link locale={locale} href={applyHref}>{labels.applyForJob}</Link>
+        {/* Client-side apply button with optimistic update */}
+        <PrimaryButton asChild className="mt-8 h-[44px] w-full rounded-[12px] text-[16px] font-medium">
+          {/* Replace link with client ApplyButton component */}
+          {/* @ts-ignore */}
+          <div>
+            {/* Using client component */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <ApplyButton jobId={job.id} locale={locale} label={labels.applyForJob} />
+          </div>
         </PrimaryButton>
+
       </div>
 
       {relatedJobs.length > 0 ? (

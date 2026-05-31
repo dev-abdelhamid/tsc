@@ -122,7 +122,7 @@ function mapStatus(raw: unknown): Job["status"] {
   return "approved"
 }
 
-function normalizeJob(item: unknown, locale: string): Job | null {
+export function normalizeJob(item: unknown, locale: string): Job | null {
   if (!item || typeof item !== "object") return null
   const row = item as Record<string, unknown>
   const id = Number(row.id)
@@ -263,7 +263,7 @@ export async function getPublicJobs(
     try {
       const response = await api.get<unknown>(endpoint, {
         locale,
-        cache: "no-store",
+        next: { revalidate: 60 },
       })
       const parsed = parseJobsResponse(response, locale)
       if (parsed.data.length > 0) return parsed
@@ -276,7 +276,7 @@ export async function getPublicJobs(
   try {
     const response = await api.get<ApiResponse<Job[]>>(
       `/public/jobs${query}`,
-      { locale, cache: "no-store" }
+      { locale, next: { revalidate: 60 } }
     )
     return parseJobsResponse(response, locale)
   } catch (err) {
@@ -300,7 +300,7 @@ export async function getPublicJobDetail(
     try {
       const response = await api.get<unknown>(endpoint, {
         locale,
-        cache: "no-store",
+        next: { revalidate: 60 },
       })
 
       if (!response || typeof response !== "object") continue

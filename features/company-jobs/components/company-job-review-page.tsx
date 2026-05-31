@@ -66,7 +66,7 @@ export async function CompanyJobReviewPage({
 
         <div className="px-4 pb-10 pt-8 sm:px-8 lg:px-10">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <h1 className="bg-gradient-to-l from-[#032C44] to-[#41A0CA] bg-clip-text text-[24px] font-bold leading-[1.16] text-transparent">
+            <h1 className={`bg-clip-text text-[24px] font-bold leading-[1.16] text-transparent bg-gradient-to-${isRtl ? "r" : "l"} from-[#032C44] to-[#41A0CA]`}>
               {t("review.title")}
             </h1>
             <PrimaryButton asChild className="h-9 rounded-lg px-4 text-sm">

@@ -5,6 +5,24 @@ import Image from "next/image"
 
 const defaultStepIcons = ["/process/profile.svg", "/process/info.svg", "/process/job.svg"]
 
+function normalizeImagePath(path?: string): string {
+  if (!path) return ""
+  let clean = path.trim()
+  // Replace backslashes with forward slashes
+  clean = clean.replace(/\\/g, "/")
+  // Remove trailing slashes
+  clean = clean.replace(/\/+$/, "")
+  // Remove "public/" prefix
+  if (clean.startsWith("public/")) {
+    clean = clean.slice(7)
+  }
+  // Prepend "/" if not absolute or external
+  if (clean && !clean.startsWith("/") && !clean.startsWith("http://") && !clean.startsWith("https://") && !clean.startsWith("data:")) {
+    clean = "/" + clean
+  }
+  return clean
+}
+
 type ProcessStep = {
   title: string
   description: string
@@ -124,7 +142,7 @@ export async function ProcessSection({ steps: overrideSteps, title: titleOverrid
             <StepConnector index={1} rtl={isRtl} />
 
             {steps.map((step, index) => {
-              const src = step.icon ?? defaultStepIcons[index % defaultStepIcons.length]
+              const src = normalizeImagePath(step.icon) || defaultStepIcons[index % defaultStepIcons.length]
 
               return (
                 <div key={`${step.title}-${index}`} className="relative z-[1] flex flex-col items-center text-center">

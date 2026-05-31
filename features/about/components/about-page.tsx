@@ -2,6 +2,8 @@ import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { ProcessSection } from "@/features/process"
 import { SupportSection } from "@/features/support"
 import { getAbout } from "@/lib/api/services/about.service"
+import { getHomePageContent } from "@/lib/api/services/home-page.service"
+
 import { AboutIntroSection } from "./about-intro-section"
 import { AboutStorySection } from "./about-story-section"
 import { AboutFeaturesSection } from "./about-features-section"
@@ -9,9 +11,10 @@ import { AboutFeaturesSection } from "./about-features-section"
 export async function AboutPage() {
   const locale = await getLocale()
   setRequestLocale(locale)
-  const [aboutT, aboutContent] = await Promise.all([
+  const [aboutT, aboutContent, homeContent] = await Promise.all([
     getTranslations("Landing.about"),
     getAbout(locale),
+    getHomePageContent(locale),
   ])
 
   const introEyebrow = aboutT("intro.eyebrow")
@@ -54,7 +57,11 @@ export async function AboutPage() {
         videoUrl={videoUrl}
       />
 
-      <ProcessSection />
+      <ProcessSection
+        steps={homeContent.processSteps}
+        title={homeContent.process.title}
+        description={homeContent.process.description}
+      />
 
       <AboutStorySection
         eyebrow={storyEyebrow}
@@ -73,7 +80,7 @@ export async function AboutPage() {
         features={features}
       />
 
-      <SupportSection />
+      <SupportSection override={homeContent.sections.footer} />
     </main>
   )
 }

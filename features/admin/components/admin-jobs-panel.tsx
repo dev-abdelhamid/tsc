@@ -6,9 +6,11 @@ import { useTranslations, useLocale } from "next-intl"
 import type { Job } from "@/lib/api/types"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
 import { pickLocalizedName } from "@/features/admin/lib/localized-name"
+import { formatJobSalaryRange } from "@/features/jobs/lib/job-display"
 import { DashboardStatusBadge } from "@/features/dashboard/components/dashboard-status-badge"
 import { approveJobAction, rejectJobAction } from "@/features/admin/actions/admin-actions"
 import { AdminTableCell, AdminTableRow, AdminTableShell } from "./admin-table-shell"
+import { DashboardStatCard } from "@/features/dashboard/components/dashboard-stat-card"
 import { cn } from "@/lib/utils"
 
 type Tab = "pending" | "approved" | "rejected" | "all"
@@ -28,6 +30,7 @@ export function AdminJobsPanel({
   initialTab?: Tab
 }) {
   const t = useTranslations("Admin.jobs")
+  const tDashboard = useTranslations("Admin.dashboard")
   const router = useRouter()
   const locale = useLocale()
   const isRTL = locale === "ar"
@@ -73,10 +76,10 @@ export function AdminJobsPanel({
   }
 
   const summaryCards = [
-    { key: "total", label: t("summary.total"), value: statusCounts.total },
-    { key: "pending", label: t("summary.pending"), value: statusCounts.pending },
-    { key: "approved", label: t("summary.published"), value: statusCounts.approved },
-    { key: "rejected", label: t("summary.rejected"), value: statusCounts.rejected },
+    { key: "total", label: t("summary.total"), value: statusCounts.total, icon: "/dashboard/jobs.svg", href: "/dashboard/admin/jobs?status=all" },
+    { key: "pending", label: t("summary.pending"), value: statusCounts.pending, icon: "/dashboard/tickets.svg", href: "/dashboard/admin/jobs?status=pending" },
+    { key: "approved", label: t("summary.published"), value: statusCounts.approved, icon: "/dashboard/education_Info.svg", href: "/dashboard/admin/jobs?status=approved" },
+    { key: "rejected", label: t("summary.rejected"), value: statusCounts.rejected, icon: "/dashboard/logout.svg", href: "/dashboard/admin/jobs?status=rejected" },
   ]
 
   function runAction(action: () => Promise<{ ok: boolean; message?: string }>) {
@@ -99,17 +102,18 @@ export function AdminJobsPanel({
   return (
     <div className={cn("flex flex-col gap-4", isRTL && "rtl")} dir={isRTL ? "rtl" : "ltr"}>
       {/* Summary Cards */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {summaryCards.map((card) => (
-          <div
+          <DashboardStatCard
             key={card.key}
-            className="rounded-[16px] border border-[#E5E7EB] bg-white px-4 py-4 shadow-[0_12px_32px_-18px_rgba(16,24,40,0.28)]"
-          >
-            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-              {card.label}
-            </p>
-            <p className="mt-3 text-[28px] font-black text-[#111827]">{card.value}</p>
-          </div>
+            iconSrc={card.icon}
+            title={card.label}
+            value={card.value}
+            viewAllHref={card.href}
+            viewAllLabel={tDashboard("viewAll")}
+            locale={locale}
+            isRTL={isRTL}
+          />
         ))}
       </div>
 
@@ -150,23 +154,13 @@ export function AdminJobsPanel({
       >
         {filtered.map((job, index) => {
           const status = mapStatus(job.status)
-          const hasSalary = job.salary_from != null && job.salary_to != null
-          const salary = hasSalary
-            ? `€${job.salary_from} – €${job.salary_to}`
-            : "—"
-
-          // Debug: Log jobs without salary
-          if (!hasSalary && index === 0) {
-            console.log("[AdminJobsPanel] First job without salary:", {
-              id: job.id,
-              title: job.title,
-              salary_from: job.salary_from,
-              salary_to: job.salary_to,
-            })
-          }
-
+          const salary = formatJobSalaryRange(job)
           return (
-            <AdminTableRow key={job.id} striped={index % 2 === 1}>
+            <AdminTableRow 
+              key={job.id} 
+              striped={index % 2 === 1}
+              onClick={() => router.push(`/dashboard/admin/jobs/${job.id}`)}
+            >
               <AdminTableCell className="w-[24%] font-medium">
                 {getJobTitle(job, locale)}
               </AdminTableCell>
@@ -184,7 +178,10 @@ export function AdminJobsPanel({
                 />
               </AdminTableCell>
               <AdminTableCell className="w-[18%]">
-                <div className={cn("flex flex-wrap gap-2", isRTL && "flex-row-reverse")}>
+                <div 
+                  className={cn("flex flex-wrap gap-2", isRTL && "flex-row-reverse")}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Link
                     locale={locale}
                     href={`/dashboard/admin/jobs/${job.id}`}

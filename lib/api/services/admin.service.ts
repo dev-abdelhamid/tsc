@@ -1,6 +1,7 @@
 // lib/api/services/admin.service.ts
 import { api } from "../client"
 import type { ApiResponse, Job, JobApplication, User, PaginationMeta } from "../types"
+import { normalizeJob } from "./jobs.service"
 
 const ADMIN_JOB_STATUSES = ["pending", "approved", "active", "rejected"] as const
 
@@ -11,11 +12,15 @@ export async function getAdminJobs(
   locale = "ar"
 ): Promise<{ data: Job[]; meta: PaginationMeta }> {
   const query = status ? `?status=${status}&page=${page}` : `?page=${page}`
-  const response = await api.get<ApiResponse<Job[]>>(
+  const response = await api.get<ApiResponse<unknown>>(
     `/admin/jobs${query}`,
     { token, locale }
   )
-  return { data: response.data, meta: response.meta! }
+  const rawList = response.data || []
+  const data = (Array.isArray(rawList) ? rawList : [])
+    .map((item) => normalizeJob(item, locale))
+    .filter((item): item is Job => item !== null)
+  return { data, meta: response.meta! }
 }
 
 export async function getAdminJobById(

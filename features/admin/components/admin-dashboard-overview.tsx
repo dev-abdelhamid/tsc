@@ -1,13 +1,15 @@
 "use client"
 
-import { Link } from "@/i18n/navigation"
+import { Link, useRouter } from "@/i18n/navigation"
 import { DashboardStatCard } from "@/features/dashboard/components/dashboard-stat-card"
 import { useTranslations } from "next-intl"
 import type { Job } from "@/lib/api/types"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
 import { pickLocalizedName } from "@/features/admin/lib/localized-name"
+import { formatJobSalaryRange } from "@/features/jobs/lib/job-display"
 import { DashboardStatusBadge } from "@/features/dashboard/components/dashboard-status-badge"
 import { AdminJobQuickActions } from "./admin-job-quick-actions"
+import { cn } from "@/lib/utils"
 
 export function AdminDashboardOverview({
   stats,
@@ -19,11 +21,14 @@ export function AdminDashboardOverview({
     total_companies: number
     total_jobs: number
     pending_jobs: number
+    published_jobs: number
   }
   pendingJobs: Job[]
   locale: string
 }) {
   const t = useTranslations("Admin.dashboard")
+  const tJobs = useTranslations("Admin.jobs")
+  const router = useRouter()
 
 
   const kpis = [
@@ -42,16 +47,16 @@ export function AdminDashboardOverview({
       viewAllLabel: t("viewAll"),
     },
     {
-      label: t("kpi.jobs"),
-      value: stats.total_jobs,
-      href: "/dashboard/admin/jobs",
+      label: tJobs("summary.published"),
+      value: stats.published_jobs,
+      href: "/dashboard/admin/jobs?status=approved",
       icon: "/dashboard/jobs.svg",
       viewAllLabel: t("viewAll"),
     },
     {
       label: t("kpi.pending"),
       value: stats.pending_jobs,
-      href: "/dashboard/admin/jobs?filter=pending",
+      href: "/dashboard/admin/jobs?status=pending",
       icon: "/dashboard/tickets.svg",
       viewAllLabel: t("viewAll"),
     },
@@ -75,11 +80,11 @@ export function AdminDashboardOverview({
       </div>
 
       <div className="overflow-hidden rounded-[16px] border border-[#E5E7EB] bg-white shadow-sm">
-        <div className="flex items-center justify-between bg-gradient-to-l from-[#032C44] to-[#41A0CA] px-6 py-4">
+        <div className={`flex items-center justify-between px-6 py-4 text-white bg-gradient-to-${locale === "ar" ? "r" : "l"} from-[#032C44] to-[#41A0CA]`}>
           <h2 className="text-[15px] font-bold text-white">{t("pendingTable")}</h2>
           <Link
             locale={locale}
-            href="/dashboard/admin/jobs"
+            href="/dashboard/admin/jobs?status=pending"
             className="text-[13px] font-semibold text-[#B8E6F7] hover:text-white"
           >
             {t("viewAll")}
@@ -89,7 +94,14 @@ export function AdminDashboardOverview({
           <table className="w-full min-w-[640px]">
             <thead>
               <tr className="border-b border-[#E5E7EB] bg-[#EBF5FB]">
-                {[t("col.job"), t("col.company"), t("col.category"), t("col.status"), t("col.actions")].map(
+                {[
+                  tJobs("columns.title"),
+                  tJobs("columns.company"),
+                  tJobs("columns.category"),
+                  tJobs("columns.salary"),
+                  tJobs("columns.status"),
+                  tJobs("columns.actions")
+                ].map(
                   (h) => (
                     <th key={h} className="px-6 py-3 text-start text-[13px] font-semibold text-[#374151]">
                       {h}
@@ -101,22 +113,32 @@ export function AdminDashboardOverview({
             <tbody>
               {pendingJobs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-[14px] text-[#9CA3AF]">
+                  <td colSpan={6} className="px-6 py-12 text-center text-[14px] text-[#9CA3AF]">
                     {t("noPending")}
                   </td>
                 </tr>
               ) : (
                 pendingJobs.slice(0, 5).map((job, idx) => (
-                  <tr key={job.id} className={idx % 2 === 0 ? "bg-white" : "bg-[#F9FAFB]"}>
+                  <tr
+                    key={job.id}
+                    onClick={() => router.push(`/dashboard/admin/jobs/${job.id}`)}
+                    className={cn(
+                      "cursor-pointer hover:bg-[#F2F8FC] transition-colors",
+                      idx % 2 === 0 ? "bg-white" : "bg-[#F9FAFB]"
+                    )}
+                  >
                     <td className="px-6 py-4 text-[14px] font-medium">{getJobTitle(job, locale)}</td>
                     <td className="px-6 py-4 text-[14px]">{job.company?.name ?? "—"}</td>
                     <td className="px-6 py-4 text-[13px] text-[#6B7280]">
                       {pickLocalizedName(job.category?.name, locale)}
                     </td>
+                    <td className="px-6 py-4 text-[13px] text-[#374151]">
+                      {formatJobSalaryRange(job)}
+                    </td>
                     <td className="px-6 py-4">
                       <DashboardStatusBadge status="pending" label={t("status.pending")} />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                       <AdminJobQuickActions jobId={job.id} locale={locale} />
                     </td>
                   </tr>

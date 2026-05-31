@@ -56,8 +56,10 @@ export function AdminUsersPanel({ users, locale }: { users: User[]; locale: stri
     })
   }
 
+  const isRTL = locale === "ar"
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 text-start">
       <div className="flex flex-wrap gap-2">
         {filters.map((f) => (
           <button
@@ -67,7 +69,7 @@ export function AdminUsersPanel({ users, locale }: { users: User[]; locale: stri
             className={cn(
               "rounded-lg px-4 py-2 text-sm font-semibold transition-colors",
               role === f.id
-                ? "bg-gradient-to-l from-[#032C44] to-[#41A0CA] text-white"
+                ? `${isRTL ? "bg-gradient-to-r" : "bg-gradient-to-l"} from-[#032C44] to-[#41A0CA] text-white`
                 : "border border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#F9FAFB]"
             )}
           >

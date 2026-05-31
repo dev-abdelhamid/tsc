@@ -273,7 +273,7 @@ export function SiteHeader({
   if (!authState.checked) {
     return (
       <header className="relative z-50 w-full overflow-x-hidden bg-[#001222]">
-        <div className="mx-auto flex h-[88px] max-w-[1512px] items-center justify-between px-4 sm:px-6 lg:h-[128px] lg:px-[100px]">
+        <div className="mx-auto flex h-[88px] max-w-[1512px] items-center justify-between px-4 sm:px-6 lg:h-[128px] lg:px-4">
           <div className="h-12 w-12 rounded bg-gray-700/50 animate-pulse lg:h-16 lg:w-16" />
           <div className="flex items-center gap-3">
             <div className="h-10 w-16 rounded bg-gray-700/50 animate-pulse" />
@@ -294,7 +294,7 @@ export function SiteHeader({
       <div className="pointer-events-none absolute top-0 -start-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
       <div className="pointer-events-none absolute top-0 -end-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
 
-      <div className="relative z-50 mx-auto flex h-[88px] w-full max-w-[1512px] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[128px] lg:gap-6 lg:px-[100px]">
+      <div className="relative z-50 mx-auto flex h-[88px] w-full max-w-[1512px] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[128px] lg:gap-6 lg:px-4">
         {/* زر المنيو - يظهر فقط في حالة الداشبورد على الشاشات الصغيرة */}
         {isDashboard && (
           <Button

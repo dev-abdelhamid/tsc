@@ -152,10 +152,27 @@ export async function updateSuccessStory(
   token: string,
   locale = "ar"
 ): Promise<SuccessStory> {
-  const response = await api.post<ApiResponse<unknown>>(`/success-stories/${id}`, formData, {
+  const response = await api.post<ApiResponse<unknown>>(`/success-stories/${id}?_method=PUT`, formData, {
     token,
     locale,
   })
   const parsed = parseSuccessStoriesResponse(response, locale)
   return parsed.data[0] ?? { id, name: "", role: "", quote: "" }
+}
+
+export async function getAdminSuccessStory(
+  id: number | string,
+  token: string,
+  locale = "ar"
+): Promise<SuccessStory | null> {
+  try {
+    const response = await api.get<unknown>(`/success-stories/${id}`, { token, locale })
+    if (!response || typeof response !== "object") return null
+    const root = response as Record<string, unknown>
+    const item = root.data ?? response
+    return normalizeSuccessStory(item, 0, locale)
+  } catch (err) {
+    console.error("[getAdminSuccessStory] error:", err)
+    return null
+  }
 }

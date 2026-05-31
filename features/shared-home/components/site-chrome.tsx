@@ -3,11 +3,11 @@
 import * as React from "react"
 import { usePathname } from "next/navigation"
 import { DashboardMobileMenuProvider } from "@/features/shared-home/components/dashboard-mobile-menu-context"
-import { SiteFooter } from "@/features/shared-home/components/site-footer"
 import { SiteHeader } from "@/features/shared-home/components/site-header"
 
 type SiteChromeProps = {
   children: React.ReactNode
+  footer?: React.ReactNode
   session?: {
     isLoggedIn: boolean
     user?: {
@@ -22,7 +22,7 @@ type SiteChromeProps = {
 
 const AUTH_ROUTES = new Set(["sign-in", "sign-up", "forgot-password"])
 
-export function SiteChrome({ children, session }: SiteChromeProps) {
+export function SiteChrome({ children, footer, session }: SiteChromeProps) {
   const pathname = usePathname() ?? "/"
 
   const isAuthPage = React.useMemo(() => {
@@ -48,7 +48,7 @@ export function SiteChrome({ children, session }: SiteChromeProps) {
 
       {isDashboard ? children : <main className="flex-1">{children}</main>}
 
-      {!isAuthPage && !isDashboard && <SiteFooter />}
+      {!isAuthPage && !isDashboard && footer}
     </DashboardMobileMenuProvider>
   )
 }

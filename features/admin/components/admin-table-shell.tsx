@@ -23,8 +23,8 @@ export function AdminTableShell({
             className={cn(
               "flex items-center rounded-t-[8px] text-white",
               isRTL
-                ? "bg-gradient-to-r from-[#032C44] to-[#41A0CA]" // RTL: من اليسار لليمين (فاتح ← غامق)
-                : "bg-gradient-to-l from-[#032C44] to-[#41A0CA]" // LTR: من اليمين لليسار (فاتح ← غامق)
+                ? "bg-gradient-to-r from-[#032C44] to-[#41A0CA]"
+                : "bg-gradient-to-l from-[#032C44] to-[#41A0CA]"
             )}
           >
             {columns.map((col) => (
@@ -50,15 +50,22 @@ export function AdminTableShell({
 export function AdminTableRow({
   children,
   striped,
+  onClick,
+  className,
 }: {
   children: React.ReactNode
   striped?: boolean
+  onClick?: () => void
+  className?: string
 }) {
   return (
     <div
+      onClick={onClick}
       className={cn(
         "flex min-h-[52px] items-center border-b border-[#F0F4F8] last:border-0",
-        striped && "bg-[#FAFBFC]"
+        striped && "bg-[#FAFBFC]",
+        onClick && "cursor-pointer hover:bg-[#F2F8FC] transition-colors",
+        className
       )}
     >
       {children}

@@ -46,12 +46,30 @@ const SECTION_KEYS: SectionKey[] = [
   "news",
   "footer",
 ];
-const MAX_STEPS = 3;
-const DEFAULT_STEP_ICONS = [
+export const MAX_STEPS = 3;
+export const DEFAULT_STEP_ICONS = [
   "/process/profile.svg",
   "/process/info.svg",
   "/process/job.svg",
 ];
+
+export function normalizeImagePath(path?: string): string {
+  if (!path) return ""
+  let clean = path.trim()
+  // Replace backslashes with forward slashes
+  clean = clean.replace(/\\/g, "/")
+  // Remove trailing slashes
+  clean = clean.replace(/\/+$/, "")
+  // Remove "public/" prefix
+  if (clean.startsWith("public/")) {
+    clean = clean.slice(7)
+  }
+  // Prepend "/" if not absolute or external
+  if (clean && !clean.startsWith("/") && !clean.startsWith("http://") && !clean.startsWith("https://") && !clean.startsWith("data:")) {
+    clean = "/" + clean
+  }
+  return clean
+}
 
 function emptySection(): SectionForm {
   return { title: "", description: "" };
@@ -167,7 +185,7 @@ function mapContentToForm(
     .slice(0, MAX_STEPS)
     .map((step, index) => ({
       ...step,
-      icon: step.icon?.trim() ? step.icon : DEFAULT_STEP_ICONS[index],
+      icon: step.icon?.trim() ? normalizeImagePath(step.icon) : DEFAULT_STEP_ICONS[index],
     }));
 
   while (steps.length < MAX_STEPS) {
@@ -303,22 +321,36 @@ export function AdminHomePanel({
     field: "title" | "description" | "icon",
     value: string,
   ) {
-    setTranslations((prev) => ({
-      ...prev,
-      [editLocale]: {
-        ...prev[editLocale],
-        steps: prev[editLocale].steps.map((step: StepForm, currentIndex: number) =>
-          currentIndex === index ? { ...step, [field]: value } : step,
-        ),
-      },
-    }))
+    setTranslations((prev) => {
+      const updated = { ...prev }
+      if (field === "icon") {
+        for (const loc of SUPPORTED_LOCALES) {
+          if (updated[loc]) {
+            updated[loc] = {
+              ...updated[loc],
+              steps: updated[loc].steps.map((step: StepForm, currentIndex: number) =>
+                currentIndex === index ? { ...step, icon: value } : step
+              ),
+            }
+          }
+        }
+      } else {
+        if (updated[editLocale]) {
+          updated[editLocale] = {
+            ...updated[editLocale],
+            steps: updated[editLocale].steps.map((step: StepForm, currentIndex: number) =>
+              currentIndex === index ? { ...step, [field]: value } : step
+            ),
+          }
+        }
+      }
+      return updated
+    })
   }
 
   function isSvgFile(file: File) {
     return file.type === "image/svg+xml" || /\.svg$/i.test(file.name)
   }
-
-  
 
   async function handleStepFileSelect(index: number, file?: File | null) {
     // remove
@@ -335,6 +367,7 @@ export function AdminHomePanel({
         delete copy[index]
         return copy
       })
+      updateStep(index, "icon", "") // Revert path text so it defaults correctly
       return
     }
     // Skip compressing vector images
@@ -350,7 +383,7 @@ export function AdminHomePanel({
     })
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setSuccess(null);
@@ -423,10 +456,29 @@ export function AdminHomePanel({
 
       if (chosenId !== undefined) formData.append(`steps[${index}][id]`, String(chosenId))
       if (chosenOrder !== undefined) formData.append(`steps[${index}][order]`, String(chosenOrder))
-      if (chosenIcon) formData.append(`steps[${index}][icon]`, chosenIcon)
 
       if (stepFiles[index]) {
-        formData.append(`steps[${index}][icon_file]`, stepFiles[index] as Blob)
+        formData.append(`steps[${index}][icon]`, stepFiles[index] as Blob)
+      } else {
+        const finalIcon = normalizeImagePath(chosenIcon) || DEFAULT_STEP_ICONS[index]
+        if (finalIcon.startsWith("/process/")) {
+          try {
+            const resp = await fetch(finalIcon)
+            if (resp.ok) {
+              const blob = await resp.blob()
+              const filename = finalIcon.split("/").pop() || "icon.svg"
+              const file = new File([blob], filename, { type: "image/svg+xml" })
+              formData.append(`steps[${index}][icon]`, file)
+            } else {
+              formData.append(`steps[${index}][icon]`, finalIcon)
+            }
+          } catch (fetchErr) {
+            console.error("Failed to fetch default icon blob:", fetchErr)
+            formData.append(`steps[${index}][icon]`, finalIcon)
+          }
+        } else {
+          formData.append(`steps[${index}][icon]`, finalIcon)
+        }
       }
 
       for (const loc of SUPPORTED_LOCALES) {
@@ -541,20 +593,18 @@ export function AdminHomePanel({
               className="rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] p-4"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm overflow-hidden">
                   {stepPreviews[index] ? (
-                    // preview from uploaded file
-                    // use native img for blob/object URLs
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={stepPreviews[index] ?? undefined} alt="" width={24} height={24} className="object-contain" />
+                    <img src={stepPreviews[index] ?? undefined} alt="" width={32} height={32} className="h-full w-full object-contain" />
                   ) : (
                     <Image
-                      src={step.icon?.trim() || DEFAULT_STEP_ICONS[index]}
+                      src={normalizeImagePath(step.icon) || DEFAULT_STEP_ICONS[index]}
                       alt=""
-                      width={24}
-                      height={24}
+                      width={32}
+                      height={32}
                       className="object-contain"
-                      unoptimized={Boolean((step.icon || DEFAULT_STEP_ICONS[index])?.startsWith("http"))}
+                      unoptimized={true}
                     />
                   )}
                 </div>
@@ -579,38 +629,66 @@ export function AdminHomePanel({
 
                 <InputLabel label={t("fields.stepIcon")}>
                   <div className="flex flex-col gap-2">
+                    {/* Path input — read-only when a file is pending upload */}
                     <input
-                      value={step.icon ?? ""}
-                      placeholder="/process/profile.svg"
-                      onChange={(e) => updateStep(index, "icon", e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+                      value={stepFiles[index] ? `📁 ${stepFiles[index]!.name}` : (step.icon ?? "")}
+                      readOnly={Boolean(stepFiles[index])}
+                      placeholder={DEFAULT_STEP_ICONS[index]}
+                      onChange={(e) => {
+                        if (!stepFiles[index]) updateStep(index, "icon", e.target.value)
+                      }}
+                      className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                        stepFiles[index]
+                          ? "border-[#006EA8] bg-[#EFF8FF] text-[#006EA8] focus:border-[#006EA8] focus:ring-[#006EA8]"
+                          : "border-[#E5E7EB] focus:border-[#006EA8] focus:ring-[#006EA8]"
+                      }`}
                     />
 
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="file"
-                        accept="image/*,image/svg+xml"
-                        title={t("fields.uploadIcon") || "Upload icon file"}
-                        aria-label={t("fields.uploadIcon") || "Upload icon file"}
-                        onChange={async (e) => {
-                          const f = e.target.files?.[0]
-                          if (!f) return
-                          await handleStepFileSelect(index, f)
-                        }}
-                        className="text-sm"
-                      />
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Styled file upload button */}
+                      <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#006EA8] bg-white px-3 py-1.5 text-xs font-medium text-[#006EA8] hover:bg-[#EFF8FF] transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="17 8 12 3 7 8"/>
+                          <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        {t("fields.uploadIcon") || "رفع أيقونة"}
+                        <input
+                          type="file"
+                          accept="image/*,image/svg+xml,.svg"
+                          className="sr-only"
+                          onChange={async (e) => {
+                            const f = e.target.files?.[0]
+                            if (!f) return
+                            await handleStepFileSelect(index, f)
+                            // reset input so same file can be re-selected
+                            e.target.value = ""
+                          }}
+                        />
+                      </label>
 
-                      <button
-                        type="button"
-                        onClick={() => handleStepFileSelect(index, undefined)}
-                        className="text-xs text-[#6B7280] underline"
-                      >
-                        {t("fields.removeImage") || "Remove"}
-                      </button>
+                      {/* Remove button — only visible when file/preview exists */}
+                      {(stepFiles[index] || stepPreviews[index]) && (
+                        <button
+                          type="button"
+                          onClick={() => handleStepFileSelect(index, undefined)}
+                          className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                          </svg>
+                          {t("fields.removeImage") || "حذف"}
+                        </button>
+                      )}
                     </div>
 
+                    {/* Preview thumbnail */}
                     {stepPreviews[index] && (
-                      <p className="text-xs text-[#6B7280]">{t("fields.preview") || "Preview"}</p>
+                      <div className="mt-1 flex items-center gap-2 rounded-lg border border-[#006EA8]/20 bg-[#EFF8FF] px-3 py-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={stepPreviews[index]!} alt="" className="h-8 w-8 rounded object-contain" />
+                        <span className="text-xs text-[#006EA8]">{t("fields.preview") || "معاينة"}</span>
+                      </div>
                     )}
                   </div>
                 </InputLabel>

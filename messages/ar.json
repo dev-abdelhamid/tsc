@@ -131,6 +131,7 @@
       "description": "نربطك بأفضل الشركات الألمانية في قطاعات حيوية. اختر مجالك لاكتشاف فرص مناسبة لمهاراتك.",
       "metricLabel": "وظائف منشورة بالفعل",
       "showMore": "عرض المزيد",
+      "vacancies": "شواغر",
       "items": {
         "business": {
           "label": "الأعمال والتسويق",
@@ -279,8 +280,8 @@
         "salary": "الراتب",
         "salaryMin": "$1",
         "salaryMax": "$10k",
-        "from": "$ من",
-        "to": "$ إلى",
+        "from": "من",
+        "to": "إلى",
         "stateOptions": {
           "hassan": "حسان",
           "alle": "الكل"
@@ -494,7 +495,10 @@
         "subjectPlaceholder": "أدخل الموضوع",
         "messageLabel": "الرسالة",
         "messagePlaceholder": "اكتب رسالتك",
-        "send": "إرسال"
+        "send": "إرسال",
+        "sending": "جاري الإرسال...",
+        "success": "تم إرسال رسالتك بنجاح!",
+        "error": "حدث خطأ. حاول مرة أخرى."
       },
       "info": {
         "phoneLabel": "رقم الهاتف",
@@ -614,6 +618,10 @@
       "details": "التفاصيل",
       "empty": "لا توجد طلبات على هذه الوظيفة بعد.",
       "unknownCandidate": "متقدم",
+      "processing": "جاري المعالجة...",
+      "approvedSuccess": "تم قبول الطلب بنجاح",
+      "rejectedSuccess": "تم رفض الطلب",
+      "errorGeneral": "حدث خطأ أثناء معالجة الطلب",
       "status": {
         "pending": "قيد الانتظار",
         "accepted": "مقبول",

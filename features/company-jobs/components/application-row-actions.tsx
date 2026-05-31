@@ -4,6 +4,7 @@ import { useTransition } from "react"
 import { useRouter } from "@/i18n/navigation"
 import { useTranslations } from "next-intl"
 import { Check, FileText, X } from "lucide-react"
+import { toast } from "sonner"
 import { updateApplicationStatusAction } from "@/features/company-jobs/actions/application-actions"
 import { cn } from "@/lib/utils"
 
@@ -25,15 +26,34 @@ export function ApplicationRowActions({
   const [pending, startTransition] = useTransition()
 
   const runStatus = (next: "accepted" | "rejected") => {
+    const successMsg = next === "accepted" 
+      ? t("applicationsPage.approvedSuccess")
+      : t("applicationsPage.rejectedSuccess")
+    
+    const toastId = toast.loading(t("applicationsPage.processing"))
+    
     startTransition(async () => {
-      const result = await updateApplicationStatusAction(
-        applicationId,
-        jobId,
-        next,
-        locale
-      )
-      if (result.ok) router.refresh()
-      else alert(result.message)
+      try {
+        const result = await updateApplicationStatusAction(
+          applicationId,
+          jobId,
+          next,
+          locale
+        )
+        
+        toast.dismiss(toastId)
+        
+        if (result.ok) {
+          toast.success(successMsg)
+          router.refresh()
+        } else {
+          toast.error(result.message || t("applicationsPage.errorGeneral"))
+        }
+      } catch (error) {
+        toast.dismiss(toastId)
+        toast.error(t("applicationsPage.errorGeneral"))
+        console.error("Application update error:", error)
+      }
     })
   }
 

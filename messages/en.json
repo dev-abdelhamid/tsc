@@ -131,6 +131,7 @@
       "description": "We connect you with top German companies across vital industries. Select your field to discover opportunities tailored to your skills.",
       "metricLabel": "Job already posted",
       "showMore": "Show More",
+      "vacancies": "open positions",
       "items": {
         "business": {
           "label": "Business & Marketing",
@@ -279,8 +280,8 @@
         "salary": "Salary",
         "salaryMin": "$1",
         "salaryMax": "$10k",
-        "from": "$ from",
-        "to": "$ to",
+        "from": "From",
+        "to": "To",
         "stateOptions": {
           "hassan": "Hassan",
           "alle": "Alle"
@@ -494,7 +495,10 @@
         "subjectPlaceholder": "Enter the subject",
         "messageLabel": "Message",
         "messagePlaceholder": "Write your message",
-        "send": "Send"
+        "send": "Send",
+        "sending": "Sending...",
+        "success": "Your message has been sent successfully!",
+        "error": "An error occurred. Please try again."
       },
       "info": {
         "phoneLabel": "Phone Number",
@@ -614,6 +618,10 @@
       "details": "Details",
       "empty": "No applications for this job yet.",
       "unknownCandidate": "Applicant",
+      "processing": "Processing...",
+      "approvedSuccess": "Application approved successfully",
+      "rejectedSuccess": "Application rejected",
+      "errorGeneral": "Failed to process application",
       "status": {
         "pending": "Pending",
         "accepted": "Approved",
