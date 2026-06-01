@@ -183,9 +183,6 @@ function CategoryCard({
 
   function updateName(lang: LocaleKey, val: string) {
     const updated = { ...category, name: { ...category.name, [lang]: val } }
-    if (lang === "ar" && !category.slug) {
-      updated.slug = slugify(val)
-    }
     onUpdate(updated)
   }
 
@@ -248,9 +245,6 @@ function CategoryCard({
       const n = category.name[lang]?.trim()
       if (n) formData.append(`name[${lang}]`, n)
     }
-
-    const slug = category.slug?.trim() || slugify(category.name.ar || category.name.en || "")
-    if (slug) formData.append("slug", slug)
 
     if (category.iconFile) formData.append("icon", category.iconFile)
 
@@ -316,11 +310,6 @@ function CategoryCard({
           className="flex flex-1 items-center gap-2 text-start"
         >
           <span className="truncate text-sm font-semibold text-[#111827]">{previewName}</span>
-          {category.slug && (
-            <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs text-[#6B7280]">
-              /{category.slug}
-            </span>
-          )}
           {subCount > 0 && (
             <span className="ms-1 flex items-center gap-1 rounded-full bg-[#006EA8]/10 px-2 py-0.5 text-xs font-medium text-[#006EA8]">
               <Layers className="h-3 w-3" />
@@ -357,18 +346,6 @@ function CategoryCard({
 
           {/* Names */}
           <LocaleInput label={isRTL ? "اسم الفئة" : "Category Name"} values={category.name} onChange={updateName} onlyLocale={editLocale} />
-
-          {/* Slug */}
-          <label className="block text-sm text-[#374151]">
-            <span className="mb-1 block font-medium">{isRTL ? "الـ Slug (مسار URL)" : "Slug (URL path)"}</span>
-            <input
-              type="text"
-              value={category.slug}
-              onChange={(e) => onUpdate({ ...category, slug: e.target.value })}
-              placeholder="مثال: software-engineering"
-              className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm font-mono focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
-            />
-          </label>
 
           {/* Icon upload */}
           <div className="rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-3 space-y-2">

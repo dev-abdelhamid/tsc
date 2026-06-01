@@ -167,9 +167,23 @@ export async function getCategoriesRaw(locale?: string, token?: string): Promise
     if (!response || typeof response !== "object") return []
 
     const root = response as Record<string, unknown>
-    const list = Array.isArray(root.data) ? root.data : Array.isArray(response) ? response : []
-
-    return list
+    
+    // Try to extract the data array from various possible response structures
+    let list: any[] = []
+    
+    if (Array.isArray(root.data)) {
+      list = root.data
+    } else if (Array.isArray(response)) {
+      list = response as any[]
+    } else if (Array.isArray(root)) {
+      list = root as any[]
+    }
+    
+    // Ensure each item has sub_categories initialized if not present
+    return list.map((item) => ({
+      ...item,
+      sub_categories: item.sub_categories || item.subCategories || item.subcategories || item.children || [],
+    }))
   } catch (err) {
     console.error("[getCategoriesRaw] error:", err)
     return []

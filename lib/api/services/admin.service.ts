@@ -153,7 +153,9 @@ export async function getAdminUsers(
   page = 1,
   locale = "ar"
 ): Promise<{ data: User[]; meta: PaginationMeta }> {
-  const query = role ? `?role=${role}&page=${page}` : `?page=${page}`
+  // Build query - for roles/filters, we'll fetch with large page size and filter client-side
+  const per_page = role ? 1000 : 100  // Get more results when filtering by role to get accurate total
+  const query = `?page=${page}&per_page=${per_page}`
 
   function matchesRole(u: User, wanted?: string) {
     if (!wanted) return true
@@ -172,24 +174,16 @@ export async function getAdminUsers(
   }
 
   try {
+    // Try admin endpoint first
     const response = await api.get<ApiResponse<User[]>>(`/admin/users${query}`, { token, locale })
     let data = response.data ?? []
-    if (role) data = data.filter((u) => matchesRole(u, role))
-
-    // If backend returned pagination meta, prefer and return it (it may contain
-    // the accurate `total` count). Only fall back to computed totals when meta
-    // is absent.
-    if (response.meta) {
-      const meta: PaginationMeta = {
-        current_page: response.meta.current_page ?? page,
-        last_page: response.meta.last_page ?? Math.max(1, Math.ceil((response.meta.total ?? data.length) / (response.meta.per_page ?? 10))),
-        per_page: response.meta.per_page ?? 10,
-        total: typeof response.meta.total === "number" ? response.meta.total : data.length,
-      }
-      return { data, meta }
+    
+    // Filter by role client-side
+    if (role) {
+      data = data.filter((u) => matchesRole(u, role))
     }
 
-    const per_page = 10
+    // Calculate accurate meta based on filtered data
     const meta: PaginationMeta = {
       current_page: page,
       last_page: Math.max(1, Math.ceil(data.length / per_page)),
@@ -199,29 +193,24 @@ export async function getAdminUsers(
 
     return { data, meta }
   } catch (err) {
-    // If the backend does not expose /admin/users, fall back to the public /users endpoint
+    // Fallback to public /users endpoint
     if (err instanceof ApiError && err.status === 404) {
       try {
         const fallback = await api.get<ApiResponse<User[]>>(`/users${query}`, { token, locale })
         let data = fallback.data ?? []
-        if (role) data = data.filter((u) => matchesRole(u, role))
-
-        if (fallback.meta) {
-          const meta: PaginationMeta = {
-            current_page: fallback.meta.current_page ?? page,
-            last_page: fallback.meta.last_page ?? Math.max(1, Math.ceil((fallback.meta.total ?? data.length) / (fallback.meta.per_page ?? 10))),
-            per_page: fallback.meta.per_page ?? 10,
-            total: typeof fallback.meta.total === "number" ? fallback.meta.total : data.length,
-          }
-          return { data, meta }
+        
+        // Filter by role client-side
+        if (role) {
+          data = data.filter((u) => matchesRole(u, role))
         }
 
-        const per_page = 10
+        // Use backend meta if available for total count, otherwise use data length
+        const totalFromBackend = fallback.meta?.total ?? data.length
         const meta: PaginationMeta = {
           current_page: page,
-          last_page: Math.max(1, Math.ceil(data.length / per_page)),
+          last_page: Math.max(1, Math.ceil(totalFromBackend / per_page)),
           per_page,
-          total: data.length,
+          total: totalFromBackend,  // Use backend total for accurate count
         }
 
         return { data, meta }
@@ -245,9 +234,7 @@ export async function getAdminStats(
   total_jobs: number
   pending_jobs: number
 }> {
-  // Try the dedicated admin endpoint first. If it does not exist on the backend
-  // (common in early integrations), fall back to deriving values from public
-  // endpoints such as /users and /jobs.
+  // Try the dedicated admin endpoint first
   try {
     const response = await api.get<
       ApiResponse<{
@@ -260,56 +247,43 @@ export async function getAdminStats(
     return response.data
   } catch (err) {
     console.warn("/admin/stats not available, falling back to derived stats", err)
+  }
 
-    function parseTotalFromResponse(resp: unknown): number {
-      if (!resp) return 0
-      if (Array.isArray(resp)) return resp.length
-      try {
-        const asObj = resp as Record<string, unknown>
-        if (asObj.meta && typeof (asObj.meta as any).total === "number") return (asObj.meta as any).total
-        if (asObj.data && Array.isArray(asObj.data)) return (asObj.data as any).length
-        if (typeof asObj.total === "number") return asObj.total as number
-      } catch {
-        // ignore
-      }
-      return 0
+  // Fallback: Calculate from admin endpoints with proper role filtering
+  try {
+    // Get user stats (role = "User") and company stats (role = "Company") separately
+    const [usersStats, companiesStats] = await Promise.all([
+      getAdminUsers(token, "User", 1, locale).catch(() => ({ data: [], meta: { total: 0 } })),
+      getAdminUsers(token, "Company", 1, locale).catch(() => ({ data: [], meta: { total: 0 } })),
+    ])
+
+    const totalUsers = usersStats.meta?.total ?? 0
+    const totalCompanies = companiesStats.meta?.total ?? 0
+
+    // Get jobs by all statuses like admin jobs page does
+    const jobStatuses = ["pending", "approved", "active", "rejected"] as const
+    const jobBatches = await Promise.all(
+      jobStatuses.map((status) =>
+        getAdminJobs(token, status, 1, locale)
+          .then((r) => r.meta)
+          .catch(() => ({ total: 0 }))
+      )
+    )
+
+    // Sum all job statuses for total jobs
+    const totalJobs = jobBatches.reduce((sum, batch) => sum + (batch?.total ?? 0), 0)
+    
+    // Pending jobs count
+    const pendingJobs = jobBatches[0]?.total ?? 0
+
+    return {
+      total_users: Number(totalUsers || 0),
+      total_companies: Number(totalCompanies || 0),
+      total_jobs: Number(totalJobs || 0),
+      pending_jobs: Number(pendingJobs || 0),
     }
-
-    try {
-      const [usersResp, jobsResp] = await Promise.all([
-        api.get<unknown>("/users?page=1&per_page=1", { token, locale }),
-        api.get<unknown>("/jobs?page=1&per_page=1", { token, locale }),
-      ])
-
-      const totalUsers = parseTotalFromResponse(usersResp)
-      const totalJobs = parseTotalFromResponse(jobsResp)
-
-      let pendingJobs = 0
-      try {
-        const pendingResp = await api.get<unknown>("/jobs?status=pending&page=1&per_page=1", { token, locale })
-        pendingJobs = parseTotalFromResponse(pendingResp)
-      } catch {
-        pendingJobs = 0
-      }
-
-      let totalCompanies = 0
-      try {
-        // Some backends expose companies as users with role=company
-        const companiesResp = await api.get<unknown>("/users?role=company&page=1&per_page=1", { token, locale })
-        totalCompanies = parseTotalFromResponse(companiesResp)
-      } catch {
-        totalCompanies = 0
-      }
-
-      return {
-        total_users: Number(totalUsers || 0),
-        total_companies: Number(totalCompanies || 0),
-        total_jobs: Number(totalJobs || 0),
-        pending_jobs: Number(pendingJobs || 0),
-      }
-    } catch (err2) {
-      console.error("[Admin Service] getAdminStats fallback error:", err2)
-      return { total_users: 0, total_companies: 0, total_jobs: 0, pending_jobs: 0 }
-    }
+  } catch (err2) {
+    console.error("[Admin Service] getAdminStats fallback error:", err2)
+    return { total_users: 0, total_companies: 0, total_jobs: 0, pending_jobs: 0 }
   }
 }
