@@ -14,14 +14,7 @@ export type DashboardShellProps = {
   onCloseMobileMenu?: () => void
 }
 
-export function DashboardShell({
-  locale,
-  user,
-  children,
-  isMobileMenuOpen,
-  onOpenMobileMenu,
-  onCloseMobileMenu,
-}: DashboardShellProps) {
+export function DashboardShell({ locale, user, children, isMobileMenuOpen, onOpenMobileMenu, onCloseMobileMenu }: DashboardShellProps) {
   const mobileMenu = useDashboardMobileMenu()
   const isOpen = isMobileMenuOpen ?? mobileMenu.isOpen
 
@@ -32,7 +25,6 @@ export function DashboardShell({
         mobileMenu.open()
         return
       }
-
       onCloseMobileMenu?.()
       mobileMenu.close()
     },
@@ -41,15 +33,9 @@ export function DashboardShell({
 
   return (
     <div className="min-h-screen bg-[#F7F9FC]">
-     
       <div className="mx-auto w-full max-w-[1400px] px-3 pb-4 pt-4 sm:px-4 sm:pb-6 sm:pt-6 lg:px-8 lg:pt-8">
         <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:gap-6">
-          <DashboardSidebar
-            locale={locale}
-            userRole={user.role}
-            open={isOpen}
-            onOpenChange={handleOpenChange}
-          />
+          <DashboardSidebar locale={locale} userRole={user.role} open={isOpen} onOpenChange={handleOpenChange} />
           <main className="min-w-0 flex-1">{children}</main>
         </div>
       </div>

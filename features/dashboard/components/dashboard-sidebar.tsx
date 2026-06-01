@@ -292,22 +292,20 @@ function SidebarNav({
                 </div>
               ))}
 
-              {/* View Site — last item in admin sidebar nav */}
-              <div className="px-2 pb-2 pt-1">
-                <div className="mx-2 my-1">
-                  <Link
-                    locale={locale}
-                    href="/"
-                    className={cn(
-                      "flex h-11 w-full items-center gap-2.5 rounded-lg border border-[#006EA8]/20 bg-gradient-to-r from-[#EBF5FB] to-[#F0F9FF] px-4 text-[#006EA8] transition-all",
-                      "hover:border-[#006EA8]/40 hover:from-[#D6EFFA] hover:to-[#E4F4FC] hover:shadow-sm"
-                    )}
-                  >
-                    <ExternalLink className="h-[18px] w-[18px] flex-none opacity-70" />
-                    <span className="text-[14px] font-semibold">{viewSiteLabel}</span>
-                  </Link>
-                </div>
-              </div>
+                   {/* ✅ View Site — آخر عنصر للجميع (Admin, User, Company) */}
+        <div className="px-2 pb-2 pt-4 mt-auto">
+          <div className="mx-2 my-1">
+            <Link locale={locale} href="/"
+              className={cn(
+                "flex h-11 w-full items-center gap-2.5 rounded-lg border border-[#006EA8]/20 bg-gradient-to-r from-[#EBF5FB] to-[#F0F9FF] px-4 text-[#006EA8] transition-all",
+                "hover:border-[#006EA8]/40 hover:from-[#D6EFFA] hover:to-[#E4F4FC] hover:shadow-sm"
+              )}
+            >
+              <ExternalLink className="h-[18px] w-[18px] flex-none opacity-70" />
+              <span className="text-[14px] font-semibold">{viewSiteLabel}</span>
+            </Link>
+          </div>
+        </div>
             </>)
           : menuItems.map((item) => (
               <SidebarItem
@@ -323,27 +321,7 @@ function SidebarNav({
             ))}
       </nav>
       <div className="mt-auto border-t border-[#E5E7EB] px-4 py-4 space-y-2">
-        {userRole !== "admin" && (
-          <>
-            <Link
-              locale={locale}
-              href="/"
-              onClick={onNavigate}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#006EA8]/30 px-3 text-sm font-semibold text-[#006EA8] hover:bg-[#006EA8]/10 bg-white transition-colors shadow-sm"
-            >
-              <ExternalLink className="h-4 w-4" />
-              <span>{viewSiteLabel}</span>
-            </Link>
-            <Link
-              locale={locale}
-              href="/dashboard"
-              onClick={onNavigate}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] px-3 text-sm font-semibold text-white hover:brightness-105 shadow-sm transition-all"
-            >
-              <span>{dashboardLabel}</span>
-            </Link>
-          </>
-        )}
+      
         <div className={cn(userRole !== "admin" && "pt-2 border-t border-[#E5E7EB]")}>
           <SidebarLogout label={isRTL ? "تسجيل الخروج" : "Logout"} flipIcon={flipIcon} />
         </div>
