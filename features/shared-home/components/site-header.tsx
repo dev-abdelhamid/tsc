@@ -36,7 +36,7 @@ const NAV_ITEMS: Array<{ key: NavItemKey; href: string }> = [
 
 const LOCALE_OPTIONS = [
   { locale: "de", label: "Deutsch", flag: "🇩🇪" },
-  { locale: "en", label: "English", flag: "🇬🇧" },
+  { locale: "en", label: "English", flag: "🇬" },
   { locale: "ar", label: "العربية", flag: "🇸🇦" },
 ] as const
 
@@ -86,7 +86,6 @@ export function SiteHeader({
   const currentLocaleOption = LOCALE_OPTIONS.find((opt) => opt.locale === currentLocale) ?? LOCALE_OPTIONS[0]
   const { isLoggedIn, user } = authState
 
-  // ✅ دالة تحقق الجلسة مُحسّنة في useEffect واحد
   React.useEffect(() => {
     let mounted = true
     const checkAuth = async () => {
@@ -123,7 +122,6 @@ export function SiteHeader({
     return () => { mounted = false }
   }, [initialIsLoggedIn, initialUser, authState.checked])
 
-  // ✅ الإشعارات (مُحسّن)
   React.useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (showNotifications && notificationsRef.current && !notificationsRef.current.contains(e.target as Node) && buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
@@ -207,40 +205,24 @@ export function SiteHeader({
           </nav>
         )}
 
-        {/* الأزرار اليمنى */}
+        {/* ✅ الأزرار - الترتيب الصحيح للداشبورد */}
         <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-4">
-          {isDashboard && (
-            <Button variant="outline" size="icon" className="h-10 w-10 rounded-[12px] border-white/20 bg-white/5 text-white hover:bg-white/10 lg:hidden" onClick={() => onMobileMenuClick?.() || mobileMenu.open()}>
-              <Menu className="h-5 w-5" />
-            </Button>
-          )}
-
-          {/* ✅ زر اللغة */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-10 gap-1.5 rounded-[12px] border border-[#40A0CA]/50 bg-transparent px-2.5 text-white hover:bg-white/10 sm:h-[44px]">
-                <span className="text-base">{currentLocaleOption.flag}</span>
-                <ChevronDown className="hidden h-4 w-4 text-white/90 sm:block" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align={isRTL ? "start" : "end"} sideOffset={8} className={cn("w-48 rounded-[12px] border-[#cfe7f7] bg-white p-1", isRTL && "text-end")}>
-              {LOCALE_OPTIONS.map(opt => (
-                <DropdownMenuItem key={opt.locale} asChild className="rounded-[8px] px-2 py-2">
-                  <Link locale={opt.locale} href={pathname} className="flex items-center justify-between gap-2">
-                    <span>{opt.flag} {opt.label}</span>
-                    {opt.locale === currentLocale && <Check className="h-4 w-4 text-[#006EA8]" />}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* ✅ زر الإشعارات */}
+          {/* ✅ 1. الإشعارات أولاً (في الداشبورد) */}
           {isLoggedIn && (
             <div className="relative" ref={notificationsRef}>
-              <Button ref={buttonRef} variant="ghost" size="icon" className="relative h-10 w-10 rounded-[12px] bg-gradient-to-br from-[#006EA8] to-[#005685] hover:scale-105 transition" onClick={() => setShowNotifications(!showNotifications)}>
+              <Button 
+                ref={buttonRef} 
+                variant="ghost" 
+                size="icon" 
+                className="relative h-10 w-10 rounded-[12px] bg-gradient-to-br from-[#006EA8] to-[#005685] hover:scale-105 transition" 
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
                 <Bell className="h-5 w-5 text-white" />
-                {unreadCount > 0 && <span className="absolute -top-1 -end-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{unreadCount > 99 ? "99+" : unreadCount}</span>}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -end-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </Button>
               {showNotifications && (
                 <>
@@ -275,7 +257,27 @@ export function SiteHeader({
             </div>
           )}
 
-          {/* ✅ زر تسجيل الدخول / البروفايل (نفس ارتفاع اللغة تماماً) */}
+          {/* ✅ 2. زر اللغة */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-10 gap-1.5 rounded-[12px] border border-[#40A0CA]/50 bg-transparent px-2.5 text-white hover:bg-white/10 sm:h-[44px]">
+                <span className="text-base">{currentLocaleOption.flag}</span>
+                <ChevronDown className="hidden h-4 w-4 text-white/90 sm:block" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align={isRTL ? "start" : "end"} sideOffset={8} className={cn("w-48 rounded-[12px] border-[#cfe7f7] bg-white p-1", isRTL && "text-end")}>
+              {LOCALE_OPTIONS.map(opt => (
+                <DropdownMenuItem key={opt.locale} asChild className="rounded-[8px] px-2 py-2">
+                  <Link locale={opt.locale} href={pathname} className="flex items-center justify-between gap-2">
+                    <span>{opt.flag} {opt.label}</span>
+                    {opt.locale === currentLocale && <Check className="h-4 w-4 text-[#006EA8]" />}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* ✅ 3. تسجيل الدخول / البروفايل */}
           {isLoggedIn ? (
             <Link locale={currentLocale} href="/dashboard" className="hidden sm:block shrink-0">
               <div className="h-10 w-10 cursor-pointer rounded-[12px] bg-gradient-to-br from-[#006EA8] to-[#005685] p-0.5 hover:scale-105 transition">
@@ -292,51 +294,96 @@ export function SiteHeader({
             </Link>
           )}
 
-          {/* ✅ قائمة الموبايل للموقع */}
-          {!isDashboard && (
+          {/* ✅ 4. زر القائمة (Menu) - يكون أخيراً في الداشبورد */}
+          {isDashboard ? (
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-10 w-10 rounded-[12px] border-white/20 bg-white/5 text-white hover:bg-white/10 lg:hidden" 
+              onClick={() => onMobileMenuClick?.() || mobileMenu.open()}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          ) : (
+            /* قائمة الموبايل للموقع العادي */
             <Sheet open={publicMobileMenuOpen} onOpenChange={setPublicMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="h-10 w-10 rounded-[12px] border-white/20 bg-white/5 text-white hover:bg-white/10 lg:hidden">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side={isRTL ? "right" : "left"} className="w-[min(100vw,310px)] p-0 lg:hidden">
-                <div className="flex h-full flex-col bg-[#F0F4F8]">
-                  <div className={cn("flex items-center justify-between border-b border-[#E5E7EB] px-4 py-4", isRTL && "flex-row-reverse")}>
-                    <SheetClose asChild>
-                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-[#EAF4FB] text-[#005685] hover:bg-[#DCEEF9]">
-                        <X className="h-5 w-5" />
-                      </Button>
-                    </SheetClose>
-                    <Link locale={currentLocale} href="/" className="flex shrink-0 items-center">
-                      <Image src="/home/hero/hero-logo.svg" alt="Brand" width={144} height={46} className="h-11 w-auto" />
-                    </Link>
-                  </div>
+              <SheetContent 
+                side={isRTL ? "right" : "left"} 
+                className="w-[min(100vw,310px)] p-0 lg:hidden bg-[#F8FAFC]"
+              >
+                <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Menu"}</SheetTitle>
+                
+                <div className={cn(
+                  "relative flex items-center justify-between px-4 py-4 border-b border-[#E5E7EB]",
+                  "bg-gradient-to-r from-[#006EA8] to-[#005685]",
+                  isRTL ? "flex-row-reverse" : ""
+                )}>
+                  <SheetClose asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm border border-white/20"
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </SheetClose>
 
-                  <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                    <div className="rounded-[12px] border border-[#E5E7EB] bg-white p-2">
-                      <SharedSidebar items={[
+                  <Link locale={currentLocale} href="/" className="flex shrink-0 items-center bg-white rounded-[12px] p-2 shadow-lg">
+                    <Image 
+                      src="/home/hero/hero-logo.svg" 
+                      alt="Brand" 
+                      width={144} 
+                      height={46} 
+                      className="h-9 w-auto" 
+                    />
+                  </Link>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                  <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-2 shadow-sm">
+                    <SharedSidebar 
+                      items={[
                         { icon: "/dashboard/dashboard.svg", label: t("nav.home"), href: "/" },
                         { icon: "/dashboard/profile.svg", label: t("nav.about"), href: "/about" },
                         { icon: "/dashboard/education_Info.svg", label: t("nav.services"), href: "/services" },
                         { icon: "/dashboard/jobs.svg", label: t("nav.jobs"), href: "/jobs" },
                         { icon: "/dashboard/tickets.svg", label: t("nav.news"), href: "/news" },
                         { icon: "/dashboard/favourites.svg", label: t("nav.contact"), href: "/contact" },
-                      ]} isRTL={isRTL} onNavigate={closePublicMobileMenu} />
-                    </div>
-
-                    {/* ✅ زر تسجيل الدخول أو الداشبورد في الموبايل (يظهر حسب حالة المصادقة) */}
-                    {isLoggedIn ? (
-                      <Link locale={currentLocale} href="/dashboard" onClick={closePublicMobileMenu} className="flex h-10 w-full items-center justify-center gap-2.5 rounded-[12px] border border-[#006EA8]/20 bg-gradient-to-r from-[#EBF5FB] to-[#F0F9FF] px-4 text-[#006EA8] font-semibold text-[14px] transition hover:border-[#006EA8]/40 hover:shadow-sm">
-                        <ExternalLink className="h-4 w-4" />
-                        {isRTL ? "لوحة التحكم" : "Dashboard"}
-                      </Link>
-                    ) : (
-                      <Link locale={currentLocale} href="/sign-in" onClick={closePublicMobileMenu} className="flex h-10 w-full items-center justify-center gap-2.5 rounded-[12px] bg-gradient-to-br from-[#006EA8] to-[#005685] px-4 text-white font-semibold text-[14px] transition hover:shadow-lg">
-                        {safeT("login", "Sign in")}
-                      </Link>
-                    )}
+                      ]} 
+                      isRTL={isRTL} 
+                      onNavigate={closePublicMobileMenu} 
+                    />
                   </div>
+
+                  {isLoggedIn ? (
+                    <Link 
+                      locale={currentLocale} 
+                      href="/dashboard" 
+                      onClick={closePublicMobileMenu} 
+                      className="flex h-11 w-full items-center justify-center gap-2.5 rounded-[12px] border border-[#006EA8]/30 bg-gradient-to-r from-[#EBF5FB] to-[#F0F9FF] px-4 text-[#006EA8] font-semibold text-[14px] transition-all hover:border-[#006EA8]/60 hover:shadow-md active:scale-[0.98]"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      {isRTL ? "لوحة التحكم" : "Dashboard"}
+                    </Link>
+                  ) : (
+                    <Link 
+                      locale={currentLocale} 
+                      href="/sign-in" 
+                      onClick={closePublicMobileMenu} 
+                      className="flex h-11 w-full items-center justify-center gap-2.5 rounded-[12px] bg-gradient-to-br from-[#006EA8] to-[#005685] px-4 text-white font-semibold text-[14px] shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
+                    >
+                      {safeT("login", "Sign in")}
+                    </Link>
+                  )}
+                </div>
+
+                <div className="px-4 pb-4">
+                  <div className="h-1 w-full rounded-full bg-gradient-to-r from-[#80CDF6] via-[#006EA8] to-[#005685] opacity-60" />
                 </div>
               </SheetContent>
             </Sheet>

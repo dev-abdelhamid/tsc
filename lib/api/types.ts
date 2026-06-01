@@ -206,3 +206,47 @@ export interface TeamMember {
   position: string
   avatar?: string
 }
+
+export interface Education {
+  id: number
+  degree: string
+  institution: string
+  field_of_study: string
+  start_date: string
+  end_date?: string
+  grade?: number
+  description?: string
+  document_url?: string
+}
+
+export interface Experience {
+  id: number
+  job_title: string
+  company: string
+  employment_type?: string
+  start_date: string
+  end_date?: string
+  is_current?: boolean
+  description?: string
+  location?: string
+}
+
+export interface Language {
+  id: number
+  name: string
+  proficiency: "beginner" | "intermediate" | "fluent" | "native"
+}
+
+export interface Skill {
+  id: number
+  name: string
+  endorsements?: number
+}
+
+export interface UserPortfolio {
+  cv_url?: string
+  educations?: Education[]
+  experiences?: Experience[]
+  languages?: Language[]
+  skills?: Skill[]
+}

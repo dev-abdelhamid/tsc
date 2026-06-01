@@ -109,40 +109,10 @@ export default function UserProfilePage() {
     }
   }
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    setMessage("")
-    try {
-      const form = e.target as HTMLFormElement
-      const fd = new FormData(form)
-      const payload = {
-        current_password: fd.get("current_password"),
-        new_password: fd.get("new_password"),
-        new_password_confirmation: fd.get("new_password_confirmation"),
-      }
-      const res = await fetch("/api/auth/profile/password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || "فشل تغيير كلمة المرور")
-      setMessage("تم تحديث كلمة المرور بنجاح")
-      form.reset()
-    } catch (err: unknown) {
-      setMessage(err instanceof Error ? err.message : "فشل تغيير كلمة المرور")
-    } finally {
-      setSaving(false)
-    }
-  }
-
   return (
     <div className="w-full">
       <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-[#111827]">البيانات الأساسية</h1>
-        </div>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#111827] mb-6">Basic Info</h1>
 
         {message && (
           <div className="mb-4 p-4 bg-blue-50 text-blue-800 rounded-lg text-sm sm:text-base">
@@ -150,109 +120,116 @@ export default function UserProfilePage() {
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Avatar Section */}
-          <div className="flex flex-col items-center gap-4 order-first lg:order-last">
-            <div className="relative">
-              <Avatar size="lg">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
+          {/* Avatar Section - Left Sidebar */}
+          <div className="lg:col-span-1 flex flex-col items-center gap-6">
+            {/* Avatar */}
+            <div className="relative w-full flex flex-col items-center">
+              <Avatar size="lg" className="h-32 w-32 sm:h-40 sm:w-40">
                 {avatarPreview ? (
                   <AvatarImage src={avatarPreview} alt="avatar" />
                 ) : (
-                  <AvatarFallback>
+                  <AvatarFallback className="text-4xl">
                     {(profile.first_name || profile.email || "").charAt(0).toUpperCase()}
                   </AvatarFallback>
                 )}
               </Avatar>
-              <label className="absolute bottom-0 right-0">
+              <label className="mt-3">
                 <input
                   accept="image/*"
                   onChange={handleAvatarChange}
                   type="file"
                   className="hidden"
                 />
-                <span className="inline-flex items-center justify-center px-3 py-2 bg-white text-xs sm:text-sm rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50">
-                  رفع
+                <span className="inline-flex items-center justify-center px-4 py-2 bg-white text-xs sm:text-sm rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50 transition">
+                  Upload Photo
                 </span>
               </label>
             </div>
 
             {/* Linked Accounts */}
             <div className="w-full">
-              <h4 className="text-xs sm:text-sm font-semibold text-[#111827] mb-3">
-                الحسابات المرتبطة
+              <h4 className="text-sm font-semibold text-[#111827] mb-3">
+                Linked accounts
               </h4>
-              <div className="flex gap-2 sm:gap-3">
-                <button className="flex-1 py-2 rounded text-xs sm:text-sm bg-[#1877F2] text-white hover:bg-[#1563D3] transition">
+              <div className="flex flex-col gap-2 w-full">
+                <button className="w-full py-2 rounded text-xs sm:text-sm bg-[#1877F2] text-white hover:bg-[#1563D3] transition font-medium">
                   Facebook
                 </button>
-                <button className="flex-1 py-2 rounded text-xs sm:text-sm border border-gray-300 hover:bg-gray-50 transition">
+                <button className="w-full py-2 rounded text-xs sm:text-sm border border-gray-300 hover:bg-gray-50 transition text-gray-700 font-medium">
                   LinkedIn
+                </button>
+                <button className="w-full py-2 rounded text-xs sm:text-sm border border-gray-300 hover:bg-gray-50 transition text-gray-700 font-medium">
+                  X
+                </button>
+                <button className="w-full py-2 rounded text-xs sm:text-sm border border-gray-300 hover:bg-gray-50 transition text-gray-700 font-medium">
+                  Pinterest
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Form Section */}
-          <form onSubmit={handleSubmit} className="flex-1 space-y-4 sm:space-y-6">
+          {/* Form Section - Main Content */}
+          <form onSubmit={handleSubmit} className="lg:col-span-3 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  الاسم الأول
+                  First Name
                 </label>
                 <Input
                   name="first_name"
                   value={profile.first_name}
                   onChange={handleChange}
-                  placeholder="الاسم الأول"
+                  placeholder="Taha"
                   className="text-sm"
                 />
               </div>
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  اسم العائلة
+                  Last Name
                 </label>
                 <Input
                   name="last_name"
                   value={profile.last_name}
                   onChange={handleChange}
-                  placeholder="اسم العائلة"
+                  placeholder="Mohamed"
                   className="text-sm"
                 />
               </div>
 
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  البريد الإلكتروني
+                  Email
                 </label>
                 <Input
                   name="email"
                   value={profile.email}
                   onChange={handleChange}
-                  placeholder="example@mail.com"
+                  placeholder="taha@gmail.com"
                   className="text-sm"
                 />
               </div>
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  الجنس
+                  Gender
                 </label>
                 <select
                   aria-label="gender"
                   name="gender"
                   value={profile.gender}
                   onChange={handleChange}
-                  className="w-full border-b border-gray-200 py-2 bg-transparent text-sm focus:outline-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
                 >
-                  <option value="">اختر</option>
-                  <option value="male">ذكر</option>
-                  <option value="female">أنثى</option>
-                  <option value="other">آخر</option>
+                  <option value="">Select</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  تاريخ الميلاد
+                  Date of Birth
                 </label>
                 <Input
                   type="date"
@@ -264,105 +241,106 @@ export default function UserProfilePage() {
               </div>
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  رقم الهاتف
+                  Phone
                 </label>
-                <Input
-                  name="phone"
-                  value={profile.phone}
-                  onChange={handleChange}
-                  placeholder="+20xxxxxxxxx"
-                  className="text-sm"
-                />
+                <div className="flex gap-2">
+                  <select className="w-20 px-2 py-2 border border-gray-300 rounded text-xs bg-white">
+                    <option>+20</option>
+                  </select>
+                  <Input
+                    name="phone"
+                    value={profile.phone?.replace("+20", "") || ""}
+                    onChange={(e) => handleChange({ ...e, target: { ...e.target, value: "+20" + e.target.value } })}
+                    placeholder="1003630088"
+                    className="text-sm flex-1"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  الدولة
+                  Country
                 </label>
-                <Input
+                <select
                   name="country"
                   value={profile.country}
                   onChange={handleChange}
-                  placeholder="الدولة"
-                  className="text-sm"
-                />
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
+                >
+                  <option value="">Select Country</option>
+                  <option value="Egypt">Egypt</option>
+                  <option value="Saudi Arabia">Saudi Arabia</option>
+                  <option value="UAE">UAE</option>
+                  <option value="Qatar">Qatar</option>
+                </select>
               </div>
+
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  الفئة
+                  Category
                 </label>
-                <Input
+                <select
                   name="category"
                   value={profile.category}
                   onChange={handleChange}
-                  placeholder="الفئة"
-                  className="text-sm"
-                />
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
+                >
+                  <option value="">Select Category</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="IT">IT</option>
+                  <option value="Finance">Finance</option>
+                </select>
               </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                  Sub Category
+                </label>
+                <select
+                  name="sub_category"
+                  value={profile.sub_category}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
+                >
+                  <option value="">Select Sub Category</option>
+                  <option value="Nursing">Specialized Nursing</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                New password
+              </label>
+              <Input
+                type="password"
+                placeholder="••••••••••"
+                className="text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                Confirm password
+              </label>
+              <Input
+                type="password"
+                placeholder="••••••••••"
+                className="text-sm"
+              />
             </div>
 
             <div className="flex justify-center pt-4">
               <button
                 type="submit"
                 disabled={saving || loading}
-                className="px-8 sm:px-12 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-[#006EA8] to-[#005685] text-white text-sm sm:text-base font-semibold shadow-[0_24px_48px_rgba(0,86,133,0.16)] hover:shadow-[0_24px_48px_rgba(0,86,133,0.24)] transition disabled:opacity-60"
+                className="px-12 py-3 rounded-full bg-gradient-to-r from-[#006EA8] to-[#005685] text-white text-base font-semibold shadow-[0_24px_48px_rgba(0,86,133,0.16)] hover:shadow-[0_24px_48px_rgba(0,86,133,0.24)] transition disabled:opacity-60"
               >
-                {saving ? "جاري الحفظ..." : "تحديث"}
+                {saving ? "Updating..." : "Update"}
               </button>
             </div>
           </form>
         </div>
-      </div>
-
-      {/* Password Change Card */}
-      <div className="mt-4 sm:mt-6 rounded-[16px] border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
-        <h2 className="text-lg sm:text-xl font-bold text-[#111827] mb-4 sm:mb-6">
-          تغيير كلمة المرور
-        </h2>
-        <form onSubmit={handlePasswordChange} className="space-y-4 sm:space-y-6">
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-              كلمة المرور الحالية
-            </label>
-            <Input
-              name="current_password"
-              type="password"
-              placeholder="كلمة المرور الحالية"
-              className="text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-              كلمة المرور الجديدة
-            </label>
-            <Input
-              name="new_password"
-              type="password"
-              placeholder="كلمة المرور الجديدة"
-              className="text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-              تأكيد كلمة المرور
-            </label>
-            <Input
-              name="new_password_confirmation"
-              type="password"
-              placeholder="تأكيد كلمة المرور"
-              className="text-sm"
-            />
-          </div>
-          <div className="flex justify-center pt-2">
-            <button
-              type="submit"
-              disabled={saving || loading}
-              className="px-8 sm:px-12 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-[#006EA8] to-[#005685] text-white text-sm sm:text-base font-semibold hover:shadow-[0_24px_48px_rgba(0,86,133,0.24)] transition disabled:opacity-60"
-            >
-              {saving ? "جاري التحديث..." : "تحديث كلمة المرور"}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   )
