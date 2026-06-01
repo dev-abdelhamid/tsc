@@ -200,8 +200,8 @@ export function SiteHeader({
         if (mounted && typeof data.unread_count === "number") {
           setUnreadCount(data.unread_count)
         }
-      } catch (err) {
-        console.error(err)
+      } catch {
+        // Silently handle unread count fetch errors
       }
     }
 
@@ -236,8 +236,8 @@ export function SiteHeader({
             read: Boolean(n.read_at),
           }))
         )
-      } catch (err) {
-        console.error(err)
+      } catch {
+        // Silently handle notification fetch errors
       } finally {
         if (mounted) setNotificationsLoading(false)
       }
@@ -252,8 +252,8 @@ export function SiteHeader({
     setUnreadCount((prev) => Math.max(0, prev - 1))
     try {
       await fetch(`/api/notifications/${id}/read`, { method: "POST", credentials: "include" })
-    } catch (err) {
-      console.error(err)
+    } catch {
+      // Silently handle notification read error
     }
   }
 
@@ -282,10 +282,7 @@ export function SiteHeader({
         isDashboard && "bg-[#001222]"
       )}
     >
-      <div className="pointer-events-none absolute top-0 -start-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
-      <div className="pointer-events-none absolute top-0 -end-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
-
-      {/* ✅ justify-between يضمن اللوجو في البداية والأزرار في النهاية */}
+      {/* Removed expensive blur effects for performance */}
       <div className="relative z-50 mx-auto flex h-[88px] w-full max-w-[1512px] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[128px] lg:gap-6 lg:px-4">
         <div className="flex shrink-0 items-center">
           <Link locale={currentLocale} href="/" aria-label={safeT("brand", "Brand")} className="flex shrink-0 items-center relative z-50">
