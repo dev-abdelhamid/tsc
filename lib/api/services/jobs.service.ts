@@ -264,6 +264,7 @@ export async function getPublicJobs(
       const response = await api.get<unknown>(endpoint, {
         locale,
         next: { revalidate: 60 },
+        timeout: 15000, // Increase timeout for slow jobs endpoint
       })
       const parsed = parseJobsResponse(response, locale)
       if (parsed.data.length > 0) return parsed
@@ -276,7 +277,7 @@ export async function getPublicJobs(
   try {
     const response = await api.get<ApiResponse<Job[]>>(
       `/public/jobs${query}`,
-      { locale, next: { revalidate: 60 } }
+      { locale, next: { revalidate: 60 }, timeout: 15000 }
     )
     return parseJobsResponse(response, locale)
   } catch (err) {
@@ -301,6 +302,7 @@ export async function getPublicJobDetail(
       const response = await api.get<unknown>(endpoint, {
         locale,
         next: { revalidate: 60 },
+        timeout: 20000, // Increase timeout to 20 seconds for slow API
       })
 
       if (!response || typeof response !== "object") continue

@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { useState, useTransition } from "react"
 import { useRouter } from "@/i18n/navigation"
 import { useTranslations } from "next-intl"
@@ -16,22 +16,8 @@ export function AdminCompaniesPanel({ companies, locale }: { companies: User[]; 
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
-  // Ensure we only show items that actually have the `company` role.
-  const filteredCompanies = companies.filter((c) => {
-    const obj = c as unknown as Record<string, unknown>
-    if (typeof obj.role === "string") return obj.role === "company"
-    if (Array.isArray(obj.roles)) {
-      return obj.roles.some((r) => {
-        if (typeof r === "string") return r === "company"
-        if (r && typeof r === "object") {
-          const rr = r as Record<string, unknown>
-          return rr.name === "company" || rr.slug === "company"
-        }
-        return false
-      })
-    }
-    return false
-  })
+  // Data is pre-filtered from the server (role="company"), no need to filter again
+  const filteredCompanies = companies
 
   // Calculate company-specific statistics
   const totalCompanies = filteredCompanies.length
@@ -117,8 +103,9 @@ export function AdminCompaniesPanel({ companies, locale }: { companies: User[]; 
                     </div>
                   )}
                   <div>
-                    <Link 
-                      href={`/admin/companies/${company.id}`} 
+                    <Link
+                      locale={locale}
+                      href={`/dashboard/admin/companies/${company.id}`}
                       className="font-medium hover:underline text-[#006EA8] block"
                     >
                       {companyProfile.companyName || company.name}

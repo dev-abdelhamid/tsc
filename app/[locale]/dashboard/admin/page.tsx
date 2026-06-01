@@ -37,7 +37,6 @@ export default async function AdminDashboardPage({
   let pendingJobs: Awaited<ReturnType<typeof getAdminJobs>>["data"] = []
 
   async function fetchAll(tkn: string) {
-    // Use dedicated stats endpoint (with robust fallbacks) to get accurate totals.
     const statsRes = await getAdminStats(tkn, locale).catch(() => ({ total_users: 0, total_companies: 0, total_jobs: 0, pending_jobs: 0 }))
     const pendingRes = await getAdminJobs(tkn, "pending", 1, locale).catch(() => ({ data: [], meta: { ...EMPTY_META } }))
 
@@ -58,10 +57,8 @@ export default async function AdminDashboardPage({
       redirect(`/${locale}/sign-in`)
     }
   } catch (err) {
-    console.error("[AdminDashboardPage] error during fetch:", err)
     if (err instanceof ApiError && err.status === 401 && session.refreshToken) {
       try {
-        console.log("[AdminDashboardPage] Access token expired, attempting to refresh token...")
         const { refreshToken: refreshService } = await import("@/lib/api/services/auth.service")
         const tokens = await refreshService(session.refreshToken, locale)
 
@@ -70,8 +67,7 @@ export default async function AdminDashboardPage({
         await session.save()
 
         await fetchAll(tokens.access_token)
-      } catch (refreshErr) {
-        console.error("[AdminDashboardPage] Token refresh failed:", refreshErr)
+      } catch {
         redirect(`/${locale}/sign-in`)
       }
     } else {

@@ -11,7 +11,6 @@ import {
 import type { Category } from "@/lib/api/types"
 import { resolveImageUrl } from "@/lib/utils"
 import { Tag, Plus, Trash2, ChevronDown, ChevronUp, X, Pencil, Layers } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
 
 const LOCALES = ["ar", "en", "de"] as const
 type LocaleKey = (typeof LOCALES)[number]
@@ -30,7 +29,6 @@ type CategoryForm = {
   iconPreview?: string | null
   existingIcon?: string
   subCategories?: SubCategoryForm[]
-  isActive?: boolean
 }
 
 function emptyLocale(): Record<LocaleKey, string> {
@@ -38,67 +36,31 @@ function emptyLocale(): Record<LocaleKey, string> {
 }
 
 function emptyCategory(): CategoryForm {
-  return { name: emptyLocale(), slug: "", subCategories: [], isActive: false }
+  return { name: emptyLocale(), slug: "", subCategories: [] }
 }
 
-function parseLocalizedField(value: unknown, locale: LocaleKey): Record<LocaleKey, string> {
-  const out = emptyLocale()
-  if (!value) return out
-
-  if (typeof value === "string") {
-    out[locale] = value
-    return out
+function mapCategoryToForm(cat: Category): CategoryForm {
+  // Normalize `name` which may be a string or a per-locale object
+  const toLocales = (val: any) => {
+    if (!val) return emptyLocale()
+    if (typeof val === "string") return { ar: val, en: val, de: val }
+    // handle objects like { ar, en, de } or { name: '...' }
+    return {
+      ar: (val.ar ?? val.name ?? val.en ?? val.de ?? "") as string,
+      en: (val.en ?? val.name ?? val.ar ?? val.de ?? "") as string,
+      de: (val.de ?? val.name ?? val.ar ?? val.en ?? "") as string,
+    }
   }
-
-  if (typeof value === "object") {
-    const obj = value as Record<string, unknown>
-    if (typeof obj.ar === "string" || typeof obj.en === "string" || typeof obj.de === "string") {
-      out.ar = typeof obj.ar === "string" ? obj.ar : ""
-      out.en = typeof obj.en === "string" ? obj.en : ""
-      out.de = typeof obj.de === "string" ? obj.de : ""
-      return out
-    }
-
-    for (const k of Object.keys(obj)) {
-      const m = k.match(/_?(ar|en|de)$/)
-      if (m) {
-        const l = m[1] as LocaleKey
-        const v = obj[k]
-        if (typeof v === "string") out[l] = v
-      }
-    }
-
-    // fallback: copy any direct locale keys
-    for (const l of LOCALES) {
-      const v = (obj as Record<string, unknown>)[l]
-      if (typeof v === "string") out[l] = v
-    }
-
-    return out
-  }
-
-  return out
-}
-
-function mapCategoryToForm(cat: Category, locale: LocaleKey): CategoryForm {
-  const rawName = (cat as any).name ?? (cat as any).title ?? cat
-  const name = parseLocalizedField(rawName, locale)
-
-  const subs = (cat.sub_categories ?? []) as any[]
-  const subCategories = subs.map((s) => ({
-    id: s.id,
-    name: parseLocalizedField(s.name ?? s.title ?? s, locale),
-  }))
-
-  const isActiveRaw = (cat as any).is_active ?? (cat as any).active
 
   return {
     id: cat.id,
-    name,
+    name: toLocales(cat.name),
     slug: cat.slug ?? "",
     existingIcon: cat.icon,
-    subCategories,
-    isActive: typeof isActiveRaw === "boolean" ? isActiveRaw : undefined,
+    subCategories: (cat.sub_categories ?? []).map((s) => ({
+      id: s.id,
+      name: toLocales(s.name),
+    })),
   }
 }
 
@@ -126,7 +88,9 @@ function LocaleInput({
     return (
       <label className="block text-sm text-[#374151]">
         <span className="mb-1 flex items-center gap-1.5 font-medium">
-          <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">{lang.toUpperCase()}</span>
+          <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
+            {lang.toUpperCase()}
+          </span>
           {label}
         </span>
         <input
@@ -144,7 +108,9 @@ function LocaleInput({
       {LOCALES.map((lang) => (
         <label key={lang} className="block text-sm text-[#374151]">
           <span className="mb-1 flex items-center gap-1.5 font-medium">
-            <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">{lang.toUpperCase()}</span>
+            <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
+              {lang.toUpperCase()}
+            </span>
             {label}
           </span>
           <input
@@ -163,14 +129,14 @@ function CategoryCard({
   category,
   index,
   locale,
-  editLocale,
+  onlyLocale,
   onUpdate,
   onDelete,
 }: {
   category: CategoryForm
   index: number
   locale: string
-  editLocale: LocaleKey
+  onlyLocale?: LocaleKey
   onUpdate: (updated: CategoryForm) => void
   onDelete: () => void
 }) {
@@ -183,6 +149,9 @@ function CategoryCard({
 
   function updateName(lang: LocaleKey, val: string) {
     const updated = { ...category, name: { ...category.name, [lang]: val } }
+    if (lang === "ar" && !category.slug) {
+      updated.slug = slugify(val)
+    }
     onUpdate(updated)
   }
 
@@ -197,28 +166,6 @@ function CategoryCard({
     onUpdate({
       ...category,
       subCategories: [...(category.subCategories || []), { name: emptyLocale() }],
-    })
-  }
-
-  function toggleActive() {
-    const updated = { ...category, isActive: !category.isActive }
-    // update UI immediately
-    onUpdate(updated)
-    setError(null)
-    setSuccess(false)
-    startTransition(async () => {
-      const formData = new FormData()
-      if (category.id) formData.append("id", String(category.id))
-      formData.append("is_active", updated.isActive ? "1" : "0")
-      const result = await saveCategoryAction(formData, locale, category.id)
-      if (!result.ok) {
-        setError(result.message ?? "فشل الحفظ")
-        // revert UI change on failure
-        onUpdate({ ...category, isActive: category.isActive })
-        return
-      }
-      setSuccess(true)
-      router.refresh()
     })
   }
 
@@ -246,11 +193,10 @@ function CategoryCard({
       if (n) formData.append(`name[${lang}]`, n)
     }
 
-    if (category.iconFile) formData.append("icon", category.iconFile)
+    const slug = category.slug?.trim() || slugify(category.name.ar || category.name.en || "")
+    if (slug) formData.append("slug", slug)
 
-    if (typeof category.isActive === "boolean") {
-      formData.append("is_active", category.isActive ? "1" : "0")
-    }
+    if (category.iconFile) formData.append("icon", category.iconFile)
 
     // Add sub_categories translatable names
     const subs = (category.subCategories || []).filter((s) =>
@@ -294,22 +240,17 @@ function CategoryCard({
           )}
         </div>
 
-        <div className="me-2">
-          {typeof category.isActive === "boolean" ? (
-            <Switch
-              checked={Boolean(category.isActive)}
-              onCheckedChange={() => toggleActive()}
-              aria-label={isRTL ? "تفعيل الفئة" : "Activate category"}
-            />
-          ) : null}
-        </div>
-
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           className="flex flex-1 items-center gap-2 text-start"
         >
           <span className="truncate text-sm font-semibold text-[#111827]">{previewName}</span>
+          {category.slug && (
+            <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs text-[#6B7280]">
+              /{category.slug}
+            </span>
+          )}
           {subCount > 0 && (
             <span className="ms-1 flex items-center gap-1 rounded-full bg-[#006EA8]/10 px-2 py-0.5 text-xs font-medium text-[#006EA8]">
               <Layers className="h-3 w-3" />
@@ -345,7 +286,19 @@ function CategoryCard({
           )}
 
           {/* Names */}
-          <LocaleInput label={isRTL ? "اسم الفئة" : "Category Name"} values={category.name} onChange={updateName} onlyLocale={editLocale} />
+          <LocaleInput label={isRTL ? "اسم الفئة" : "Category Name"} values={category.name} onChange={updateName} onlyLocale={onlyLocale} />
+
+          {/* Slug */}
+          <label className="block text-sm text-[#374151]">
+            <span className="mb-1 block font-medium">{isRTL ? "الـ Slug (مسار URL)" : "Slug (URL path)"}</span>
+            <input
+              type="text"
+              value={category.slug}
+              onChange={(e) => onUpdate({ ...category, slug: e.target.value })}
+              placeholder="مثال: software-engineering"
+              className="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm font-mono focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8]"
+            />
+          </label>
 
           {/* Icon upload */}
           <div className="rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-3 space-y-2">
@@ -409,20 +362,15 @@ function CategoryCard({
                       </span>
                       <button
                         type="button"
-                        onClick={() => removeSubCategory(idx)}
                         title={isRTL ? "حذف" : "Remove"}
+                        onClick={() => removeSubCategory(idx)}
                         className="flex h-6 w-6 items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <div>
-                      <LocaleInput
-                        label={isRTL ? "الاسم" : "Name"}
-                        values={sub.name}
-                        onChange={(lang, val) => updateSubCategory(idx, lang, val)}
-                        onlyLocale={editLocale}
-                      />
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <LocaleInput label={isRTL ? "الاسم" : "Name"} values={sub.name} onChange={(l, v) => updateSubCategory(idx, l, v)} onlyLocale={onlyLocale} />
                     </div>
                   </div>
                 ))}
@@ -450,10 +398,10 @@ export function AdminCategoriesPanel({
   categories: Category[]
   locale: string
 }) {
-  const [editLocale, setEditLocale] = useState<LocaleKey>((locale as LocaleKey) || "ar")
   const [forms, setForms] = useState<CategoryForm[]>(() =>
-    categories.length > 0 ? categories.map((c) => mapCategoryToForm(c, locale as LocaleKey)) : []
+    categories.length > 0 ? categories.map(mapCategoryToForm) : []
   )
+  const [editLocale, setEditLocale] = useState<LocaleKey>("ar")
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [deletePending, startDeleteTransition] = useTransition()
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -514,20 +462,6 @@ export function AdminCategoriesPanel({
       }
     >
       <div className="space-y-6">
-        {/* Language switcher */}
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-[#6B7280]">{isRTL ? "اللغة:" : "Language:"}</label>
-          {LOCALES.map((loc) => (
-            <button
-              key={loc}
-              type="button"
-              onClick={() => setEditLocale(loc)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded ${editLocale === loc ? "bg-[#006EA8] text-white" : "bg-[#EBF5FB] text-[#006EA8]"}`}
-            >
-              {loc.toUpperCase()}
-            </button>
-          ))}
-        </div>
         {/* Delete confirm modal */}
         {deleteConfirm !== null && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -564,6 +498,21 @@ export function AdminCategoriesPanel({
           </div>
         )}
 
+        {/* Language switcher */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-[#6B7280]">{isRTL ? "اللغة:" : "Language:"}</label>
+          {LOCALES.map((loc) => (
+            <button
+              key={loc}
+              type="button"
+              onClick={() => setEditLocale(loc)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded ${editLocale === loc ? "bg-[#006EA8] text-white" : "bg-[#EBF5FB] text-[#006EA8]"}`}
+            >
+              {loc.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
         {forms.length === 0 && (
           <div className="rounded-[12px] border border-dashed border-[#78A3BE] bg-[#F8FBFF] py-16 text-center">
             <Tag className="mx-auto h-10 w-10 text-[#78A3BE]" />
@@ -581,8 +530,8 @@ export function AdminCategoriesPanel({
                 key={category.id ?? `new-${realIndex}`}
                 category={category}
                 index={formIndex}
-                locale={locale}
-                editLocale={editLocale}
+                  locale={locale}
+                  onlyLocale={editLocale}
                 onUpdate={(updated) =>
                   setForms((prev) => prev.map((c, i) => (i === formIndex ? updated : c)))
                 }

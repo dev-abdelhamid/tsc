@@ -868,6 +868,40 @@
       "error": "Speichern fehlgeschlagen",
       "locationRequired": "Ort ist erforderlich"
     },
+    "faqs": {
+      "columns": {
+        "question": "Frage",
+        "answer": "Antwort",
+        "actions": "Aktionen"
+      },
+      "add": "+ Frage hinzufügen",
+      "empty": "Keine FAQs",
+      "delete": "Löschen",
+      "error": "Aktion fehlgeschlagen",
+      "titles": {
+        "details": "FAQ Details"
+      },
+      "labels": {
+        "language": "Sprache:"
+      },
+      "fields": {
+        "question": "Frage",
+        "answer": "Antwort"
+      },
+      "actions": {
+        "saving": "Speichern...",
+        "create": "Erstellen",
+        "saveChanges": "Änderungen speichern",
+        "back": "Zurück"
+      },
+      "messages": {
+        "saved": "✓ Erfolgreich gespeichert"
+      },
+      "errors": {
+        "atLeastOneQuestion": "Mindestens eine arabische Frage ist erforderlich",
+        "save": "Speichern fehlgeschlagen"
+      }
+    },
     "home": {
       "title": "Startseiteninhalt",
       "description": "Aktualisieren Sie Hero, Prozessschritte und die Abschnittstitel auf der öffentlichen Startseite.",

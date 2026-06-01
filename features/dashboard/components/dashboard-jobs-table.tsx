@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image"
 import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
@@ -76,10 +78,11 @@ export function DashboardJobsTable({
             <p className="bg-white px-4 py-12 text-center text-sm text-gray-500">{emptyMessage}</p>
           ) : (
             rows.map((row, index) => (
-              <div
+              <Link
                 key={row.id}
+                href={row.detailsHref}
                 className={cn(
-                  "flex items-center border-b border-gray-50 last:border-0",
+                  "flex items-center border-b border-gray-50 last:border-0 hover:opacity-80 transition cursor-pointer",
                   index % 2 === 0 
                     ? "bg-white" 
                     : isRTL
@@ -108,15 +111,15 @@ export function DashboardJobsTable({
                   <DashboardStatusBadge status={row.status} />
                 </div>
                 <div className={"flex flex-1 px-2 py-3 justify-center "}>
-                  <Link
-                    href={row.detailsHref}
+                  <div
+                    onClick={(e) => e.preventDefault()}
                     className="inline-flex items-center gap-2 rounded-[8px] bg-gradient-to-b from-[#006EA8] to-[#005685] px-4 py-2 text-xs font-normal text-white shadow-[inset_0_1px_18px_2px_#E8F2FF,inset_0_1px_4px_2px_#C2DDFF] hover:opacity-95"
                   >
                     <Image src="/dashboard/jobs.svg" alt="" width={16} height={16} className="h-4 w-4 brightness-0 invert" />
                     {detailsLabel}
-                  </Link>
+                  </div>
                 </div>
-              </div>
+              </Link>
             ))
           )}
         </div>

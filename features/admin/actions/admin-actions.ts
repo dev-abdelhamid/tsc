@@ -12,6 +12,11 @@ import {
   deleteNewsItem,
   updateNewsItem,
 } from "@/lib/api/services/news.service"
+import {
+  createFaq,
+  updateFaq,
+  deleteFaq,
+} from "@/lib/api/services/faqs.service"
 import { updateSetting } from "@/lib/api/services/settings.service"
 import { updateAbout } from "../../../lib/api/services/about.service"
 import { updateHomePageContent } from "@/lib/api/services/home-page.service"
@@ -151,6 +156,36 @@ export async function deleteNewsAction(id: number, locale: string) {
     return { ok: true as const }
   } catch (err) {
     const message = err instanceof ApiError ? err.message : "Failed to delete news"
+    return { ok: false as const, message }
+  }
+}
+
+export async function deleteFaqAction(id: number, locale: string) {
+  try {
+    const { token } = await requireAdmin(locale)
+    await deleteFaq(id, token, locale)
+    revalidatePath(`/${locale}/dashboard/admin/faqs`)
+    revalidatePath(`/${locale}/faqs`)
+    return { ok: true as const }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to delete FAQ"
+    return { ok: false as const, message }
+  }
+}
+
+export async function saveFaqAction(formData: FormData, locale: string, faqId?: number) {
+  try {
+    const { token } = await requireAdmin(locale)
+    if (faqId) {
+      await updateFaq(faqId, formData, token, locale)
+    } else {
+      await createFaq(formData, token, locale)
+    }
+    revalidatePath(`/${locale}/dashboard/admin/faqs`)
+    revalidatePath(`/${locale}/faqs`)
+    return { ok: true as const }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to save FAQ"
     return { ok: false as const, message }
   }
 }

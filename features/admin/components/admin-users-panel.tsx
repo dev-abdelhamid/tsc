@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { useState, useTransition } from "react"
 import { useRouter } from "@/i18n/navigation"
 import { useTranslations } from "next-intl"
@@ -84,7 +84,7 @@ export function AdminUsersPanel({ users, locale }: { users: User[]; locale: stri
         {filteredUsers.map((user, index) => (
           <AdminTableRow key={user.id} striped={index % 2 === 1}>
             <AdminTableCell className="w-[20%]">
-              <Link href={`/admin/users/${user.id}`} className="font-medium hover:underline text-[#006EA8]">
+              <Link locale={locale} href={`/dashboard/admin/users/${user.id}`} className="font-medium hover:underline text-[#006EA8]">
                 {user.name}
               </Link>
             </AdminTableCell>

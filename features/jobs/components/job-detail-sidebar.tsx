@@ -1,4 +1,3 @@
-import { Bookmark } from "lucide-react"
 import { Link } from "@/i18n/navigation"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import type { Job } from "@/lib/api/types"
@@ -11,6 +10,7 @@ import {
 } from "@/features/jobs/lib/job-display"
 import { RelatedJobCard } from "@/features/jobs/components/related-job-card"
 import ApplyButton from "@/features/jobs/components/apply-button"
+import { FavoriteButton } from "@/features/jobs/components/favorite-button"
 
 
 type JobDetailSidebarProps = {
@@ -88,23 +88,11 @@ export function JobDetailSidebar({
                 {labels.monthly}
               </p>
             </div>
-            <button
-              type="button"
-              className="rounded-full p-1 text-[#40A0CA] transition hover:bg-[#e8f2ff]"
-              aria-label="Bookmark"
-            >
-              <Bookmark className="size-8 fill-[#40A0CA]/25 stroke-[#40A0CA]" />
-            </button>
+            <FavoriteButton jobId={job.id} locale={locale} />
           </div>
         ) : (
           <div className="flex justify-end">
-            <button
-              type="button"
-              className="rounded-full p-1 text-[#40A0CA] transition hover:bg-[#e8f2ff]"
-              aria-label="Bookmark"
-            >
-              <Bookmark className="size-8 fill-[#40A0CA]/25 stroke-[#40A0CA]" />
-            </button>
+            <FavoriteButton jobId={job.id} locale={locale} />
           </div>
         )}
 
@@ -127,15 +115,7 @@ export function JobDetailSidebar({
         ) : null}
 
         {/* Client-side apply button with optimistic update */}
-        <PrimaryButton asChild className="mt-8 h-[44px] w-full rounded-[12px] text-[16px] font-medium">
-          {/* Replace link with client ApplyButton component */}
-          {/* @ts-ignore */}
-          <div>
-            {/* Using client component */}
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-            <ApplyButton jobId={job.id} locale={locale} label={labels.applyForJob} />
-          </div>
-        </PrimaryButton>
+        <ApplyButton jobId={job.id} locale={locale} label={labels.applyForJob} />
 
       </div>
 

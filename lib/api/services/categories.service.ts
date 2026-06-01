@@ -149,6 +149,7 @@ export async function getCategories(
       locale,
       token,
       next: { revalidate: 60 },
+      timeout: 15000, // Increase timeout for slow categories endpoint
     })
     const parsed = parseCategoriesResponse(response, locale)
     if (parsed.length > 0) return parsed
@@ -163,7 +164,7 @@ export async function getCategories(
 // Get raw categories with all fields preserved (for admin editors)
 export async function getCategoriesRaw(locale?: string, token?: string): Promise<any[]> {
   try {
-    const response = await api.get<unknown>("/categories", { locale, token })
+    const response = await api.get<unknown>("/categories", { locale, token, timeout: 15000 })
     if (!response || typeof response !== "object") return []
 
     const root = response as Record<string, unknown>

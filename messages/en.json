@@ -868,6 +868,40 @@
       "error": "Save failed",
       "locationRequired": "Location is required"
     },
+    "faqs": {
+      "columns": {
+        "question": "Question",
+        "answer": "Answer",
+        "actions": "Actions"
+      },
+      "add": "+ Add FAQ",
+      "empty": "No FAQs",
+      "delete": "Delete",
+      "error": "Action failed",
+      "titles": {
+        "details": "FAQ Details"
+      },
+      "labels": {
+        "language": "Language:"
+      },
+      "fields": {
+        "question": "Question",
+        "answer": "Answer"
+      },
+      "actions": {
+        "saving": "Saving...",
+        "create": "Create",
+        "saveChanges": "Save Changes",
+        "back": "Back"
+      },
+      "messages": {
+        "saved": "✓ Saved successfully"
+      },
+      "errors": {
+        "atLeastOneQuestion": "At least Arabic question is required",
+        "save": "Failed to save"
+      }
+    },
     "home": {
       "title": "Homepage content",
       "description": "Update the hero, process steps, and homepage section titles shown on the public homepage.",

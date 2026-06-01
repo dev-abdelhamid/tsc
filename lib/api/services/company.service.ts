@@ -32,7 +32,7 @@ export async function getCompanyJob(
   locale = "ar"
 ): Promise<Job | null> {
   try {
-    const response = await api.get<ApiResponse<Job>>(`/jobs/${id}`, { token, locale })
+    const response = await api.get<ApiResponse<Job>>(`/jobs/${id}`, { token, locale, next: { revalidate: 60 } })
     return response.data ?? (response as unknown as Job) ?? null
   } catch (error) {
     console.error("[Company Service] getCompanyJob error:", error)
@@ -46,7 +46,7 @@ export async function getCompanyJobs(
   locale = "ar"
 ): Promise<{ data: Job[]; meta: PaginationMeta }> {
   try {
-    const response = await api.get<unknown>(`/jobs?page=${page}`, { token, locale })
+    const response = await api.get<unknown>(`/jobs?page=${page}`, { token, locale, next: { revalidate: 60 } }) // Cache for 60 seconds
     const typedResponse = response as
       | { data?: Job[]; meta?: PaginationMeta }
       | Job[]

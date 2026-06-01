@@ -8,7 +8,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const list = await getCountries(locale, session?.accessToken)
-    return NextResponse.json({ data: list })
+    
+    // Cache for 24 hours - countries don't change often
+    const response = NextResponse.json({ data: list })
+    response.headers.set("Cache-Control", "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800")
+    return response
   } catch {
     return NextResponse.json({ data: [], error: "Failed to fetch countries" }, { status: 500 })
   }

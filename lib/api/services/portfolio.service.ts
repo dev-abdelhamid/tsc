@@ -9,7 +9,7 @@ export async function getUserPortfolio(
   try {
     const response = await api.get<ApiResponse<UserPortfolio>>(
       "/user/portfolio",
-      { token, locale, cache: "no-store" }
+      { token, locale, cache: "no-store", timeout: 15000 } // Increase timeout to 15 seconds
     )
     return response.data || {}
   } catch {

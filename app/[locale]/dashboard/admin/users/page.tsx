@@ -24,7 +24,6 @@ export default async function AdminUsersPage({
     const result = await getAdminUsers(session.accessToken!, "user", 1, locale)
     users = result.data
   } catch (err) {
-    console.error(err)
     // ignore
   }
 

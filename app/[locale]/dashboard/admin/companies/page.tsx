@@ -24,7 +24,6 @@ export default async function AdminCompaniesPage({
     const result = await getAdminUsers(session.accessToken!, "company", 1, locale)
     companies = result.data
   } catch (err) {
-    console.error(err)
     // empty
   }
 

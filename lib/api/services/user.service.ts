@@ -22,10 +22,28 @@ function unwrapPayload<T>(response: unknown): T | undefined {
 }
 
 function extractApplications(response: unknown): JobApplication[] {
-  if (Array.isArray(response)) return response as JobApplication[]
+  let items: any[] = []
+  
+  if (Array.isArray(response)) {
+    items = response
+  } else if (response && typeof response === "object") {
+    const payload = response as any
+    // Try to extract array from common wrapper properties
+    if (Array.isArray(payload.data)) items = payload.data
+    else if (Array.isArray(payload.items)) items = payload.items
+    else if (Array.isArray(payload.results)) items = payload.results
+    else if (Array.isArray(payload)) items = payload
+  }
 
-  const payload = unwrapPayload<JobApplication[]>(response)
-  return Array.isArray(payload) ? payload : []
+  // Transform API response to JobApplication type
+  return items.map((item: any) => ({
+    id: item.id || item.applicationId || 0,
+    job: item.job || item.jobDetails || undefined,
+    user: item.user || undefined,
+    status: item.status || "pending",
+    applied_at: item.applied_at || item.appliedAt || "",
+    cv_url: item.cv_url || item.userPortfolio?.cv || undefined,
+  })).filter((app: JobApplication) => app.id > 0)
 }
 
 function extractPaginationMeta(response: unknown): PaginationMeta | undefined {
