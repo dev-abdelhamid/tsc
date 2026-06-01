@@ -181,11 +181,8 @@ export function SiteHeader({
   }
 
   return (
-    <header className={cn("sticky top-0 z-50 w-full bg-[#001222] shadow-2xl transition-all", isDashboard && "bg-[#001222]")}>
-      <div className="pointer-events-none absolute top-0 -start-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
-      <div className="pointer-events-none absolute top-0 -end-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
-
-      <div className="relative z-50 mx-auto flex h-[88px] w-full max-w-[1512px] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[128px] lg:gap-6 lg:px-4">
+    <header className={cn("sticky top-0 z-50 w-full bg-[#001222] shadow-lg transition-all", isDashboard && "bg-[#001222]")}>
+      <div className="relative z-50 mx-auto flex h-[88px] w-full max-w-full items-center justify-between gap-3 px-4 sm:px-6 lg:h-[128px] lg:gap-6 lg:px-6" style={{ maxWidth: "1512px" }}>
         {/* اللوجو */}
         <Link locale={currentLocale} href="/" className="flex shrink-0 items-center">
           <Image src="/home/hero/hero-logo.svg" alt="Brand" width={220} height={88} className="h-[56px] w-auto sm:h-[72px] lg:h-[92px]" loading="eager" priority />
