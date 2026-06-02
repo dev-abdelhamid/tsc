@@ -32,30 +32,30 @@ export default async function UserProfilePage({ params }: { params: Promise<{ lo
       }
 
       // Extract category/subcategory from nested Userprofile (camelCase: categoryId, subcategoryId)
-      const categoryId = userProfile.categoryId || user.category?.id || undefined
-      const subcategoryId = userProfile.subcategoryId || user.sub_category?.id || undefined
+      const categoryId = userProfile.categoryId || undefined
+      const subcategoryId = userProfile.subcategoryId || undefined
 
       initialProfile = {
         first_name: firstName,
         last_name: lastName,
         email: user.email || "",
         phone: user.phone || "",
-        gender: userProfile.gender || user.gender || "",
-        dob: userProfile.dateOfBirth || user.dob || "",
+        gender: userProfile.gender || "",
+        dob: userProfile.dateOfBirth || "",
         // provide both localized name and ids so client can pick IDs
         country: user.country?.name || "",
-        country_id: user.country?.id ?? user.country_id,
+        country_id: user.country?.id || undefined,
         country_code: user.country?.code || "", // dial code like "+20"
-        category: user.category?.name || "",
+        category: userProfile.categoryName || "",
         category_id: categoryId,
-        sub_category: user.sub_category?.name || "",
+        sub_category: userProfile.subcategoryName || "",
         sub_category_id: subcategoryId,
         avatar: user.avatar || "",
         // Social media from Userprofile
-        facebook: userProfile.facebook || user.facebook || "",
-        linkedin: userProfile.linkedin || user.linkedin || "",
-        twitter: userProfile.twitterX || user.twitterX || "",
-        pinterest: userProfile.pinterest || user.pinterest || "",
+        facebook: userProfile.facebook || "",
+        linkedin: userProfile.linkedin || "",
+        twitter: userProfile.twitterX || "",
+        pinterest: userProfile.pinterest || "",
         locale: user.locale || "",
       }
     }

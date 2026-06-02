@@ -35,7 +35,7 @@ export function DashboardShell({ locale, user, children, isMobileMenuOpen, onOpe
     <div className="min-h-screen bg-[#F7F9FC] overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1400px] px-3 pb-4 pt-4 sm:px-4 sm:pb-6 sm:pt-6 lg:px-8 lg:pt-8">
         <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:gap-6 overflow-hidden">
-          <DashboardSidebar locale={locale} userRole={user.role} open={isOpen} onOpenChange={handleOpenChange} />
+          <DashboardSidebar locale={locale} userRole={user.role || "user"} open={isOpen} onOpenChange={handleOpenChange} />
           <main className="min-w-0 flex-1 overflow-hidden">{children}</main>
         </div>
       </div>

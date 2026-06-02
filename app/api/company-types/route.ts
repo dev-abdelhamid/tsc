@@ -9,9 +9,10 @@ export async function GET(request: NextRequest) {
   try {
     const list = await getCompanyTypes(locale, session?.accessToken)
     
-    // Cache for 24 hours - company types don't change often
+    // Browser cache: 10 min, CDN: 24h, Stale: 7d
+    // This balances fresh data with performance
     const response = NextResponse.json({ data: list })
-    response.headers.set("Cache-Control", "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800")
+    response.headers.set("Cache-Control", "public, max-age=600, s-maxage=86400, stale-while-revalidate=604800")
     return response
   } catch {
     return NextResponse.json({ data: [], error: "Failed to fetch company types" }, { status: 500 })

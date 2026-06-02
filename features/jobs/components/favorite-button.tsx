@@ -4,7 +4,7 @@ import * as React from "react"
 import { Bookmark } from "lucide-react"
 import { toast } from "sonner"
 import { toggleFavorite } from "@/lib/api/services/jobs.service"
-import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "@/i18n/navigation"
 
 type FavoriteButtonProps = {
   jobId: number
@@ -17,7 +17,7 @@ export function FavoriteButton({
   locale = "ar", 
   initialIsFavorite = false 
 }: FavoriteButtonProps) {
-  const { session } = useAuth()
+  const router = useRouter()
   const [isFavorite, setIsFavorite] = React.useState(initialIsFavorite)
   const [loading, setLoading] = React.useState(false)
 
@@ -25,14 +25,28 @@ export function FavoriteButton({
     e.preventDefault()
     e.stopPropagation()
 
+    // Get access token from localStorage
+    let accessToken: string | null = null
+    if (typeof window !== "undefined") {
+      try {
+        const tokens = localStorage.getItem("auth_tokens")
+        if (tokens) {
+          const parsed = JSON.parse(tokens)
+          accessToken = parsed.access_token
+        }
+      } catch {
+        // Silently handle parse errors
+      }
+    }
+
     // Check if user is logged in
-    if (!session?.accessToken) {
+    if (!accessToken) {
       const message = locale === "ar" 
         ? "يجب تسجيل الدخول أولاً"
         : "Please log in first"
       toast.error(message)
       setTimeout(() => {
-        window.location.href = `/${locale}/sign-in`
+        router.push(`/sign-in`)
       }, 1000)
       return
     }
@@ -42,7 +56,7 @@ export function FavoriteButton({
     const toastId = toast.loading(locale === "ar" ? "جاري..." : "Loading...")
 
     try {
-      const result = await toggleFavorite(jobId, session.accessToken, locale)
+      const result = await toggleFavorite(jobId, accessToken, locale)
       setIsFavorite(result.is_favourite)
       toast.dismiss(toastId)
       

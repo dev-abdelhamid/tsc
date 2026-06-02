@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSession } from "@/lib/session"
 import { api } from "@/lib/api/client"
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getSession()
     const token = session.accessToken
@@ -12,7 +12,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const locale = request.headers.get("x-locale") || request.headers.get("accept-language") || "ar"
-    const jobId = params.id
+    const { id } = await params
+    const jobId = id
 
     // If an external jobs API base is configured, prefer forwarding the request there.
     const externalBase = process.env.JOBS_API_URL || process.env.NEXT_PUBLIC_JOBS_API_URL || process.env.NEXT_PUBLIC_API_URL

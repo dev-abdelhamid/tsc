@@ -1,4 +1,6 @@
 import { useLocale } from "next-intl"
+import { PrimaryButton } from "@/components/ui/primary-button"
+
 
 type AdminPageLayoutProps = {
   title: string

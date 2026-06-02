@@ -1,6 +1,6 @@
 // lib/api/services/user.service.ts
 import { api } from "../client"
-import type { ApiResponse, User, JobApplication, PaginationMeta } from "../types"
+import type { ApiResponse, User, JobApplication, PaginationMeta, Job } from "../types"
 
 export interface UpdateProfileData {
   name?: string
@@ -121,6 +121,37 @@ export async function getMyApplications(
   }
 
   return { data, meta }
+}
+
+export async function getMyApplicationDetail(
+  token: string,
+  applicationId: number,
+  locale = "ar"
+): Promise<JobApplication | null> {
+  try {
+    const response = await api.get<unknown>(`/my-applications/${applicationId}`, {
+      token,
+      locale,
+    })
+
+    if (!response || typeof response !== "object") return null
+    const root = response as Record<string, unknown>
+    const data = root.data ?? response
+
+    if (!data || typeof data !== "object") return null
+    const appData = data as Record<string, unknown>
+
+    return {
+      id: Number(appData.id) || applicationId,
+      job: appData.job as Job,
+      user: appData.user as User,
+      status: (appData.status as "pending" | "accepted" | "rejected") || "pending",
+      applied_at: String(appData.applied_at || ""),
+      cv_url: appData.cv_url as string | undefined,
+    } satisfies JobApplication
+  } catch {
+    return null
+  }
 }
 
 export async function getUserStats(

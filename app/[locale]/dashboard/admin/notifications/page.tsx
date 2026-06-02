@@ -20,7 +20,7 @@ export default async function AdminNotificationsPage({
 
   const token = session.accessToken
 
-  let notificationsResult = { data: [] }
+  let notificationsResult: { data: any[] } = { data: [] }
   try {
     notificationsResult = await getNotifications(token, 1, locale)
   } catch (err) {

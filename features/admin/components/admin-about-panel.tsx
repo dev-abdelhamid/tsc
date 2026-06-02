@@ -505,14 +505,14 @@ export function AdminAboutPanel({
             </button>
           </div>
 
-          {features.length === 0 && (
+          {currentTranslation.features.length === 0 && (
             <p className="rounded-lg bg-[#F9FAFB] py-8 text-center text-sm text-[#9CA3AF]">
               {isRTL ? "لا توجد مزايا. اضغط \"إضافة ميزة\" للبدء." : "No features. Click \"Add Feature\" to start."}
             </p>
           )}
 
           <div className="space-y-4">
-            {features.map((feature, idx) => (
+            {currentTranslation.features.map((feature, idx) => (
               <FeatureCard
                 key={feature.id ?? `new-${idx}`}
                 feature={feature}

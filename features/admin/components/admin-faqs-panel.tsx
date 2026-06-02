@@ -43,7 +43,6 @@ export function AdminFaqsPanel({ faqs }: { faqs: any[] }) {
         onClick={() => router.push(`/dashboard/admin/faqs/new`)}
         className="w-auto h-10 px-5 mx-0 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 mb-4"
       >
-        <Plus className="h-4 w-4" />
         <span>{t("add")}</span>
       </PrimaryButton>
 

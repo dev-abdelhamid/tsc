@@ -55,7 +55,7 @@ function appendLocaleQuery(endpoint: string, locale?: string) {
 
 async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   ensureBrowserSafeRequest(endpoint)
-  const { locale: optLocale, token, ...fetchOptions } = options
+  const { locale: optLocale, token, timeout, ...fetchOptions } = options
 
   // Determine locale automatically when not provided:
   // - On the server read the `X-NEXT-INTL-LOCALE` / `x-requested-locale` / `accept-language` header
@@ -115,7 +115,7 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
   // Debug logging removed to reduce console noise
   // Add an AbortController-based timeout to avoid hanging requests
   const controller = new AbortController()
-  const timeoutMs = (fetchOptions as any).timeout ?? 8000
+  const timeoutMs = timeout ?? 8000
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
   const start = Date.now()
@@ -171,24 +171,25 @@ export const api = {
     opts?: {
       locale?: string
       token?: string
+      timeout?: number
       cache?: RequestCache
       next?: { revalidate?: number; tags?: string[] }
     }
   ) => fetchApi<T>(endpoint, { method: "GET", ...opts }),
 
-  post: <T>(endpoint: string, body?: FormData | Record<string, unknown>, opts?: { locale?: string; token?: string }) =>
+  post: <T>(endpoint: string, body?: FormData | Record<string, unknown>, opts?: { locale?: string; token?: string; timeout?: number }) =>
     fetchApi<T>(endpoint, {
       method: "POST",
       body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
       ...opts,
     }),
 
-  put: <T>(endpoint: string, body: Record<string, unknown>, opts?: { locale?: string; token?: string }) =>
+  put: <T>(endpoint: string, body: Record<string, unknown>, opts?: { locale?: string; token?: string; timeout?: number }) =>
     fetchApi<T>(endpoint, { method: "PUT", body: JSON.stringify(body), ...opts }),
 
-  patch: <T>(endpoint: string, body?: Record<string, unknown>, opts?: { locale?: string; token?: string }) =>
+  patch: <T>(endpoint: string, body?: Record<string, unknown>, opts?: { locale?: string; token?: string; timeout?: number }) =>
     fetchApi<T>(endpoint, { method: "PATCH", body: body ? JSON.stringify(body) : undefined, ...opts }),
 
-  delete: <T>(endpoint: string, opts?: { locale?: string; token?: string }) =>
+  delete: <T>(endpoint: string, opts?: { locale?: string; token?: string; timeout?: number }) =>
     fetchApi<T>(endpoint, { method: "DELETE", ...opts }),
 }

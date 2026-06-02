@@ -14,11 +14,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const list = await getCities(countryId, locale, session?.accessToken)
-    
-    // Cache response for 1 hour on CDN and 5 minutes in browser
-    const response = NextResponse.json({ data: list })
-    response.headers.set("Cache-Control", "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400")
-    return response
+    return NextResponse.json({ data: list })
   } catch {
     return NextResponse.json({ data: [], error: "Failed to fetch cities" }, { status: 500 })
   }
