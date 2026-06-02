@@ -90,7 +90,6 @@ export async function getNotifications(
     )
     return parseNotificationsResponse(response, locale)
   } catch (err) {
-    console.error("[getNotifications] error:", err)
     return { data: [] }
   }
 }
@@ -140,7 +139,6 @@ export async function getUnreadCount(
     )
     return response.data ?? { unread_count: 0 }
   } catch (err) {
-    console.error("[getUnreadCount] error:", err)
     return { unread_count: 0 }
   }
 }

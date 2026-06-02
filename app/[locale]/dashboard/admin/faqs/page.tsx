@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session"
 import { getAdminFaqs } from "@/lib/api/services/faqs.service"
 import { AdminFaqsPanel } from "@/features/admin/components/admin-faqs-panel"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
+import type { Faq } from "@/lib/api/services/faqs.service"
 
 export default async function AdminFaqsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -14,11 +15,11 @@ export default async function AdminFaqsPage({ params }: { params: Promise<{ loca
     redirect(`/${locale}/dashboard`)
   }
 
-  let faqs: any[] = []
+  let faqs: Faq[] = []
   try {
     const result = await getAdminFaqs(session.accessToken!, { per_page: 100 }, locale)
     faqs = result.data
-  } catch (err) {
+  } catch {
     // ignore
   }
 

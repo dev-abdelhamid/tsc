@@ -147,6 +147,14 @@
   --sidebar-accent-foreground: #f5f5f5;
   --sidebar-border: #1e4d6b;
   --sidebar-ring: #80cdf6;
+  --sidebar-width: 256px;
+  --sidebar-width-icon: 56px;
+}
+
+/* Sidebar wrapper CSS variables - defined in :root to avoid inline styles */
+[data-slot="sidebar-wrapper"] {
+  --sidebar-width: inherit;
+  --sidebar-width-icon: inherit;
 }
 
 @layer base {

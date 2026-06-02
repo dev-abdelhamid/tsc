@@ -110,7 +110,7 @@ function convertToAPIFormat(portfolio: UserPortfolio): {
   const education: EducationAPI[] = (portfolio.educations || []).map(edu => ({
     id: edu.id,
     university: edu.institution,
-    level_of_education: (edu.degree as any) || "bachelor",
+    level_of_education: (edu.degree as "high_school" | "bachelor" | "master" | "phd") || "bachelor",
     graduation_year: edu.start_date ? new Date(edu.start_date).getFullYear().toString() : new Date().getFullYear().toString(),
     specialization: edu.field_of_study || "",
     final_grade: edu.grade ? 
@@ -225,7 +225,7 @@ export async function savePortfolio(
     const response = await api.post<ApiResponse<PortfolioAPIResponse>>(
       "/portfolio",
       formData,
-      { token, locale, isFormData: true }
+      { token, locale }
     )
     
     const apiResponse = response.data || {}

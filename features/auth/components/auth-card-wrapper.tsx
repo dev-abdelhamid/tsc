@@ -48,7 +48,7 @@ export function AuthCardWrapper({
           alt=""
           width={16}
           height={16}
-          className={cn("h-4 w-auto shrink-0 opacity-100", isRTL && "scale-x-[-1]")}
+          className={cn("h-auto w-4 shrink-0 opacity-100", isRTL && "scale-x-[-1]")}
           aria-hidden
         />
         <span>{backLabel}</span>

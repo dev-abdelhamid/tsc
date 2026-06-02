@@ -132,7 +132,7 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
     clearTimeout(timeoutId)
     const duration = Date.now() - start
     if (!isBrowser && duration > 2000) {
-      console.warn(`[fetchApi] slow failure ${requestUrl} ${duration}ms`)
+
     }
     if (err && err.name === "AbortError") {
       throw new ApiError(0, `Request timed out after ${timeoutMs}ms`)
@@ -144,7 +144,7 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   const duration = Date.now() - start
   if (!isBrowser && duration > 2000) {
-    console.warn(`[fetchApi] slow request ${requestUrl} ${duration}ms`)
+
   }
 
   if (!res.ok) {

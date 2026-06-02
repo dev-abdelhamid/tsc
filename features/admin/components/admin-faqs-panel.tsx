@@ -4,18 +4,19 @@ import { useState, useTransition } from "react"
 import { useRouter } from "@/i18n/navigation"
 import { useLocale, useTranslations } from "next-intl"
 import { PrimaryButton } from "@/components/ui/primary-button"
-import { Plus, Trash2, Pencil, AlertTriangle } from "lucide-react"
+import { Trash2, Pencil, AlertTriangle } from "lucide-react"
 import { AdminTableCell, AdminTableRow, AdminTableShell } from "./admin-table-shell"
 import { deleteFaqAction } from "@/features/admin/actions/admin-actions"
+import type { Faq } from "@/lib/api/services/faqs.service"
 
-export function AdminFaqsPanel({ faqs }: { faqs: any[] }) {
+export function AdminFaqsPanel({ faqs }: { faqs: Faq[] }) {
   const t = useTranslations("Admin.faqs")
   const locale = useLocale()
   const isRTL = locale === "ar"
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | number | null>(null)
 
   const columns = [
     { key: "question", label: t("columns.question"), className: "w-[40%]" },
@@ -23,10 +24,10 @@ export function AdminFaqsPanel({ faqs }: { faqs: any[] }) {
     { key: "actions", label: t("columns.actions"), className: "w-[12%] text-center" },
   ]
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string | number) {
     setError(null)
     startTransition(async () => {
-      const result = await deleteFaqAction(id, locale)
+      const result = await deleteFaqAction(Number(id), locale)
       if (!result.ok) {
         setError(result.message ?? t("error"))
         return

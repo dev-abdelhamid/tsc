@@ -43,7 +43,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ user, tokens }, { status: 200 })
   } catch (error: unknown) {
-    const status = error instanceof ApiError ? error.status : 500
+    let status = 500
+    if (error instanceof ApiError) {
+      status = error.status || 500
+    }
+    // Ensure status is within valid range
+    if (typeof status !== 'number' || status < 200 || status > 599) {
+      status = 500
+    }
+    
     const message = error instanceof ApiError ? error.message : "حدث خطأ في الخادم"
     const errors = error instanceof ApiError ? error.errors : undefined
 

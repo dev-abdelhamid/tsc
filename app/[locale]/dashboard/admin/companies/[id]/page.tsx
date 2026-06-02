@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session"
 import { getAdminUsers } from "@/lib/api/services/admin.service"
 import { AdminCompanyDetailView } from "@/features/admin/components/admin-company-detail-view"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
+import type { User } from "@/lib/api/types"
 
 export default async function AdminCompanyDetailPage({
   params,
@@ -18,7 +19,7 @@ export default async function AdminCompanyDetailPage({
     redirect(`/${locale}/dashboard`)
   }
 
-  let company: any = null
+  let company: User | null = null
   try {
     // Fetch with large page size to get all companies without pagination
     const result = await getAdminUsers(session.accessToken!, "company", 1, locale)
@@ -34,8 +35,8 @@ export default async function AdminCompanyDetailPage({
       hasMore = nextResult.meta?.last_page && currentPage < nextResult.meta.last_page
     }
     
-    company = allCompanies.find((c: any) => c.id === parseInt(id))
-  } catch (err) {
+    company = allCompanies.find((c: User) => c.id === parseInt(id)) || null
+  } catch {
     // ignore
   }
 
@@ -43,15 +44,20 @@ export default async function AdminCompanyDetailPage({
     redirect(`/${locale}/dashboard/admin/companies`)
   }
 
-  const companyProfile = company.companyProfile || {}
+  const companyProfile = company?.companyProfile || {}
 
-  const resolveCompanyTitle = () => {
+  const resolveCompanyTitle = (): string => {
+    if (!company) return ""
     if (companyProfile.companyName) return companyProfile.companyName
     const name = company.name
     if (!name) return ""
     if (typeof name === "string") return name
     // name may be an object with per-locale strings
-    return (name.ar || name.en || name.de || name.name || name.title || "") as string
+    const nameObj = name as Record<string, string> | string
+    if (typeof nameObj === "object") {
+      return (nameObj.ar || nameObj.en || nameObj.de || nameObj.name || nameObj.title || "") as string
+    }
+    return typeof nameObj === "string" ? nameObj : ""
   }
 
   return (

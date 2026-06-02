@@ -1,13 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { useTranslations } from "next-intl"
+import { useCallback, useState } from "react"
 import { useRouter } from "@/i18n/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { X, Plus, Upload } from "lucide-react"
+import { X, Plus } from "lucide-react"
 import type { Job, UserPortfolio, Language, Experience, Education, Skill } from "@/lib/api/types"
 
 type JobApplicationClientProps = {
@@ -35,12 +34,9 @@ export default function JobApplicationClient({
   locale,
   job,
   initialPortfolio,
-  token,
 }: JobApplicationClientProps) {
-  const t = useTranslations()
   const router = useRouter()
   const isAr = locale === "ar"
-  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [formState, setFormState] = useState<FormState>({
     languages: initialPortfolio?.languages || [],
@@ -155,16 +151,6 @@ export default function JobApplicationClient({
     })
   }
 
-  // Handle file upload
-  const handleEducationFileUpload = (id: number, file: File | null) => {
-    if (file) {
-      setFormState({
-        ...formState,
-        educationFiles: { ...formState.educationFiles, [id]: file },
-      })
-    }
-  }
-
   // Submit application
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -258,9 +244,10 @@ export default function JobApplicationClient({
       setTimeout(() => {
         router.push("/dashboard/user/applications")
       }, 1500)
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       toast.dismiss(toastId)
-      toast.error(err?.message || (isAr ? "حدث خطأ" : "Error occurred"))
+      const errorMessage = err instanceof Error ? err.message : "Error occurred"
+      toast.error(errorMessage || (isAr ? "حدث خطأ" : "Error occurred"))
       console.error("Application error:", err)
     } finally {
       setSubmitting(false)
@@ -302,8 +289,7 @@ export default function JobApplicationClient({
                     type="button"
                     onClick={() => removeLanguage(lang.id)}
                     className="text-red-600 hover:text-red-800"
-                    title={isAr ? "إزالة" : "Remove"}
-                    aria-label={isAr ? "إزالة اللغة" : "Remove language"}
+                    title={isAr ? "حذف اللغة" : "Remove Language"}
                   >
                     <X className="size-5" />
                   </button>
@@ -332,8 +318,7 @@ export default function JobApplicationClient({
                     })
                   }
                   className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                  title={isAr ? "مستوى اللغة" : "Language proficiency"}
-                  aria-label={isAr ? "مستوى اللغة" : "Language proficiency"}
+                  title={isAr ? "مستوى الكفاءة" : "Proficiency Level"}
                 >
                   <option value="beginner">{isAr ? "مبتدئ" : "Beginner"}</option>
                   <option value="intermediate">{isAr ? "متوسط" : "Intermediate"}</option>
@@ -375,8 +360,7 @@ export default function JobApplicationClient({
                     type="button"
                     onClick={() => removeSkill(skill.id)}
                     className="text-blue-600 hover:text-blue-800"
-                    title={isAr ? "إزالة" : "Remove"}
-                    aria-label={isAr ? "إزالة المهارة" : "Remove skill"}
+                    title={isAr ? "حذف المهارة" : "Remove Skill"}
                   >
                     <X className="size-4" />
                   </button>
@@ -434,8 +418,7 @@ export default function JobApplicationClient({
                       type="button"
                       onClick={() => removeExperience(exp.id)}
                       className="text-red-600 hover:text-red-800"
-                      title={isAr ? "إزالة" : "Remove"}
-                      aria-label={isAr ? "إزالة الخبرة" : "Remove experience"}
+                      title={isAr ? "حذف الخبرة" : "Remove Experience"}
                     >
                       <X className="size-5" />
                     </button>
@@ -532,8 +515,7 @@ export default function JobApplicationClient({
                       type="button"
                       onClick={() => removeEducation(edu.id)}
                       className="text-red-600 hover:text-red-800"
-                      title={isAr ? "إزالة" : "Remove"}
-                      aria-label={isAr ? "إزالة التعليم" : "Remove education"}
+                      title={isAr ? "حذف التعليم" : "Remove Education"}
                     >
                       <X className="size-5" />
                     </button>

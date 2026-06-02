@@ -11,8 +11,8 @@ import { Plus, Trash2, Upload, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  locale: string;
-  initialPortfolio?: any;
+  locale: string
+  initialPortfolio?: Record<string, any>
 };
 
 // API expected formats
@@ -37,14 +37,18 @@ type ExperienceForm = {
   id?: number;
 };
 type SkillForm = { skill_name: string; id?: number };
+type Language = { id: number; language: string; level: string };
+type Education = { id: number; [key: string]: any };
+type Experience = { id: number; [key: string]: any };
+type Skill = { id: number; skill_name: string };
 
 export default function UserEducationClient({ locale, initialPortfolio }: Props) {
-  // State直接用API返回的格式
-  const [cv, setCv] = useState<string | null>(null);
-  const [languages, setLanguages] = useState<any[]>([]);
-  const [educations, setEducations] = useState<any[]>([]);
-  const [experiences, setExperiences] = useState<any[]>([]);
-  const [skills, setSkills] = useState<any[]>([]);
+  // State directly in API format
+  const [cv, setCv] = useState<string | null>(null)
+  const [languages, setLanguages] = useState<Language[]>([])
+  const [educations, setEducations] = useState<Education[]>([])
+  const [experiences, setExperiences] = useState<Experience[]>([])
+  const [skills, setSkills] = useState<Skill[]>([])
   
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -80,58 +84,58 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
 
   // تحميل البيانات من API
   useEffect(() => {
-    let mounted = true;
+    let mounted = true
     async function loadPortfolio() {
       try {
-        setLoading(true);
+        setLoading(true)
         const res = await fetch("/api/user/portfolio", { 
           headers: { "x-locale": locale } 
-        });
-        const data = await res.json();
+        })
+        const data = await res.json()
         
-        if (!res.ok) throw new Error(data.message || "Failed to load portfolio data");
+        if (!res.ok) throw new Error(data.message || "Failed to load portfolio data")
         
         // API returns: { success, message, data: { id, cv, education, workExperience, skills, languages } }
-        const portfolioData = data.data || data;
+        const portfolioData = data.data || data
         
         if (mounted) {
-          setCv(portfolioData.cv || null);
-          setLanguages(portfolioData.languages || []);
-          setEducations(portfolioData.education || portfolioData.educations || []);
-          setExperiences(portfolioData.workExperience || portfolioData.experiences || []);
-          setSkills(portfolioData.skills || []);
+          setCv(portfolioData.cv || null)
+          setLanguages(portfolioData.languages || [])
+          setEducations(portfolioData.education || portfolioData.educations || [])
+          setExperiences(portfolioData.workExperience || portfolioData.experiences || [])
+          setSkills(portfolioData.skills || [])
           
-          console.log("[Load] Languages:", portfolioData.languages?.length || 0);
-          console.log("[Load] Education:", portfolioData.education?.length || 0);
-          console.log("[Load] WorkExperience:", portfolioData.workExperience?.length || 0);
-          console.log("[Load] Skills:", portfolioData.skills?.length || 0);
+          console.log("[Load] Languages:", portfolioData.languages?.length || 0)
+          console.log("[Load] Education:", portfolioData.education?.length || 0)
+          console.log("[Load] WorkExperience:", portfolioData.workExperience?.length || 0)
+          console.log("[Load] Skills:", portfolioData.skills?.length || 0)
         }
       } catch (err) {
         if (mounted) {
-          console.error("[Load] Error:", err);
-          toast.error(isAr ? "فشل تحميل البيانات" : "Failed to load data");
+          console.error("[Load] Error:", err)
+          toast.error(isAr ? "فشل تحميل البيانات" : "Failed to load data")
         }
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) setLoading(false)
       }
     }
     
     if (initialPortfolio && Object.keys(initialPortfolio).length > 0) {
-      const portfolioData = initialPortfolio.data || initialPortfolio;
-      setCv(portfolioData.cv || null);
-      setLanguages(portfolioData.languages || []);
-      setEducations(portfolioData.education || portfolioData.educations || []);
-      setExperiences(portfolioData.workExperience || portfolioData.experiences || []);
-      setSkills(portfolioData.skills || []);
-      setLoading(false);
+      const portfolioData = initialPortfolio.data || initialPortfolio
+      setCv(portfolioData.cv || null)
+      setLanguages(portfolioData.languages || [])
+      setEducations(portfolioData.education || portfolioData.educations || [])
+      setExperiences(portfolioData.workExperience || portfolioData.experiences || [])
+      setSkills(portfolioData.skills || [])
+      setLoading(false)
     } else {
-      loadPortfolio();
+      loadPortfolio()
     }
     
     return () => {
-      mounted = false;
-    };
-  }, [initialPortfolio, locale, isAr]);
+      mounted = false
+    }
+  }, [initialPortfolio, locale, isAr])
 
   // حفظ البيانات إلى API - المعدل لإرسال المصفوفات الفارغة
   const savePortfolio = async () => {
@@ -336,7 +340,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       return;
     }
     
-    const newEducation: any = {
+    const newEducation: Education = {
       id: Date.now(),
       university: educationForm.university,
       level_of_education: educationForm.level_of_education,
@@ -364,7 +368,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       return;
     }
     
-    const newExperience: any = {
+    const newExperience: Experience = {
       id: Date.now(),
       company_name: experienceForm.company_name,
       department: experienceForm.department,
@@ -521,7 +525,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
         <div className="p-4 sm:p-6">
           {languages.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {languages.map((lang: any) => (
+              {languages.map((lang: Language) => (
                 <div key={lang.id} className="p-4 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] flex justify-between items-start">
                   <div>
                     <h3 className="font-medium text-[#111827]">{lang.language}</h3>
@@ -536,6 +540,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                     onClick={() => handleRemoveLanguage(lang.id)}
                     className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
                     disabled={saving}
+                    title={isAr ? "حذف اللغة" : "Delete Language"}
                   >
                     <Trash2 size={18} />
                   </button>
@@ -567,12 +572,13 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
         <div className="p-4 sm:p-6">
           {educations.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {educations.map((edu: any) => (
+              {educations.map((edu: Education) => (
                 <div key={edu.id} className="p-4 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] relative">
                   <button
                     onClick={() => handleRemoveEducation(edu.id)}
                     className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
                     disabled={saving}
+                    title={isAr ? "حذف المؤهل" : "Delete Education"}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -624,12 +630,13 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
         <div className="p-4 sm:p-6">
           {experiences.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {experiences.map((exp: any) => (
+              {experiences.map((exp: Experience) => (
                 <div key={exp.id} className="p-4 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] relative">
                   <button
                     onClick={() => handleRemoveExperience(exp.id)}
                     className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
                     disabled={saving}
+                    title={isAr ? "حذف الخبرة" : "Delete Experience"}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -674,13 +681,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
         <div className="p-4 sm:p-6">
           {skills.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {skills.map((skill: any) => (
+              {skills.map((skill: Skill) => (
                 <div key={skill.id} className="flex items-center gap-1 bg-[#F0F9FF] border border-[#006EA8] rounded-full px-3 py-1">
                   <span className="text-[#006EA8] text-sm">{skill.skill_name}</span>
                   <button
                     onClick={() => handleRemoveSkill(skill.id)}
                     className="text-red-500 hover:text-red-700 p-0.5 rounded-full hover:bg-red-50 transition"
                     disabled={saving}
+                    title={isAr ? "حذف المهارة" : "Delete Skill"}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -718,7 +726,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               value={languageForm.language}
               onChange={(e) => setLanguageForm((prev) => ({ ...prev, language: e.target.value }))}
             />
-            <Select value={languageForm.level} onValueChange={(value: string) => setLanguageForm((prev) => ({ ...prev, level: value as any }))}>
+            <Select value={languageForm.level} onValueChange={(value: string) => setLanguageForm((prev) => ({ ...prev, level: value as "beginner" | "intermediate" | "fluent" | "native" }))}>
               <SelectTrigger>
                 <SelectValue placeholder={isAr ? "اختر المستوى" : "Select level"} />
               </SelectTrigger>
@@ -753,7 +761,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               value={educationForm.university}
               onChange={(e) => setEducationForm((prev) => ({ ...prev, university: e.target.value }))}
             />
-            <Select value={educationForm.level_of_education} onValueChange={(value: any) => setEducationForm((prev) => ({ ...prev, level_of_education: value }))}>
+            <Select value={educationForm.level_of_education} onValueChange={(value: string) => setEducationForm((prev) => ({ ...prev, level_of_education: value as "high_school" | "bachelor" | "master" | "phd" }))}>
               <SelectTrigger>
                 <SelectValue placeholder={isAr ? "المستوى التعليمي *" : "Education Level *"} />
               </SelectTrigger>
@@ -775,7 +783,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               value={educationForm.specialization}
               onChange={(e) => setEducationForm((prev) => ({ ...prev, specialization: e.target.value }))}
             />
-            <Select value={educationForm.final_grade} onValueChange={(value: any) => setEducationForm((prev) => ({ ...prev, final_grade: value }))}>
+            <Select value={educationForm.final_grade} onValueChange={(value: string) => setEducationForm((prev) => ({ ...prev, final_grade: value as "excellent" | "very_good" | "good" | "pass" }))}>
               <SelectTrigger>
                 <SelectValue placeholder={isAr ? "التقدير النهائي" : "Final Grade"} />
               </SelectTrigger>

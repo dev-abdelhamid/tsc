@@ -302,7 +302,11 @@ export function CreateJobWizard({
       )}
     >
       <div className="flex w-full max-w-[802px] items-center justify-between gap-4">
-        <h1 className={`bg-clip-text text-[28px] font-bold leading-[116%] text-transparent sm:text-[36px] bg-gradient-to-${isRtl ? "r" : "l"} from-[#032C44] to-[#41A0CA]`}>
+        <h1 className={cn(
+          "bg-clip-text text-[28px] font-bold leading-[116%] text-transparent sm:text-[36px]",
+          isRtl ? "bg-gradient-to-r" : "bg-gradient-to-l",
+          "from-[#032C44] to-[#41A0CA]"
+        )}>
           {t("title")}
         </h1>
         <Link

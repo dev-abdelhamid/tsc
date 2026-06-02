@@ -61,7 +61,11 @@ export async function CompanyJobApplicationsPage({
       <div className="rounded-[8px] bg-white p-6 shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)] sm:p-8">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className={`bg-clip-text text-[24px] font-bold leading-[1.16] text-transparent bg-gradient-to-${isRtl ? "r" : "l"} from-[#032C44] to-[#41A0CA]`}>
+            <h1 className={cn(
+              "bg-clip-text text-[24px] font-bold leading-[1.16] text-transparent",
+              isRtl ? "bg-gradient-to-r" : "bg-gradient-to-l",
+              "from-[#032C44] to-[#41A0CA]"
+            )}>
               {t("applicationsPage.title")}
             </h1>
             <p className="mt-2 text-[16px] text-[#525252]">{jobTitle}</p>
@@ -69,7 +73,11 @@ export async function CompanyJobApplicationsPage({
         </div>
 
         <div className="overflow-x-auto rounded-[8px]">
-          <div className={`flex min-w-[720px] items-center rounded-t-[8px] px-2 py-2 text-base font-normal text-white bg-gradient-to-${isRtl ? "r" : "l"} from-[#032C44] to-[#41A0CA]`}>
+          <div className={cn(
+            "flex min-w-[720px] items-center rounded-t-[8px] px-2 py-2 text-base font-normal text-white",
+            isRtl ? "bg-gradient-to-r" : "bg-gradient-to-l",
+            "from-[#032C44] to-[#41A0CA]"
+          )}>
             <div className="w-[35%] shrink-0 px-2">{t("applicationsPage.candidate")}</div>
             <div className="flex w-[20%] justify-center px-2">{t("applicationsPage.statusLabel")}</div>
             <div className="flex flex-1 justify-end px-2">{t("applicationsPage.actionsLabel")}</div>

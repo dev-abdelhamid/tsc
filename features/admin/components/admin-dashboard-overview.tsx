@@ -80,7 +80,11 @@ export function AdminDashboardOverview({
       </div>
 
       <div className="overflow-hidden rounded-[16px] border border-[#E5E7EB] bg-white shadow-sm">
-        <div className={`flex items-center justify-between px-6 py-4 text-white bg-gradient-to-${locale === "ar" ? "r" : "l"} from-[#032C44] to-[#41A0CA]`}>
+        <div className={cn(
+          "flex items-center justify-between px-6 py-4 text-white",
+          locale === "ar" ? "bg-gradient-to-r" : "bg-gradient-to-l",
+          "from-[#032C44] to-[#41A0CA]"
+        )}>
           <h2 className="text-[15px] font-bold text-white">{t("pendingTable")}</h2>
           <Link
             locale={locale}
