@@ -55,7 +55,6 @@ export function AdminSuccessStoriesPanel({ stories }: { stories: SuccessStory[] 
           onClick={() => router.push(`/dashboard/admin/success-stories/new`)}
           className="w-auto h-10 px-5 mx-0 rounded-lg text-sm font-semibold flex items-center justify-center gap-2"
         >
-          <Plus className="h-4 w-4 shrink-0" />
           <span>{t("add")}</span>
         </PrimaryButton>
       }
