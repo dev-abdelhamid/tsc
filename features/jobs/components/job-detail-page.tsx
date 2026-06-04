@@ -6,6 +6,8 @@ import { getJobDetailForLocale } from "@/features/jobs/lib/jobs-for-locale"
 import { JobDetailHero } from "@/features/jobs/components/job-detail-hero"
 import { JobDetailSidebar } from "@/features/jobs/components/job-detail-sidebar"
 import { JobDetailShare } from "@/features/jobs/components/job-detail-share"
+import { getSession } from "@/lib/session"
+import { getFavoriteJobs } from "@/lib/api/services/jobs.service"
 
 type JobDetailPageProps = {
   jobId: number
@@ -43,6 +45,17 @@ export async function JobDetailPage({ jobId, locale: propLocale }: JobDetailPage
   if (!detail) notFound()
 
   const { job, related: relatedJobs } = detail
+
+  const session = await getSession().catch(() => null)
+  let initialIsFavorite = false
+  if (session?.accessToken) {
+    try {
+      const favorites = await getFavoriteJobs(session.accessToken, locale).catch(() => [])
+      initialIsFavorite = favorites.some((fav) => fav.id === jobId)
+    } catch {
+      // ignore
+    }
+  }
 
   const title = getJobTitle(job, locale)
   const description = localizedField(job.description, locale)
@@ -139,6 +152,7 @@ export async function JobDetailPage({ jobId, locale: propLocale }: JobDetailPage
               postedAgo: t("postedAgo"),
               companySubLabel: t("companySubLabel"),
             }}
+            initialIsFavorite={initialIsFavorite}
           />
         </div>
       </div>

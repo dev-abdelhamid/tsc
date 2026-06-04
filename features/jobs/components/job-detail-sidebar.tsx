@@ -7,11 +7,11 @@ import {
   formatDetailEmployment,
   formatGenderForDetail,
   formatJobSalaryRange,
+  getLocalizedName,
 } from "@/features/jobs/lib/job-display"
 import { RelatedJobCard } from "@/features/jobs/components/related-job-card"
 import ApplyButton from "@/features/jobs/components/apply-button"
 import { FavoriteButton } from "@/features/jobs/components/favorite-button"
-
 
 type JobDetailSidebarProps = {
   job: Job
@@ -32,6 +32,8 @@ type JobDetailSidebarProps = {
     companySubLabel: string
   }
   applyHref?: string
+  initialIsFavorite?: boolean
+  isCompanyView?: boolean
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
@@ -51,13 +53,15 @@ export function JobDetailSidebar({
   relatedJobs,
   labels,
   applyHref = "/sign-in",
+  initialIsFavorite = false,
+  isCompanyView = false,
 }: JobDetailSidebarProps) {
-  const industry = job.company?.company_type?.name || job.category?.name
-  const employment = formatDetailEmployment(job)
+  const industry = job.company?.company_type?.name || getLocalizedName(job.category?.name, locale)
+  const employment = formatDetailEmployment(job, locale)
   const salaryRange = formatJobSalaryRange(job)
-  const ageRange = formatAgeRange(job, "")
+  const ageRange = formatAgeRange(job, locale)
   const deadline = formatApplicationDeadline(job.application_deadline, locale)
-  const genderLabel = job.gender ? formatGenderForDetail(job.gender) : null
+  const genderLabel = job.gender ? formatGenderForDetail(job.gender, locale) : null
 
   const showSalary = salaryRange !== "—"
   const showIndustry = Boolean(industry?.trim())
@@ -88,12 +92,16 @@ export function JobDetailSidebar({
                 {labels.monthly}
               </p>
             </div>
-            <FavoriteButton jobId={job.id} locale={locale} />
+            {!isCompanyView && (
+              <FavoriteButton jobId={job.id} locale={locale} initialIsFavorite={initialIsFavorite} />
+            )}
           </div>
         ) : (
-          <div className="flex justify-end">
-            <FavoriteButton jobId={job.id} locale={locale} />
-          </div>
+          !isCompanyView && (
+            <div className="flex justify-end">
+              <FavoriteButton jobId={job.id} locale={locale} initialIsFavorite={initialIsFavorite} />
+            </div>
+          )
         )}
 
         {hasDetails ? (
@@ -114,8 +122,16 @@ export function JobDetailSidebar({
           </>
         ) : null}
 
-        {/* Client-side apply button with optimistic update */}
-        <ApplyButton jobId={job.id} locale={locale} label={labels.applyForJob} />
+        {/* Client-side apply button or company view button */}
+        {isCompanyView ? (
+          <PrimaryButton asChild className="mt-8">
+            <Link locale={locale} href={applyHref}>
+              {labels.applyForJob}
+            </Link>
+          </PrimaryButton>
+        ) : (
+          <ApplyButton jobId={job.id} locale={locale} label={labels.applyForJob} />
+        )}
 
       </div>
 

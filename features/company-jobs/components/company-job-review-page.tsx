@@ -74,11 +74,6 @@ export async function CompanyJobReviewPage({
             )}>
               {t("review.title")}
             </h1>
-            <PrimaryButton asChild className="h-9 rounded-lg px-4 text-sm">
-              <Link locale={locale} href={`/dashboard/company/jobs/${jobId}/applications`}>
-                {t("review.viewApplications")}
-              </Link>
-            </PrimaryButton>
           </div>
 
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_min(100%,421px)] lg:justify-between lg:gap-10">
@@ -136,6 +131,7 @@ export async function CompanyJobReviewPage({
               locale={locale}
               relatedJobs={[]}
               applyHref={`/dashboard/company/jobs/${jobId}/applications`}
+              isCompanyView={true}
               labels={{
                 monthly: jobsT("detail.monthly"),
                 details: jobsT("detail.details"),

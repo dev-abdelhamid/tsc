@@ -2,12 +2,14 @@ import { redirect } from "next/navigation"
 import Image from "next/image"
 import { getTranslations, setRequestLocale } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
-import { getSession } from "@/lib/session"
+import { getSession, withTokenRefresh } from "@/lib/session"
 import { getCompanyJobs } from "@/lib/api/services/company.service"
 import { CompanyJobActionsMenu } from "@/features/company-jobs/components/company-job-actions-menu"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
 import { DashboardStatusBadge } from "@/features/dashboard/components/dashboard-status-badge"
 import { PrimaryButton } from "@/components/ui/primary-button"
+import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
+import { ApiError } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
 
 function mapJobStatus(status: string): "pending" | "approved" | "rejected" {
@@ -44,10 +46,15 @@ export default async function CompanyJobsPage({
 
   let jobs: Awaited<ReturnType<typeof getCompanyJobs>>["data"] | null = null
   try {
-    const res = await getCompanyJobs(session.accessToken, 1, locale)
+    const res = await withTokenRefresh(session, locale, (token) =>
+      getCompanyJobs(token, 1, locale)
+    )
     jobs = res.data
   } catch (err) {
     console.error(err)
+    if (err instanceof ApiError && err.status === 401) {
+      redirect(`/${locale}/sign-in`)
+    }
     jobs = null
   }
 
@@ -60,21 +67,15 @@ export default async function CompanyJobsPage({
   }
 
   return (
-    <div className="flex w-full flex-col gap-6" dir={isRtl ? "rtl" : "ltr"}>
-      <div className="flex  flex-row items-center justify-between gap-4 rounded-[8px] bg-white p-6 shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)] sm:p-8">
-        <h1
-          className={cn(
-            "bg-gradient-to-l from-[#032C44] to-[#41A0CA] bg-clip-text text-[20px] font-bold leading-[1.60] text-transparent",
-            isRtl && "bg-gradient-to-r" // عكس التدرج في RTL
-          )}
-        >
-          {t("listTitle")}
-        </h1>
-        <PrimaryButton asChild className="h-9 rounded-lg px-4  w-auto text-sm">
+    <DashboardPageShell
+      title={t("listTitle")}
+      isRTL={isRtl}
+      action={
+        <PrimaryButton asChild className="h-9 rounded-lg px-4 w-auto text-sm">
           <Link locale={locale} href="/dashboard/company/jobs/create">{t("addJob")}</Link>
         </PrimaryButton>
-      </div>
-
+      }
+    >
       <div className="overflow-hidden rounded-[8px] bg-white p-4 shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)] sm:p-6">
         {jobs.length === 0 ? (
           <div className="px-4 py-12 text-center">
@@ -180,6 +181,6 @@ export default async function CompanyJobsPage({
           </div>
         )}
       </div>
-    </div>
+    </DashboardPageShell>
   )
 }

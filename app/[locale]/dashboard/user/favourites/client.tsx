@@ -1,0 +1,169 @@
+"use client";
+
+import { useState } from "react";
+import { Link } from "@/i18n/navigation";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { PrimaryButton } from "@/components/ui/primary-button";
+import { Trash2, Briefcase } from "lucide-react";
+
+type Props = {
+  locale: string;
+  initialJobs: any[];
+};
+
+export default function FavouritesClient({ locale, initialJobs }: Props) {
+  const [jobs, setJobs] = useState<any[]>(initialJobs);
+  const [loading, setLoading] = useState(false);
+  const isAr = locale === "ar";
+
+  const handleDelete = async (jobId: number) => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/user/favourites", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept-Language": locale,
+        },
+        body: JSON.stringify({ job_id: jobId }),
+      });
+
+      const resData = await res.json();
+      if (!res.ok) {
+        throw new Error(resData.message || "Failed to remove from favorites");
+      }
+
+      toast.success(isAr ? "تم إزالة الوظيفة من المفضلة" : "Job removed from favorites");
+      setJobs((prev) => prev.filter((job) => job.id !== jobId));
+    } catch (err: any) {
+      console.error("[Delete favourite error]", err);
+      toast.error(err.message || (isAr ? "فشل إزالة الوظيفة" : "Failed to remove job"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCompanyLogo = (logoUrl?: string | null) => {
+    if (!logoUrl) return "/portfolio/job-placeholder.png";
+    if (logoUrl.startsWith("http")) return logoUrl;
+    return logoUrl;
+  };
+
+  const gradientTitleClasses = cn(
+    "bg-clip-text text-transparent font-bold text-xl",
+    isAr ? "bg-gradient-to-r" : "bg-gradient-to-l",
+    "from-[#032C44] to-[#41A0CA]"
+  );
+
+  return (
+    <div className="w-full space-y-6 max-w-[1000px] mx-auto pb-10" dir={isAr ? "rtl" : "ltr"}>
+      {/* Header Cards (matching premium styling in screenshots) */}
+      <div className="flex flex-col gap-6">
+        <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm flex items-center justify-between">
+          <div>
+            <h2 className={gradientTitleClasses}>
+              {isAr ? "الوظائف المفضلة" : "My Favorite Jobs"}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {isAr ? "إدارة الوظائف التي قمت بحفظها للتقديم عليها لاحقاً" : "Manage the jobs you saved to apply later"}
+            </p>
+          </div>
+          <div className="bg-[#EBF5FB] text-[#006EA8] px-4 py-2 rounded-xl text-center shrink-0">
+            <span className="block text-2xl font-bold">{jobs.length}</span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold">
+              {isAr ? "إجمالي الوظائف" : "Total Saved"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full">
+        {jobs.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {jobs.map((job) => {
+              const companyName = job.company?.name || "—";
+              const categoryName = job.category?.name || job.company?.company_type?.name || "—";
+              const location = job.location || "—";
+              const logo = getCompanyLogo(job.company?.logo);
+
+              return (
+                <div
+                  key={job.id}
+                  className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between h-full space-y-6"
+                >
+                  <div className="space-y-4">
+                    {/* Top: title and category */}
+                    <div className="flex items-start justify-between gap-4">
+                      <h3 className="text-[18px] font-bold text-[#032C44] line-clamp-1">
+                        {job.title}
+                      </h3>
+                      <span className="rounded-full bg-[#006EA8]/10 px-3 py-1 text-xs font-bold text-[#006EA8] shrink-0">
+                        {categoryName}
+                      </span>
+                    </div>
+
+                    {/* Middle: company info and logo */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center overflow-hidden shrink-0">
+                        <img
+                          src={logo}
+                          alt={companyName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/portfolio/job-placeholder.png";
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[#032C44]">{companyName}</p>
+                        <p className="text-xs text-gray-500">{location}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom: actions */}
+                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 items-center">
+                    {/* Delete button */}
+                    <button
+                      onClick={() => handleDelete(job.id)}
+                      disabled={loading}
+                      className="h-[42px] border border-[#FF5B5C] hover:bg-[#FFF5F5] text-[#FF5B5C] rounded-[10px] text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>{isAr ? "حذف" : "Delete"}</span>
+                    </button>
+
+                    {/* Details button */}
+                    <Link href={`/jobs/${job.id}`} className="w-full flex-1">
+                      <PrimaryButton
+                        type="button"
+                        className="h-[42px] rounded-[10px] text-xs w-full flex items-center justify-center gap-2"
+                      >
+                        <Briefcase className="w-4 h-4 text-white inline-block" />
+                        <span>{isAr ? "التفاصيل" : "Details"}</span>
+                      </PrimaryButton>
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-12 text-center shadow-sm">
+            <img src="/portfolio/drop.svg" alt="Empty" className="w-16 h-16 mx-auto opacity-40 mb-4" />
+            <p className="text-gray-500 font-medium">
+              {isAr ? "لا توجد وظائف مفضلة حالياً" : "No saved jobs at the moment"}
+            </p>
+            <Link
+              href="/jobs"
+              className="inline-block mt-4 text-xs font-bold text-[#006EA8] hover:underline"
+            >
+              {isAr ? "تصفح الوظائف المتاحة" : "Browse available jobs"}
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

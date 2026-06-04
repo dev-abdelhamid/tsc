@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
-import { getUserStats, getMyApplications } from "@/lib/api/services/user.service"
+import { getMyApplications } from "@/lib/api/services/user.service"
+import { getFavoriteJobs } from "@/lib/api/services/jobs.service"
+import { getTickets } from "@/lib/api/services/tickets.service"
 import { DashboardStatCard } from "@/features/dashboard/components/dashboard-stat-card"
 import { DashboardJobsTable } from "@/features/dashboard/components/dashboard-jobs-table"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
@@ -26,16 +28,21 @@ export default async function UserDashboardPage({
   const token = session.accessToken!
   const isAr = locale === "ar"
 
-  let stats = { total_applications: 0 }
-  let applications: Awaited<ReturnType<typeof getMyApplications>>["data"] = []
+  let applications: any[] = []
+  let totalApplications = 0
+  let totalFavorites = 0
+  let totalTickets = 0
 
   try {
-    const [statsData, appsData] = await Promise.all([
-      getUserStats(token, locale as "ar" | "en" | "de"),
-      getMyApplications(token, 1, locale as "ar" | "en" | "de"),
+    const [appsData, favoritesData, ticketsData] = await Promise.all([
+      getMyApplications(token, 1, locale).catch(() => ({ data: [], meta: { total: 0 } })),
+      getFavoriteJobs(token, locale).catch(() => []),
+      getTickets(token, 1, locale).catch(() => ({ data: [], meta: { total: 0 } })),
     ])
-    stats = statsData
     applications = appsData.data ?? []
+    totalApplications = appsData.meta?.total ?? applications.length
+    totalFavorites = favoritesData.length
+    totalTickets = ticketsData.meta?.total ?? ticketsData.data?.length ?? 0
   } catch (_err) {
     // graceful fallback
   }
@@ -52,7 +59,7 @@ export default async function UserDashboardPage({
       : app.status === "rejected"
         ? "rejected"
         : "pending") as "approved" | "rejected" | "pending",
-    detailsHref: `/jobs/${app.job?.id ?? app.id}`,
+    detailsHref: `/dashboard/user/applications/${app.id}`,
   }))
 
   return (
@@ -61,7 +68,7 @@ export default async function UserDashboardPage({
         <DashboardStatCard
           iconSrc="/dashboard/jobs.svg"
           title={isAr ? "إجمالي طلبات الوظائف" : "Total Jobs Apply"}
-          value={stats.total_applications}
+          value={totalApplications}
           unit={isAr ? "Job" : "Job"}
           viewAllHref="/dashboard/user/applications"
           viewAllLabel={isAr ? "عرض الكل" : "View All"}
@@ -70,7 +77,7 @@ export default async function UserDashboardPage({
         <DashboardStatCard
           iconSrc="/dashboard/favourites.svg"
           title={isAr ? "الوظائف المفضلة" : "Total Favourite Jobs"}
-          value={0}
+          value={totalFavorites}
           unit={isAr ? "Job" : "Job"}
           viewAllHref="/dashboard/user/favourites"
           viewAllLabel={isAr ? "عرض الكل" : "View All"}
@@ -79,7 +86,7 @@ export default async function UserDashboardPage({
         <DashboardStatCard
           iconSrc="/dashboard/tickets.svg"
           title={isAr ? "إجمالي التذاكر" : "Total Ticket"}
-          value={0}
+          value={totalTickets}
           unit={isAr ? "ticket" : "ticket"}
           viewAllHref="/dashboard/user/tickets"
           viewAllLabel={isAr ? "عرض الكل" : "View All"}

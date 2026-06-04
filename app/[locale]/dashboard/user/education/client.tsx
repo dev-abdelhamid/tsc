@@ -1,905 +1,1500 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { PrimaryButton } from "@/components/ui/primary-button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Trash2, Upload, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  locale: string
-  initialPortfolio?: Record<string, any>
+  locale: string;
+  initialPortfolio?: Record<string, any>;
 };
 
-// API expected formats
-type LanguageForm = { language: string; level: "beginner" | "intermediate" | "fluent" | "native" };
-type EducationForm = { 
-  university: string; 
-  level_of_education: "high_school" | "bachelor" | "master" | "phd"; 
-  graduation_year: string; 
-  specialization: string; 
-  final_grade: "excellent" | "very_good" | "good" | "pass";
-  attachment?: File;
+// Internal model structures
+type LanguageItem = {
   id?: number;
+  tempId?: string;
+  language: string;
+  level: "beginner" | "intermediate" | "fluent" | "native";
 };
-type ExperienceForm = { 
-  company_name: string; 
-  department: string; 
-  start_date: string; 
-  end_date?: string; 
-  currently_working?: boolean; 
-  responsibilities?: string;
-  attachment?: File;
+
+type EducationItem = {
   id?: number;
+  tempId?: string;
+  university: string;
+  levelOfEducation: "high_school" | "bachelor" | "master" | "phd";
+  graduationYear: string;
+  specialization: string;
+  finalGrade: "excellent" | "very_good" | "good" | "pass";
+  attachment?: string | null;
+  attachmentFile?: File | null;
 };
-type SkillForm = { skill_name: string; id?: number };
-type Language = { id: number; language: string; level: string };
-type Education = { id: number; [key: string]: any };
-type Experience = { id: number; [key: string]: any };
-type Skill = { id: number; skill_name: string };
+
+type ExperienceItem = {
+  id?: number;
+  tempId?: string;
+  companyName: string;
+  department: string;
+  startDate: string;
+  endDate?: string;
+  currentlyWorking: boolean;
+  responsibilities: string;
+  attachment?: string | null;
+  attachmentFile?: File | null;
+};
+
+type SkillItem = {
+  id?: number;
+  tempId?: string;
+  skillName: string;
+};
 
 export default function UserEducationClient({ locale, initialPortfolio }: Props) {
-  // State directly in API format
-  const [cv, setCv] = useState<string | null>(null)
-  const [languages, setLanguages] = useState<Language[]>([])
-  const [educations, setEducations] = useState<Education[]>([])
-  const [experiences, setExperiences] = useState<Experience[]>([])
-  const [skills, setSkills] = useState<Skill[]>([])
-  
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  // Page states
+  const [cv, setCv] = useState<string | null>(null);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [languages, setLanguages] = useState<LanguageItem[]>([]);
+  const [educations, setEducations] = useState<EducationItem[]>([]);
+  const [experiences, setExperiences] = useState<ExperienceItem[]>([]);
+  const [skills, setSkills] = useState<SkillItem[]>([]);
+
   const [loading, setLoading] = useState(true);
-  
-  // Modal states
+  const [saving, setSaving] = useState(false);
+
+  // Modal visibility states
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showEducationModal, setShowEducationModal] = useState(false);
   const [showExperienceModal, setShowExperienceModal] = useState(false);
   const [showSkillModal, setShowSkillModal] = useState(false);
-  
-  // Form states
-  const [languageForm, setLanguageForm] = useState<LanguageForm>({ language: "", level: "beginner" });
-  const [educationForm, setEducationForm] = useState<EducationForm>({ 
-    university: "", 
-    level_of_education: "bachelor", 
-    graduation_year: new Date().getFullYear().toString(),
+
+  // Modal editing items
+  const [editingEducation, setEditingEducation] = useState<EducationItem | null>(null);
+  const [editingExperience, setEditingExperience] = useState<ExperienceItem | null>(null);
+
+  // Modal form states
+  const [modalLanguages, setModalLanguages] = useState<LanguageItem[]>([]);
+  const [educationForm, setEducationForm] = useState<Omit<EducationItem, "id" | "tempId">>({
+    university: "",
+    levelOfEducation: "bachelor",
+    graduationYear: new Date().getFullYear().toString(),
     specialization: "",
-    final_grade: "good"
+    finalGrade: "good",
+    attachment: null,
+    attachmentFile: null,
   });
-  const [experienceForm, setExperienceForm] = useState<ExperienceForm>({ 
-    company_name: "", 
-    department: "", 
-    start_date: "",
-    currently_working: false
+  const [experienceForm, setExperienceForm] = useState<Omit<ExperienceItem, "id" | "tempId">>({
+    companyName: "",
+    department: "",
+    startDate: "",
+    endDate: "",
+    currentlyWorking: false,
+    responsibilities: "",
+    attachment: null,
+    attachmentFile: null,
   });
-  const [skillForm, setSkillForm] = useState<SkillForm>({ skill_name: "" });
-  
-  const [educationFile, setEducationFile] = useState<File | null>(null);
-  const [experienceFile, setExperienceFile] = useState<File | null>(null);
+  const [modalSkills, setModalSkills] = useState<SkillItem[]>([]);
+  const [newSkillInput, setNewSkillInput] = useState("");
 
   const isAr = locale === "ar";
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // تحميل البيانات من API
-  useEffect(() => {
-    let mounted = true
-    async function loadPortfolio() {
-      try {
-        setLoading(true)
-        const res = await fetch("/api/user/portfolio", { 
-          headers: { "x-locale": locale } 
-        })
-        const data = await res.json()
-        
-        if (!res.ok) throw new Error(data.message || "Failed to load portfolio data")
-        
-        // API returns: { success, message, data: { id, cv, education, workExperience, skills, languages } }
-        const portfolioData = data.data || data
-        
-        if (mounted) {
-          setCv(portfolioData.cv || null)
-          setLanguages(portfolioData.languages || [])
-          setEducations(portfolioData.education || portfolioData.educations || [])
-          setExperiences(portfolioData.workExperience || portfolioData.experiences || [])
-          setSkills(portfolioData.skills || [])
-          
-          console.log("[Load] Languages:", portfolioData.languages?.length || 0)
-          console.log("[Load] Education:", portfolioData.education?.length || 0)
-          console.log("[Load] WorkExperience:", portfolioData.workExperience?.length || 0)
-          console.log("[Load] Skills:", portfolioData.skills?.length || 0)
-        }
-      } catch (err) {
-        if (mounted) {
-          console.error("[Load] Error:", err)
-          toast.error(isAr ? "فشل تحميل البيانات" : "Failed to load data")
-        }
-      } finally {
-        if (mounted) setLoading(false)
+  // Helper arrays
+  const gradYears = Array.from(
+    { length: 60 },
+    (_, i) => (new Date().getFullYear() + 5 - i).toString()
+  );
+
+  // Unified data mapping from backend
+  const mapDataFromBackend = (data: any) => {
+    setCv(data.cv || data.cv_url || null);
+
+    // Languages
+    const langs = (data.languages || []).map((l: any) => ({
+      id: l.id,
+      language: l.language || l.name || "",
+      level: l.level || l.proficiency || "beginner",
+    }));
+    setLanguages(langs);
+
+    // Education (Mapping camelCase / snake_case / converted format safely)
+    const edus = (data.education || data.educations || []).map((e: any) => {
+      const university = e.university || e.institution || "";
+      const levelOfEducation = e.levelOfEducation || e.level_of_education || e.degree || "bachelor";
+      
+      let graduationYear = String(e.graduationYear || e.graduation_year || "");
+      if (!graduationYear && e.end_date) {
+        graduationYear = String(new Date(e.end_date).getFullYear());
       }
-    }
-    
-    if (initialPortfolio && Object.keys(initialPortfolio).length > 0) {
-      const portfolioData = initialPortfolio.data || initialPortfolio
-      setCv(portfolioData.cv || null)
-      setLanguages(portfolioData.languages || [])
-      setEducations(portfolioData.education || portfolioData.educations || [])
-      setExperiences(portfolioData.workExperience || portfolioData.experiences || [])
-      setSkills(portfolioData.skills || [])
-      setLoading(false)
-    } else {
-      loadPortfolio()
-    }
-    
-    return () => {
-      mounted = false
-    }
-  }, [initialPortfolio, locale, isAr])
+      if (graduationYear === "NaN") graduationYear = "";
 
-  // حفظ البيانات إلى API - المعدل لإرسال المصفوفات الفارغة
-  const savePortfolio = async () => {
+      const specialization = e.specialization || e.field_of_study || "";
+      
+      let finalGrade = e.finalGrade || e.final_grade || "good";
+      if (typeof e.grade === "number") {
+        finalGrade = e.grade >= 85 ? "excellent" :
+                     e.grade >= 75 ? "very_good" :
+                     e.grade >= 65 ? "good" : "pass";
+      }
+
+      return {
+        id: e.id,
+        university,
+        levelOfEducation,
+        graduationYear,
+        specialization,
+        finalGrade,
+        attachment: e.attachment || e.document_url || null,
+      };
+    });
+    setEducations(edus);
+
+    // Experiences (Mapping raw/converted format safely)
+    const exps = (data.workExperience || data.experiences || []).map((e: any) => ({
+      id: e.id,
+      companyName: e.companyName || e.company_name || e.company || "",
+      department: e.department || e.job_title || "",
+      startDate: e.startDate || e.start_date || "",
+      endDate: e.endDate || e.end_date || "",
+      currentlyWorking: e.currentlyWorking || e.currently_working === 1 || e.currently_working === "1" || e.currently_working === true || e.is_current === true || false,
+      responsibilities: e.responsibilities || e.description || "",
+      attachment: e.attachment || null,
+    }));
+    setExperiences(exps);
+
+    // Skills
+    const sks = (data.skills || []).map((s: any) => ({
+      id: s.id,
+      skillName: s.skillName || s.skill_name || s.name || "",
+    }));
+    setSkills(sks);
+  };
+
+  // Fetch data
+  const loadPortfolio = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/user/portfolio", {
+        headers: { "x-locale": locale, "accept-language": locale },
+      });
+
+      // 401 = session expired – no toast, just leave the form empty
+      if (res.status === 401) {
+        setLoading(false);
+        return;
+      }
+
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.message || "Failed to load portfolio data");
+
+      mapDataFromBackend(resData.data || resData);
+    } catch (err: any) {
+      console.error("[Load error]", err);
+      toast.error(isAr ? "فشل تحميل البيانات" : "Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (initialPortfolio && Object.keys(initialPortfolio).length > 0) {
+      const data = initialPortfolio.data || initialPortfolio;
+      mapDataFromBackend(data);
+      setLoading(false);
+    } else {
+      loadPortfolio();
+    }
+  }, [initialPortfolio, locale]);
+
+  // Save the entire portfolio using FormData (API expects arrays to be sent)
+  const savePortfolio = async (
+    updatedLangs = languages,
+    updatedEdus = educations,
+    updatedExps = experiences,
+    updatedSkills = skills,
+    newCvFile: File | null = cvFile
+  ) => {
+    // ── Pre-save validation: backend requires ALL 4 sections to be non-empty arrays ──
+    if (updatedLangs.length === 0) {
+      toast.error(isAr ? "يجب إضافة لغة واحدة على الأقل قبل الحفظ" : "Please add at least one language before saving");
+      return;
+    }
+    if (updatedEdus.length === 0) {
+      toast.error(isAr ? "يجب إضافة مؤهل تعليمي واحد على الأقل قبل الحفظ" : "Please add at least one education entry before saving");
+      return;
+    }
+    if (updatedExps.length === 0) {
+      toast.error(isAr ? "يجب إضافة خبرة عملية واحدة على الأقل قبل الحفظ" : "Please add at least one work experience before saving");
+      return;
+    }
+    if (updatedSkills.length === 0) {
+      toast.error(isAr ? "يجب إضافة مهارة واحدة على الأقل قبل الحفظ" : "Please add at least one skill before saving");
+      return;
+    }
+
     try {
       setSaving(true);
+
       const formData = new FormData();
-      
-      // إضافة التعليم - دائماً (حتى لو فارغ)
-      if (educations.length === 0) {
-        // إرسال تعليم فارغ - API يتوقع مصفوفة
-        formData.append("education", JSON.stringify([]));
-      } else {
-        educations.forEach((edu, idx) => {
-          formData.append(`education[${idx}][university]`, edu.university);
-          formData.append(`education[${idx}][level_of_education]`, edu.level_of_education);
-          formData.append(`education[${idx}][graduation_year]`, edu.graduation_year);
-          formData.append(`education[${idx}][specialization]`, edu.specialization || "");
-          formData.append(`education[${idx}][final_grade]`, edu.final_grade);
-          if (edu.id) formData.append(`education[${idx}][id]`, String(edu.id));
-          if (idx === educations.length - 1 && educationFile) {
-            formData.append(`education[${idx}][attachment]`, educationFile);
-          }
-        });
+
+      // Append CV if available
+      if (newCvFile) {
+        formData.append("cv", newCvFile);
       }
-      
-      // إضافة الخبرات - دائماً (حتى لو فارغ)
-      if (experiences.length === 0) {
-        formData.append("work_experience", JSON.stringify([]));
+
+      // Languages
+      updatedLangs.forEach((lang, idx) => {
+        formData.append(`languages[${idx}][language]`, lang.language);
+        formData.append(`languages[${idx}][level]`, lang.level);
+        if (lang.id) formData.append(`languages[${idx}][id]`, String(lang.id));
+      });
+
+      // Education
+      updatedEdus.forEach((edu, idx) => {
+        formData.append(`education[${idx}][university]`, edu.university);
+        formData.append(`education[${idx}][level_of_education]`, edu.levelOfEducation);
+        formData.append(`education[${idx}][graduation_year]`, edu.graduationYear);
+        formData.append(`education[${idx}][specialization]`, edu.specialization);
+        formData.append(`education[${idx}][final_grade]`, edu.finalGrade);
+        if (edu.id) formData.append(`education[${idx}][id]`, String(edu.id));
+        if (edu.attachmentFile) formData.append(`education[${idx}][attachment]`, edu.attachmentFile);
+      });
+
+      // Work Experience
+      if (updatedExps.length === 0) {
+        // should never reach here due to validation above
+        toast.error(isAr ? "يجب إضافة خبرة عملية" : "Work experience is required");
+        return;
       } else {
-        experiences.forEach((exp, idx) => {
-          formData.append(`work_experience[${idx}][company_name]`, exp.company_name);
+        updatedExps.forEach((exp, idx) => {
+          formData.append(`work_experience[${idx}][company_name]`, exp.companyName);
           formData.append(`work_experience[${idx}][department]`, exp.department);
-          formData.append(`work_experience[${idx}][start_date]`, exp.start_date);
-          if (exp.end_date) formData.append(`work_experience[${idx}][end_date]`, exp.end_date);
-          if (exp.responsibilities) formData.append(`work_experience[${idx}][responsibilities]`, exp.responsibilities);
-          if (exp.currently_working) formData.append(`work_experience[${idx}][currently_working]`, "1");
-          if (exp.id) formData.append(`work_experience[${idx}][id]`, String(exp.id));
-          if (idx === experiences.length - 1 && experienceFile) {
-            formData.append(`work_experience[${idx}][attachment]`, experienceFile);
+          formData.append(`work_experience[${idx}][start_date]`, exp.startDate);
+          if (exp.endDate && !exp.currentlyWorking) {
+            formData.append(`work_experience[${idx}][end_date]`, exp.endDate);
           }
+          formData.append(`work_experience[${idx}][currently_working]`, exp.currentlyWorking ? "1" : "0");
+          formData.append(`work_experience[${idx}][responsibilities]`, exp.responsibilities || "");
+          if (exp.id) formData.append(`work_experience[${idx}][id]`, String(exp.id));
+          if (exp.attachmentFile) formData.append(`work_experience[${idx}][attachment]`, exp.attachmentFile);
         });
       }
-      
-      // إضافة المهارات - دائماً (حتى لو فارغ)
-      if (skills.length === 0) {
-        formData.append("skills", JSON.stringify([]));
-      } else {
-        skills.forEach((skill, idx) => {
-          formData.append(`skills[${idx}][skill_name]`, skill.skill_name);
-          if (skill.id) formData.append(`skills[${idx}][id]`, String(skill.id));
-        });
-      }
-      
-      // إضافة اللغات - دائماً (حتى لو فارغ)
-      if (languages.length === 0) {
-        formData.append("languages", JSON.stringify([]));
-      } else {
-        languages.forEach((lang, idx) => {
-          formData.append(`languages[${idx}][language]`, lang.language);
-          formData.append(`languages[${idx}][level]`, lang.level);
-          if (lang.id) formData.append(`languages[${idx}][id]`, String(lang.id));
-        });
-      }
-      
-      console.log("[Save] Languages:", languages.length, "Education:", educations.length, "Experience:", experiences.length, "Skills:", skills.length);
-      
+
+      // Skills
+      updatedSkills.forEach((skill, idx) => {
+        formData.append(`skills[${idx}][skill_name]`, skill.skillName);
+        if (skill.id) formData.append(`skills[${idx}][id]`, String(skill.id));
+      });
+
       const res = await fetch("/api/user/portfolio", {
         method: "POST",
+        headers: {
+          "x-locale": locale,
+          "accept-language": locale,
+        },
         body: formData,
-        headers: { "x-locale": locale },
       });
-      
-      const data = await res.json();
-      
+
+      const resData = await res.json();
       if (!res.ok) {
-        const errorMessage = data.message || data.errors?.join(", ") || "Failed to save";
-        throw new Error(errorMessage);
+        let errorMsg = resData.message || "";
+        if (resData.errors) {
+          const details = Object.values(resData.errors).flat().join(", ");
+          if (details) errorMsg = `${errorMsg}: ${details}`;
+        }
+        throw new Error(errorMsg || "Failed to save portfolio");
       }
-      
-      // تحديث البيانات من الاستجابة
-      const savedData = data.data || data;
-      setCv(savedData.cv || null);
-      setLanguages(savedData.languages || []);
-      setEducations(savedData.education || savedData.educations || []);
-      setExperiences(savedData.workExperience || savedData.experiences || []);
-      setSkills(savedData.skills || []);
-      
-      setEducationFile(null);
-      setExperienceFile(null);
-      
-      toast.success(isAr ? "تم الحفظ بنجاح" : "Saved successfully");
-      return true;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to save";
-      console.error("[Save] Error:", message);
-      toast.error(message);
-      return false;
+
+      toast.success(isAr ? "تم حفظ البيانات بنجاح" : "Portfolio saved successfully");
+      setCvFile(null);
+      await loadPortfolio();
+    } catch (err: any) {
+      console.error("[Save error]", err);
+      toast.error(err.message || (isAr ? "فشل حفظ البيانات" : "Failed to save data"));
     } finally {
       setSaving(false);
     }
   };
 
-  // رفع السيرة الذاتية - المعدل
-  const handleCVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // CV Direct Upload Handlers
+  const triggerCVUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleCVChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("cv", file);
-      
-      // إرسال جميع البيانات الموجودة (أو فارغة)
-      if (educations.length === 0) {
-        formData.append("education", JSON.stringify([]));
-      } else {
-        educations.forEach((edu, idx) => {
-          formData.append(`education[${idx}][university]`, edu.university);
-          formData.append(`education[${idx}][level_of_education]`, edu.level_of_education);
-          formData.append(`education[${idx}][graduation_year]`, edu.graduation_year);
-          formData.append(`education[${idx}][specialization]`, edu.specialization || "");
-          formData.append(`education[${idx}][final_grade]`, edu.final_grade);
-          if (edu.id) formData.append(`education[${idx}][id]`, String(edu.id));
-        });
-      }
-      
-      if (experiences.length === 0) {
-        formData.append("work_experience", JSON.stringify([]));
-      } else {
-        experiences.forEach((exp, idx) => {
-          formData.append(`work_experience[${idx}][company_name]`, exp.company_name);
-          formData.append(`work_experience[${idx}][department]`, exp.department);
-          formData.append(`work_experience[${idx}][start_date]`, exp.start_date);
-          if (exp.end_date) formData.append(`work_experience[${idx}][end_date]`, exp.end_date);
-          if (exp.responsibilities) formData.append(`work_experience[${idx}][responsibilities]`, exp.responsibilities);
-          if (exp.currently_working) formData.append(`work_experience[${idx}][currently_working]`, "1");
-          if (exp.id) formData.append(`work_experience[${idx}][id]`, String(exp.id));
-        });
-      }
-      
-      if (skills.length === 0) {
-        formData.append("skills", JSON.stringify([]));
-      } else {
-        skills.forEach((skill, idx) => {
-          formData.append(`skills[${idx}][skill_name]`, skill.skill_name);
-          if (skill.id) formData.append(`skills[${idx}][id]`, String(skill.id));
-        });
-      }
-      
-      if (languages.length === 0) {
-        formData.append("languages", JSON.stringify([]));
-      } else {
-        languages.forEach((lang, idx) => {
-          formData.append(`languages[${idx}][language]`, lang.language);
-          formData.append(`languages[${idx}][level]`, lang.level);
-          if (lang.id) formData.append(`languages[${idx}][id]`, String(lang.id));
-        });
-      }
-      
-      const res = await fetch("/api/user/portfolio", {
-        method: "POST",
-        body: formData,
-        headers: { "x-locale": locale },
-      });
-      
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to upload CV");
-      
-      const savedData = data.data || data;
-      setCv(savedData.cv || null);
-      toast.success(isAr ? "تم رفع السيرة الذاتية بنجاح" : "CV uploaded successfully");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : (isAr ? "فشل رفع السيرة الذاتية" : "Failed to upload CV"));
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  // باقي الدوال كما هي (handleAddLanguage, handleAddEducation, etc.)
-  // إضافة لغة
-  const handleAddLanguage = async () => {
-    if (!languageForm.language || !languageForm.level) {
-      toast.error(isAr ? "يرجى ملء جميع الحقول" : "Please fill all fields");
+    if (file.type !== "application/pdf") {
+      toast.error(isAr ? "يجب رفع ملف بصيغة PDF فقط" : "Only PDF files are allowed");
       return;
     }
-    
-    const newLanguage = { 
-      id: Date.now(), 
-      language: languageForm.language, 
-      level: languageForm.level 
-    };
-    setLanguages([...languages, newLanguage]);
-    setLanguageForm({ language: "", level: "beginner" });
+    setCvFile(file);
+    await savePortfolio(languages, educations, experiences, skills, file);
+  };
+
+  const handleCVDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleCVDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      toast.error(isAr ? "يجب رفع ملف بصيغة PDF فقط" : "Only PDF files are allowed");
+      return;
+    }
+    setCvFile(file);
+    await savePortfolio(languages, educations, experiences, skills, file);
+  };
+
+  // -----------------
+  // Language Operations
+  // -----------------
+  const openLanguagesEdit = () => {
+    setModalLanguages(
+      languages.map((l, index) => ({
+        ...l,
+        tempId: l.id ? undefined : `lang-${index}-${Date.now()}`,
+      }))
+    );
+    setShowLanguageModal(true);
+  };
+
+  const addLanguageRow = () => {
+    setModalLanguages((prev) => [
+      ...prev,
+      { tempId: `lang-new-${Date.now()}-${Math.random()}`, language: "", level: "beginner" },
+    ]);
+  };
+
+  const removeLanguageRow = (index: number) => {
+    setModalLanguages((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const updateLanguageRow = (index: number, field: keyof LanguageItem, value: string) => {
+    setModalLanguages((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const saveLanguagesModal = async () => {
+    const invalid = modalLanguages.some((l) => !l.language.trim());
+    if (invalid) {
+      toast.error(isAr ? "الرجاء تحديد اسم اللغة لكل الصفوف" : "Please specify the language name for all rows");
+      return;
+    }
+    if (modalLanguages.length === 0) {
+      toast.error(isAr ? "يجب إضافة لغة واحدة على الأقل" : "At least one language is required");
+      return;
+    }
     setShowLanguageModal(false);
-    await savePortfolio();
+    setLanguages(modalLanguages);
+    await savePortfolio(modalLanguages, educations, experiences, skills, cvFile);
   };
 
-  // إضافة مؤهل علمي
-  const handleAddEducation = async () => {
-    if (!educationForm.university || !educationForm.level_of_education || !educationForm.graduation_year) {
-      toast.error(isAr ? "يرجى ملء الحقول المطلوبة" : "Please fill required fields");
-      return;
-    }
-    
-    const newEducation: Education = {
-      id: Date.now(),
-      university: educationForm.university,
-      level_of_education: educationForm.level_of_education,
-      graduation_year: educationForm.graduation_year,
-      specialization: educationForm.specialization,
-      final_grade: educationForm.final_grade,
-    };
-    
-    setEducations([...educations, newEducation]);
-    setEducationForm({ 
-      university: "", 
-      level_of_education: "bachelor", 
-      graduation_year: new Date().getFullYear().toString(),
+  // -----------------
+  // Education Operations
+  // -----------------
+  const openAddEducation = () => {
+    setEditingEducation(null);
+    setEducationForm({
+      university: "",
+      levelOfEducation: "bachelor",
+      graduationYear: new Date().getFullYear().toString(),
       specialization: "",
-      final_grade: "good"
+      finalGrade: "good",
+      attachment: null,
+      attachmentFile: null,
     });
+    setShowEducationModal(true);
+  };
+
+  const openEditEducation = (item: EducationItem) => {
+    setEditingEducation(item);
+    setEducationForm({
+      university: item.university,
+      levelOfEducation: item.levelOfEducation,
+      graduationYear: item.graduationYear,
+      specialization: item.specialization,
+      finalGrade: item.finalGrade,
+      attachment: item.attachment,
+      attachmentFile: null,
+    });
+    setShowEducationModal(true);
+  };
+
+  const deleteEducationItem = async (index: number) => {
+    if (educations.length <= 1) {
+      toast.error(isAr ? "يجب أن تحتوي سيرتك الذاتية على مؤهل تعليمي واحد على الأقل." : "Your portfolio must contain at least one education item.");
+      return;
+    }
+    const updated = educations.filter((_, idx) => idx !== index);
+    setEducations(updated);
+    await savePortfolio(languages, updated, experiences, skills, cvFile);
+  };
+
+  const submitEducation = async () => {
+    if (!educationForm.university.trim()) {
+      toast.error(isAr ? "الرجاء إدخال اسم الجامعة" : "Please enter the university name");
+      return;
+    }
+    if (!educationForm.specialization.trim()) {
+      toast.error(isAr ? "الرجاء إدخال التخصص" : "Please enter the specialization");
+      return;
+    }
+    if (!educationForm.graduationYear) {
+      toast.error(isAr ? "الرجاء تحديد سنة التخرج" : "Please select graduation year");
+      return;
+    }
+    if (!educationForm.levelOfEducation) {
+      toast.error(isAr ? "الرجاء تحديد المستوى التعليمي" : "Please select education level");
+      return;
+    }
+    if (!educationForm.finalGrade) {
+      toast.error(isAr ? "الرجاء تحديد التقدير النهائي" : "Please select final grade");
+      return;
+    }
+
     setShowEducationModal(false);
-    await savePortfolio();
+
+    let updatedEdus = [...educations];
+    if (editingEducation) {
+      updatedEdus = educations.map((item) =>
+        (item.id && item.id === editingEducation.id) ||
+          (item.tempId && item.tempId === editingEducation.tempId)
+          ? { ...item, ...educationForm }
+          : item
+      );
+    } else {
+      const newEdu: EducationItem = {
+        tempId: `edu-new-${Date.now()}`,
+        ...educationForm,
+      };
+      updatedEdus.push(newEdu);
+    }
+
+    setEducations(updatedEdus);
+    await savePortfolio(languages, updatedEdus, experiences, skills, cvFile);
   };
 
-  // إضافة خبرة عملية
-  const handleAddExperience = async () => {
-    if (!experienceForm.company_name || !experienceForm.department || !experienceForm.start_date) {
-      toast.error(isAr ? "يرجى ملء الحقول المطلوبة" : "Please fill required fields");
-      return;
-    }
-    
-    const newExperience: Experience = {
-      id: Date.now(),
-      company_name: experienceForm.company_name,
-      department: experienceForm.department,
-      start_date: experienceForm.start_date,
-      currently_working: experienceForm.currently_working || false,
-    };
-    if (experienceForm.end_date && !experienceForm.currently_working) {
-      newExperience.end_date = experienceForm.end_date;
-    }
-    if (experienceForm.responsibilities) {
-      newExperience.responsibilities = experienceForm.responsibilities;
-    }
-    
-    setExperiences([...experiences, newExperience]);
-    setExperienceForm({ 
-      company_name: "", 
-      department: "", 
-      start_date: "",
-      currently_working: false
+  // -----------------
+  // Work Experience Operations
+  // -----------------
+  const openAddExperience = () => {
+    setEditingExperience(null);
+    setExperienceForm({
+      companyName: "",
+      department: "",
+      startDate: "",
+      endDate: "",
+      currentlyWorking: false,
+      responsibilities: "",
+      attachment: null,
+      attachmentFile: null,
     });
-    setShowExperienceModal(false);
-    await savePortfolio();
+    setShowExperienceModal(true);
   };
 
-  // إضافة مهارة
-  const handleAddSkill = async () => {
-    if (!skillForm.skill_name.trim()) {
-      toast.error(isAr ? "يرجى إدخال اسم المهارة" : "Please enter skill name");
+  const openEditExperience = (item: ExperienceItem) => {
+    setEditingExperience(item);
+    setExperienceForm({
+      companyName: item.companyName,
+      department: item.department,
+      startDate: item.startDate,
+      endDate: item.currentlyWorking ? "" : item.endDate || "",
+      currentlyWorking: item.currentlyWorking,
+      responsibilities: item.responsibilities,
+      attachment: item.attachment,
+      attachmentFile: null,
+    });
+    setShowExperienceModal(true);
+  };
+
+  const deleteExperienceItem = async (index: number) => {
+    if (experiences.length <= 1) {
+      toast.error(isAr ? "يجب أن تحتوي سيرتك الذاتية على خبرة عملية واحدة على الأقل." : "Your portfolio must contain at least one work experience.");
       return;
     }
-    
-    const newSkill = { id: Date.now(), skill_name: skillForm.skill_name };
-    setSkills([...skills, newSkill]);
-    setSkillForm({ skill_name: "" });
+    const updated = experiences.filter((_, idx) => idx !== index);
+    setExperiences(updated);
+    await savePortfolio(languages, educations, updated, skills, cvFile);
+  };
+
+  const submitExperience = async () => {
+    if (!experienceForm.companyName.trim()) {
+      toast.error(isAr ? "الرجاء إدخال اسم الشركة" : "Please enter the company name");
+      return;
+    }
+    if (!experienceForm.department.trim()) {
+      toast.error(isAr ? "الرجاء إدخال القسم" : "Please enter the department");
+      return;
+    }
+    if (!experienceForm.startDate) {
+      toast.error(isAr ? "الرجاء تحديد تاريخ البدء" : "Please select start date");
+      return;
+    }
+    if (!experienceForm.currentlyWorking && !experienceForm.endDate) {
+      toast.error(isAr ? "الرجاء تحديد تاريخ النهاية" : "Please select end date");
+      return;
+    }
+    if (!experienceForm.responsibilities.trim()) {
+      toast.error(isAr ? "الرجاء إدخال المسؤوليات" : "Please enter responsibilities");
+      return;
+    }
+
+    setShowExperienceModal(false);
+
+    let updatedExps = [...experiences];
+    if (editingExperience) {
+      updatedExps = experiences.map((item) =>
+        (item.id && item.id === editingExperience.id) ||
+          (item.tempId && item.tempId === editingExperience.tempId)
+          ? { ...item, ...experienceForm }
+          : item
+      );
+    } else {
+      const newExp: ExperienceItem = {
+        tempId: `exp-new-${Date.now()}`,
+        ...experienceForm,
+      };
+      updatedExps.push(newExp);
+    }
+
+    setExperiences(updatedExps);
+    await savePortfolio(languages, educations, updatedExps, skills, cvFile);
+  };
+
+  // -----------------
+  // Skill Operations
+  // -----------------
+  const openSkillsEdit = () => {
+    setModalSkills([...skills]);
+    setNewSkillInput("");
+    setShowSkillModal(true);
+  };
+
+  const addSkillToModal = () => {
+    const text = newSkillInput.trim();
+    if (!text) return;
+    if (modalSkills.some((s) => s.skillName.toLowerCase() === text.toLowerCase())) {
+      toast.error(isAr ? "المهارة مضافة بالفعل" : "Skill already added");
+      return;
+    }
+    setModalSkills((prev) => [...prev, { tempId: `skill-${Date.now()}`, skillName: text }]);
+    setNewSkillInput("");
+  };
+
+  const removeSkillFromModal = (index: number) => {
+    setModalSkills((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const saveSkillsModal = async () => {
+    if (modalSkills.length === 0) {
+      toast.error(isAr ? "يجب إضافة مهارة واحدة على الأقل" : "At least one skill is required");
+      return;
+    }
     setShowSkillModal(false);
-    await savePortfolio();
+    setSkills(modalSkills);
+    await savePortfolio(languages, educations, experiences, modalSkills, cvFile);
   };
 
-  // حذف لغة
-  const handleRemoveLanguage = async (id: number) => {
-    setLanguages(languages.filter((l) => l.id !== id));
-    await savePortfolio();
+  // Get display helpers
+  const getLevelLabel = (lvl: string) => {
+    const map: Record<string, string> = {
+      beginner: isAr ? "مبتدئ" : "Beginner",
+      intermediate: isAr ? "متوسط" : "Intermediate",
+      fluent: isAr ? "محادثة" : "Conversational",
+      native: isAr ? "اللغة الأم" : "Native or Bilingual",
+    };
+    return map[lvl] || lvl;
   };
 
-  // حذف مؤهل
-  const handleRemoveEducation = async (id: number) => {
-    setEducations(educations.filter((e) => e.id !== id));
-    await savePortfolio();
+  const getEduLevelLabel = (lvl: string) => {
+    const map: Record<string, string> = {
+      high_school: isAr ? "ثانوية عامة" : "High School",
+      bachelor: isAr ? "بكالوريوس" : "Bachelor",
+      master: isAr ? "ماجستير" : "Master",
+      phd: isAr ? "دكتوراه" : "PhD",
+    };
+    return map[lvl] || lvl;
   };
 
-  // حذف خبرة
-  const handleRemoveExperience = async (id: number) => {
-    setExperiences(experiences.filter((e) => e.id !== id));
-    await savePortfolio();
+  const getGradeLabel = (grd: string) => {
+    const map: Record<string, string> = {
+      excellent: isAr ? "امتياز (A = 90-100%)" : "A = 90-100%",
+      very_good: isAr ? "جيد جداً (B = 80-89%)" : "B = 80-89%",
+      good: isAr ? "جيد (C = 70-79%)" : "C = 70-79%",
+      pass: isAr ? "مقبول (D = 50-69%)" : "D = 50-69%",
+    };
+    return map[grd] || grd;
   };
 
-  // حذف مهارة
-  const handleRemoveSkill = async (id: number) => {
-    setSkills(skills.filter((s) => s.id !== id));
-    await savePortfolio();
+  const getFilenameFromUrl = (url?: string | null) => {
+    if (!url) return "";
+    return url.substring(url.lastIndexOf("/") + 1);
   };
+
+  // Gradient heading direction matching read order
+  const gradientTitleClasses = cn(
+    "bg-clip-text text-transparent",
+    isAr ? "bg-gradient-to-r" : "bg-gradient-to-l",
+    "from-[#032C44] to-[#41A0CA]"
+  );
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006EA8] mx-auto"></div>
-          <p className="mt-4 text-gray-600">{isAr ? "جاري التحميل..." : "Loading..."}</p>
+          <p className="mt-4 text-gray-600 font-medium">{isAr ? "جاري التحميل..." : "Loading..."}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-6" dir={isAr ? "rtl" : "ltr"}>
-      {/* Header */}
-      <div className="rounded-[16px] bg-white p-6 shadow-sm sm:p-8">
-        <h1 className={cn(
-          "text-2xl sm:text-3xl font-bold bg-clip-text text-transparent",
-          isAr ? "bg-gradient-to-r" : "bg-gradient-to-l",
-          "from-[#032C44] to-[#41A0CA]"
-        )}>
-          {isAr ? "بيانات السيرة الذاتية" : "Portfolio & CV"}
-        </h1>
-        <p className="mt-2 text-sm text-[#525252]">
-          {isAr 
-            ? "أضف لغاتك، المؤهلات العلمية، الخبرات العملية، المهارات والسيرة الذاتية" 
-            : "Add your languages, education, work experience, skills, and CV"}
-        </p>
-      </div>
+    <div className="w-full space-y-6 max-w-[1000px] mx-auto pb-10" dir={isAr ? "rtl" : "ltr"}>
+      {/* 1. CV Section */}
+      <div className="rounded-[16px] bg-white p-6 border border-[#E5E7EB] shadow-sm">
+        <h2 className={cn("text-[20px] font-bold", gradientTitleClasses)}> CV</h2>
 
-      {/* CV Section */}
-      <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-[#111827]">{isAr ? "السيرة الذاتية" : "CV"}</h2>
-          <label className="cursor-pointer">
-            <input
-              accept=".pdf,.doc,.docx"
-              onChange={handleCVUpload}
-              type="file"
-              className="hidden"
-              disabled={uploading || saving}
-            />
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-[#006EA8] text-white text-sm rounded-lg hover:bg-[#005685] transition disabled:opacity-60 cursor-pointer">
-              <Upload size={16} />
-              {uploading ? (isAr ? "جاري الرفع..." : "Uploading...") : (isAr ? "رفع السيرة الذاتية" : "Upload CV")}
-            </span>
-          </label>
+        <div
+          onClick={triggerCVUpload}
+          onDragOver={handleCVDragOver}
+          onDrop={handleCVDrop}
+          className="border-2 border-dashed border-[#40A0CA] bg-[#F4FAFF] hover:bg-[#EBF7FF] transition rounded-[12px] py-10 px-4 flex flex-col items-center justify-center cursor-pointer text-center"
+        >
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleCVChange}
+            accept=".pdf"
+            className="hidden"
+          />
+          <img src="/portfolio/drop.svg" alt="Upload Icon" className="w-[50px] h-[50px] mb-3" />
+          <p className="text-[#032C44] text-[15px] font-medium">
+            {isAr ? (
+              <>قم بسحب سيرتك الذاتية هنا، أو <span className="text-[#006EA8] underline">تصفح</span></>
+            ) : (
+              <>Drop your CV here, or <span className="text-[#006EA8] underline">browse</span></>
+            )}
+          </p>
+          <p className="text-[#6B7280] text-[12px] mt-1">
+            {isAr ? "يدعم بصيغة PDF" : "Supports PDF"}
+          </p>
         </div>
 
-        {cv ? (
-          <div className="rounded-lg border-2 border-dashed border-[#40A0CA] bg-[#F4FAFF] p-6 text-center">
-            <div className="text-4xl mb-2">📄</div>
-            <p className="text-sm text-[#0F172A] font-medium mb-3">
-              {isAr ? "تم رفع السيرة الذاتية" : "CV uploaded"}
-            </p>
+        {/* Existing CV Link */}
+        {cv && (
+          <div className="mt-4 flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-[8px]">
+            <div className="flex items-center gap-2">
+              <img src="/portfolio/pdf.svg" alt="PDF" className="w-6 h-6" />
+              <span className="text-sm font-medium text-gray-700 truncate max-w-[200px] sm:max-w-md">
+                {getFilenameFromUrl(cv)}
+              </span>
+            </div>
             <a
               href={cv}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-[#006EA8] hover:text-[#005685] text-sm font-medium underline"
+              className="text-xs font-semibold text-[#006EA8] hover:underline"
             >
-              <Download size={16} />
-              {isAr ? "تحميل" : "Download"}
+              {isAr ? "عرض الملف" : "View File"}
             </a>
-          </div>
-        ) : (
-          <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-            <div className="text-4xl mb-2">📄</div>
-            <p className="text-sm text-[#6B7280]">
-              {isAr ? "لم يتم رفع سيرة ذاتية بعد" : "No CV uploaded yet"}
-            </p>
-            <p className="text-xs text-[#9CA3AF] mt-1">
-              {isAr ? "يدعم PDF, DOC, DOCX" : "Supports PDF, DOC, DOCX"}
-            </p>
           </div>
         )}
       </div>
 
-      {/* Languages Section */}
-      <div className="rounded-[16px] border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between p-4 sm:p-6 text-white bg-gradient-to-r from-[#032C44] to-[#41A0CA]">
-          <h2 className="text-xl font-bold">{isAr ? "اللغات" : "Languages"}</h2>
-          <button 
-            onClick={() => setShowLanguageModal(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white text-[#006EA8] text-sm rounded-lg hover:bg-[#F0F9FF] transition font-medium"
-            disabled={saving}
-          >
-            <Plus size={16} />
-            {isAr ? "إضافة" : "Add"}
-          </button>
+      {/* 2. Language Section */}
+      <div className="rounded-[16px] bg-white p-6 border border-[#E5E7EB] shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className={cn("text-[20px] font-bold", gradientTitleClasses)}>
+            {isAr ? "اللغات" : "Language"}
+          </h2>
+          <div className="flex gap-2">
+            <button
+              onClick={openLanguagesEdit}
+              className="flex items-center gap-1.5 px-4 py-2 border border-[#E5E7EB] hover:bg-gray-50 rounded-[8px] text-[14px] font-semibold text-[#032C44] transition"
+            >
+              <img src="/portfolio/edit.svg" alt="Edit" className="w-[16px] h-[16px]" />
+              <span>{isAr ? "تعديل" : "Edit"}</span>
+            </button>
+            <PrimaryButton
+              onClick={openLanguagesEdit}
+              className="w-auto h-[40px] px-4 rounded-[8px] flex items-center justify-center gap-1 text-[14px] font-semibold cursor-pointer"
+            >
+              <span className="text-[16px] font-bold">+</span>
+              <span>{isAr ? "إضافة جديد" : "Add New"}</span>
+            </PrimaryButton>
+          </div>
         </div>
 
-        <div className="p-4 sm:p-6">
+        <div className="space-y-3">
           {languages.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {languages.map((lang: Language) => (
-                <div key={lang.id} className="p-4 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] flex justify-between items-start">
-                  <div>
-                    <h3 className="font-medium text-[#111827]">{lang.language}</h3>
-                    <p className="text-sm text-[#6B7280] mt-1 capitalize">
-                      {lang.level === "native" ? (isAr ? "لغة أم" : "Native") :
-                       lang.level === "fluent" ? (isAr ? "طلاقة" : "Fluent") :
-                       lang.level === "intermediate" ? (isAr ? "متوسط" : "Intermediate") :
-                       (isAr ? "مبتدئ" : "Beginner")}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveLanguage(lang.id)}
-                    className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
-                    disabled={saving}
-                    title={isAr ? "حذف اللغة" : "Delete Language"}
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ))}
-            </div>
+            languages.map((lang, idx) => (
+              <div key={idx} className="text-[#525252] text-[15px] font-medium flex items-center gap-1.5">
+                <span className="font-bold text-[#032C44]">{lang.language}:</span>
+                <span className="text-gray-600">{getLevelLabel(lang.level)}</span>
+              </div>
+            ))
           ) : (
-            <p className="text-sm text-[#6B7280] text-center py-8">
-              {isAr ? "لا توجد لغات مضافة" : "No languages added yet"}
+            <p className="text-sm text-gray-400 italic">
+              {isAr ? "لم يتم إضافة لغات بعد" : "No languages added yet"}
             </p>
           )}
         </div>
       </div>
 
-      {/* Education Section */}
-      <div className="rounded-[16px] border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between p-4 sm:p-6 text-white bg-gradient-to-r from-[#032C44] to-[#41A0CA]">
-          <h2 className="text-xl font-bold">{isAr ? "المؤهلات العلمية" : "Education"}</h2>
-          <button 
-            onClick={() => setShowEducationModal(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white text-[#006EA8] text-sm rounded-lg hover:bg-[#F0F9FF] transition font-medium"
-            disabled={saving}
+      {/* 3. Education Section */}
+      <div className="rounded-[16px] bg-white p-6 border border-[#E5E7EB] shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className={cn("text-[20px] font-bold", gradientTitleClasses)}>
+            {isAr ? "المؤهلات العلمية" : "Education"}
+          </h2>
+          <PrimaryButton
+            onClick={openAddEducation}
+            className="w-auto h-[40px] px-4 rounded-[8px] flex items-center justify-center gap-1 text-[14px] font-semibold cursor-pointer"
           >
-            <Plus size={16} />
-            {isAr ? "إضافة" : "Add"}
-          </button>
+            <span className="text-[16px] font-bold">+</span>
+            <span>{isAr ? "إضافة جديد" : "Add New"}</span>
+          </PrimaryButton>
         </div>
 
-        <div className="p-4 sm:p-6">
-          {educations.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {educations.map((edu: Education) => (
-                <div key={edu.id} className="p-4 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] relative">
+        {educations.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {educations.map((edu, idx) => (
+              <div
+                key={idx}
+                className="border border-[#E5E7EB] bg-white rounded-[12px] p-4 relative flex flex-col justify-between min-h-[160px] shadow-sm hover:shadow-md transition"
+              >
+                {/* Actions top right */}
+                <div className={cn("absolute top-3 flex gap-1", isAr ? "left-3" : "right-3")}>
                   <button
-                    onClick={() => handleRemoveEducation(edu.id)}
-                    className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
-                    disabled={saving}
-                    title={isAr ? "حذف المؤهل" : "Delete Education"}
+                    onClick={() => openEditEducation(edu)}
+                    className="p-1 hover:bg-gray-100 rounded-full transition"
+                    title={isAr ? "تعديل" : "Edit"}
                   >
-                    <Trash2 size={16} />
+                    <img src="/portfolio/edit.svg" alt="Edit" className="w-[16px] h-[16px]" />
                   </button>
-                  <h3 className="font-bold text-[#006EA8] pr-6">{edu.university}</h3>
-                  <p className="text-sm text-[#6B7280] mt-1">
-                    {edu.level_of_education === "bachelor" ? (isAr ? "بكالوريوس" : "Bachelor") :
-                     edu.level_of_education === "master" ? (isAr ? "ماجستير" : "Master") :
-                     edu.level_of_education === "phd" ? (isAr ? "دكتوراه" : "PhD") :
-                     edu.level_of_education === "high_school" ? (isAr ? "ثانوية عامة" : "High School") :
-                     edu.level_of_education}
+                  <button
+                    onClick={() => deleteEducationItem(idx)}
+                    className="p-1 hover:bg-red-50 rounded-full transition"
+                    title={isAr ? "حذف" : "Delete"}
+                  >
+                    <img src="/portfolio/remove.svg" alt="Remove" className="w-[16px] h-[16px]" />
+                  </button>
+                </div>
+
+                <div className="pr-12 pl-2">
+                  <h3 className="text-[16px] font-bold text-[#032C44] line-clamp-1 mb-1 leading-snug">
+                    {getEduLevelLabel(edu.levelOfEducation)}
+                  </h3>
+                  <p className="text-[13px] text-[#525252] font-semibold line-clamp-1">
+                    {edu.university}
                   </p>
-                  {edu.specialization && (
-                    <p className="text-xs text-[#9CA3AF] mt-1">{edu.specialization}</p>
-                  )}
-                  <p className="text-xs text-[#9CA3AF] mt-2">{edu.graduation_year}</p>
-                  <p className="text-sm text-[#111827] mt-2 font-medium">
-                    {isAr ? "التقدير:" : "Grade:"} {
-                      edu.final_grade === "excellent" ? (isAr ? "ممتاز" : "Excellent") :
-                      edu.final_grade === "very_good" ? (isAr ? "جيد جداً" : "Very Good") :
-                      edu.final_grade === "good" ? (isAr ? "جيد" : "Good") :
-                      edu.final_grade === "pass" ? (isAr ? "مقبول" : "Pass") :
-                      edu.final_grade}
+                  <p className="text-[12px] text-[#6B7280] mt-1 font-medium">
+                    {edu.graduationYear}
+                  </p>
+                  <p className="text-[12px] text-[#525252] mt-1 font-semibold">
+                    {getGradeLabel(edu.finalGrade)}
                   </p>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-[#6B7280] text-center py-8">
-              {isAr ? "لا توجد مؤهلات علمية مضافة" : "No education added yet"}
-            </p>
-          )}
-        </div>
-      </div>
 
-      {/* Experience Section */}
-      <div className="rounded-[16px] border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between p-4 sm:p-6 text-white bg-gradient-to-r from-[#032C44] to-[#41A0CA]">
-          <h2 className="text-xl font-bold">{isAr ? "الخبرات العملية" : "Work Experience"}</h2>
-          <button 
-            onClick={() => setShowExperienceModal(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white text-[#006EA8] text-sm rounded-lg hover:bg-[#F0F9FF] transition font-medium"
-            disabled={saving}
-          >
-            <Plus size={16} />
-            {isAr ? "إضافة" : "Add"}
-          </button>
-        </div>
-
-        <div className="p-4 sm:p-6">
-          {experiences.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {experiences.map((exp: Experience) => (
-                <div key={exp.id} className="p-4 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] relative">
-                  <button
-                    onClick={() => handleRemoveExperience(exp.id)}
-                    className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
-                    disabled={saving}
-                    title={isAr ? "حذف الخبرة" : "Delete Experience"}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                  <h3 className="font-bold text-[#006EA8] pr-6">{exp.company_name}</h3>
-                  <p className="text-sm text-[#6B7280] mt-1">{exp.department}</p>
-                  <p className="text-xs text-[#9CA3AF] mt-2">
-                    {exp.start_date}
-                    {exp.currently_working
-                      ? ` - ${isAr ? "حالياً" : "Present"}`
-                      : exp.end_date
-                        ? ` - ${exp.end_date}`
-                        : ""}
-                  </p>
-                  {exp.responsibilities && (
-                    <p className="text-xs text-[#6B7280] mt-2 line-clamp-2">{exp.responsibilities}</p>
-                  )}
+                {/* PDF File Indicator at bottom */}
+                <div className="mt-3 pt-2 border-t border-gray-100 flex items-center gap-1.5 text-xs text-[#006EA8] truncate">
+                  <img src="/portfolio/pdf.svg" alt="PDF Icon" className="w-5 h-5 flex-shrink-0" />
+                  <span className="truncate font-semibold text-[11px] max-w-[130px]">
+                    {edu.attachmentFile
+                      ? edu.attachmentFile.name
+                      : edu.attachment
+                        ? getFilenameFromUrl(edu.attachment)
+                        : isAr ? "لا توجد شهادة مرفقة" : "No attachment"}
+                  </span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-[#6B7280] text-center py-8">
-              {isAr ? "لا توجد خبرات عملية مضافة" : "No work experience added yet"}
-            </p>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 italic">
+            {isAr ? "لم يتم إضافة مؤهلات تعليمية بعد" : "No education added yet"}
+          </p>
+        )}
       </div>
 
-      {/* Skills Section */}
-      <div className="rounded-[16px] border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between p-4 sm:p-6 text-white bg-gradient-to-r from-[#032C44] to-[#41A0CA]">
-          <h2 className="text-xl font-bold">{isAr ? "المهارات" : "Skills"}</h2>
-          <button 
-            onClick={() => setShowSkillModal(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white text-[#006EA8] text-sm rounded-lg hover:bg-[#F0F9FF] transition font-medium"
-            disabled={saving}
+      {/* 4. Work Experience Section */}
+      <div className="rounded-[16px] bg-white p-6 border border-[#E5E7EB] shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className={cn("text-[20px] font-bold", gradientTitleClasses)}>
+            {isAr ? "الخبرات العملية" : "Work Experience"}
+          </h2>
+          <PrimaryButton
+            onClick={openAddExperience}
+            className="w-auto h-[40px] px-4 rounded-[8px] flex items-center justify-center gap-1 text-[14px] font-semibold cursor-pointer"
           >
-            <Plus size={16} />
-            {isAr ? "إضافة" : "Add"}
+            <span className="text-[16px] font-bold">+</span>
+            <span>{isAr ? "إضافة جديد" : "Add New"}</span>
+          </PrimaryButton>
+        </div>
+
+        {experiences.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {experiences.map((exp, idx) => (
+              <div
+                key={idx}
+                className="border border-[#E5E7EB] bg-white rounded-[12px] p-4 relative flex flex-col justify-between min-h-[160px] shadow-sm hover:shadow-md transition"
+              >
+                {/* Actions */}
+                <div className={cn("absolute top-3 flex gap-1", isAr ? "left-3" : "right-3")}>
+                  <button
+                    onClick={() => openEditExperience(exp)}
+                    className="p-1 hover:bg-gray-100 rounded-full transition"
+                    title={isAr ? "تعديل" : "Edit"}
+                  >
+                    <img src="/portfolio/edit.svg" alt="Edit" className="w-[16px] h-[16px]" />
+                  </button>
+                  <button
+                    onClick={() => deleteExperienceItem(idx)}
+                    className="p-1 hover:bg-red-50 rounded-full transition"
+                    title={isAr ? "حذف" : "Delete"}
+                  >
+                    <img src="/portfolio/remove.svg" alt="Remove" className="w-[16px] h-[16px]" />
+                  </button>
+                </div>
+
+                <div className="pr-12 pl-2">
+                  <h3 className="text-[16px] font-bold text-[#032C44] line-clamp-1 mb-1 leading-snug">
+                    {exp.companyName}
+                  </h3>
+                  <p className="text-[13px] text-[#525252] font-semibold line-clamp-1">
+                    {exp.department}
+                  </p>
+                  <p className="text-[11px] text-[#6B7280] mt-1 font-semibold">
+                    {exp.startDate} - {exp.currentlyWorking ? (isAr ? "حالياً" : "Present") : exp.endDate || ""}
+                  </p>
+                </div>
+
+                {/* PDF File Indicator at bottom */}
+                <div className="mt-3 pt-2 border-t border-gray-100 flex items-center gap-1.5 text-xs text-[#006EA8] truncate">
+                  <img src="/portfolio/pdf.svg" alt="PDF Icon" className="w-5 h-5 flex-shrink-0" />
+                  <span className="truncate font-semibold text-[11px] max-w-[130px]">
+                    {exp.attachmentFile
+                      ? exp.attachmentFile.name
+                      : exp.attachment
+                        ? getFilenameFromUrl(exp.attachment)
+                        : isAr ? "لا توجد مرفقات" : "No attachment"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 italic">
+            {isAr ? "لم يتم إضافة خبرات عملية بعد" : "No work experience added yet"}
+          </p>
+        )}
+      </div>
+
+      {/* 5. Skills Section */}
+      <div className="rounded-[16px] bg-white p-6 border border-[#E5E7EB] shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className={cn("text-[20px] font-bold", gradientTitleClasses)}>
+            {isAr ? "المهارات" : "Skills"}
+          </h2>
+          <button
+            onClick={openSkillsEdit}
+            className="flex items-center gap-1.5 px-4 py-2 border border-[#E5E7EB] hover:bg-gray-50 rounded-[8px] text-[14px] font-semibold text-[#032C44] transition"
+          >
+            <img src="/portfolio/edit.svg" alt="Edit" className="w-[16px] h-[16px]" />
+            <span>{isAr ? "تعديل" : "Edit"}</span>
           </button>
         </div>
 
-        <div className="p-4 sm:p-6">
+        <div className="flex flex-wrap gap-2">
           {skills.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {skills.map((skill: Skill) => (
-                <div key={skill.id} className="flex items-center gap-1 bg-[#F0F9FF] border border-[#006EA8] rounded-full px-3 py-1">
-                  <span className="text-[#006EA8] text-sm">{skill.skill_name}</span>
-                  <button
-                    onClick={() => handleRemoveSkill(skill.id)}
-                    className="text-red-500 hover:text-red-700 p-0.5 rounded-full hover:bg-red-50 transition"
-                    disabled={saving}
-                    title={isAr ? "حذف المهارة" : "Delete Skill"}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
+            skills.map((s, idx) => (
+              <div
+                key={idx}
+                className="px-4 py-1.5 border border-[#006EA8] text-[#006EA8] bg-white rounded-full text-sm font-semibold hover:bg-[#F0F9FF] transition"
+              >
+                {s.skillName}
+              </div>
+            ))
           ) : (
-            <p className="text-sm text-[#6B7280] text-center py-8">
-              {isAr ? "لا توجد مهارات مضافة" : "No skills added yet"}
+            <p className="text-sm text-gray-400 italic">
+              {isAr ? "لم يتم إضافة مهارات بعد" : "No skills added yet"}
             </p>
           )}
         </div>
       </div>
 
-      {/* Saving Overlay */}
-      {saving && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006EA8]"></div>
-            <p className="text-gray-600">{isAr ? "جاري الحفظ..." : "Saving..."}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Modals - باقي الـ Modals كما هي */}
-      {/* Language Modal */}
+      {/* ------------------------------------------------------------- */}
+      {/* LANGUAGE MODAL (Edit all list, matching Screenshot 3) */}
+      {/* ------------------------------------------------------------- */}
       <Dialog open={showLanguageModal} onOpenChange={setShowLanguageModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{isAr ? "إضافة لغة" : "Add Language"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input
-              placeholder={isAr ? "اسم اللغة" : "Language name"}
-              value={languageForm.language}
-              onChange={(e) => setLanguageForm((prev) => ({ ...prev, language: e.target.value }))}
-            />
-            <Select value={languageForm.level} onValueChange={(value: string) => setLanguageForm((prev) => ({ ...prev, level: value as "beginner" | "intermediate" | "fluent" | "native" }))}>
-              <SelectTrigger>
-                <SelectValue placeholder={isAr ? "اختر المستوى" : "Select level"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="beginner">{isAr ? "مبتدئ" : "Beginner"}</SelectItem>
-                <SelectItem value="intermediate">{isAr ? "متوسط" : "Intermediate"}</SelectItem>
-                <SelectItem value="fluent">{isAr ? "طلاقة" : "Fluent"}</SelectItem>
-                <SelectItem value="native">{isAr ? "لغة أم" : "Native"}</SelectItem>
-              </SelectContent>
-            </Select>
+        <DialogContent className="max-w-[550px] p-6 rounded-[20px] bg-white border-0 shadow-lg">
+          <DialogDescription className="sr-only">
+            {isAr ? "إضافة وتعديل اللغات في سيرتك الذاتية" : "Add and edit languages in your portfolio"}
+          </DialogDescription>
+          <div className="flex items-center justify-between mb-6">
+            <DialogTitle className={gradientTitleClasses}>
+              {isAr ? "اللغات" : "Language"}
+            </DialogTitle>
+            <button
+              onClick={() => setShowLanguageModal(false)}
+              className="p-1 hover:bg-gray-100 rounded-full transition"
+            >
+              <img src="/portfolio/close-circle.svg" alt="Close" className="w-7 h-7" />
+            </button>
           </div>
-          <DialogFooter>
-            <Button onClick={() => setShowLanguageModal(false)} variant="outline" disabled={saving}>
+
+          <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
+            {modalLanguages.map((row, idx) => (
+              <div key={idx} className="flex items-end gap-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                {/* Language name input */}
+                <div className="flex-1 space-y-1">
+                  <label className="text-[14px] font-bold text-[#032C44]">
+                    {isAr ? "اللغة" : "Language"}
+                  </label>
+                  <Input
+                    type="text"
+                    value={row.language}
+                    onChange={(e) => updateLanguageRow(idx, "language", e.target.value)}
+                    placeholder={isAr ? "مثال: الإنجليزية" : "e.g. English"}
+                    className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
+                  />
+                </div>
+
+                {/* Level select */}
+                <div className="w-[180px] space-y-1">
+                  <label className="text-[14px] font-bold text-[#032C44]">
+                    {isAr ? "المستوى *" : "level *"}
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={row.level}
+                      onChange={(e) => updateLanguageRow(idx, "level", e.target.value as any)}
+                      className="appearance-none border border-[#E5E7EB] focus:border-[#40A0CA] bg-white rounded-[8px] px-3 py-2 pr-8 text-sm w-full outline-none"
+                    >
+                      <option value="beginner">{isAr ? "مبتدئ" : "Beginner"}</option>
+                      <option value="intermediate">{isAr ? "متوسط" : "Intermediate"}</option>
+                      <option value="fluent">{isAr ? "محادثة" : "Conversational"}</option>
+                      <option value="native">{isAr ? "اللغة الأم" : "Native or Bilingual"}</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                      <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delete row */}
+                <button
+                  onClick={() => removeLanguageRow(idx)}
+                  className="p-2 border border-[#FF5B5C] bg-[#FFF5F5] hover:bg-[#FFE5E5] rounded-[8px] transition flex-shrink-0 mb-[1px]"
+                  title={isAr ? "حذف الصف" : "Delete Row"}
+                >
+                  <img src="/portfolio/remove.svg" alt="Delete" className="w-[16px] h-[16px]" />
+                </button>
+              </div>
+            ))}
+
+            {modalLanguages.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-4">
+                {isAr ? "لم تقم بإضافة لغة بعد. انقر على إضافة صف أدناه." : "No languages added yet. Click Add Row below."}
+              </p>
+            )}
+          </div>
+
+          <div className="mt-4">
+            <button
+              onClick={addLanguageRow}
+              className="text-sm font-bold text-[#006EA8] hover:underline flex items-center gap-1"
+            >
+              <span>+</span> <span>{isAr ? "إضافة لغة جديدة" : "Add New Language"}</span>
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <button
+              type="button"
+              onClick={() => setShowLanguageModal(false)}
+              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition"
+            >
               {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button onClick={handleAddLanguage} className="bg-[#006EA8] hover:bg-[#005685]" disabled={saving}>
-              {isAr ? "إضافة" : "Add"}
-            </Button>
-          </DialogFooter>
+            </button>
+            <PrimaryButton
+              onClick={saveLanguagesModal}
+              disabled={saving}
+              className="px-10 w-auto"
+            >
+              {isAr ? "تأكيد" : "Submit"}
+            </PrimaryButton>
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Education Modal */}
+      {/* ------------------------------------------------------------- */}
+      {/* EDUCATION MODAL */}
+      {/* ------------------------------------------------------------- */}
       <Dialog open={showEducationModal} onOpenChange={setShowEducationModal}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{isAr ? "إضافة مؤهل علمي" : "Add Education"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input
-              placeholder={isAr ? "اسم الجامعة *" : "University Name *"}
-              value={educationForm.university}
-              onChange={(e) => setEducationForm((prev) => ({ ...prev, university: e.target.value }))}
-            />
-            <Select value={educationForm.level_of_education} onValueChange={(value: string) => setEducationForm((prev) => ({ ...prev, level_of_education: value as "high_school" | "bachelor" | "master" | "phd" }))}>
-              <SelectTrigger>
-                <SelectValue placeholder={isAr ? "المستوى التعليمي *" : "Education Level *"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="high_school">{isAr ? "ثانوية عامة" : "High School"}</SelectItem>
-                <SelectItem value="bachelor">{isAr ? "بكالوريوس" : "Bachelor"}</SelectItem>
-                <SelectItem value="master">{isAr ? "ماجستير" : "Master"}</SelectItem>
-                <SelectItem value="phd">{isAr ? "دكتوراه" : "PhD"}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder={isAr ? "سنة التخرج *" : "Graduation Year *"}
-              type="number"
-              value={educationForm.graduation_year}
-              onChange={(e) => setEducationForm((prev) => ({ ...prev, graduation_year: e.target.value }))}
-            />
-            <Input
-              placeholder={isAr ? "التخصص" : "Specialization"}
-              value={educationForm.specialization}
-              onChange={(e) => setEducationForm((prev) => ({ ...prev, specialization: e.target.value }))}
-            />
-            <Select value={educationForm.final_grade} onValueChange={(value: string) => setEducationForm((prev) => ({ ...prev, final_grade: value as "excellent" | "very_good" | "good" | "pass" }))}>
-              <SelectTrigger>
-                <SelectValue placeholder={isAr ? "التقدير النهائي" : "Final Grade"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="excellent">{isAr ? "ممتاز" : "Excellent"}</SelectItem>
-                <SelectItem value="very_good">{isAr ? "جيد جداً" : "Very Good"}</SelectItem>
-                <SelectItem value="good">{isAr ? "جيد" : "Good"}</SelectItem>
-                <SelectItem value="pass">{isAr ? "مقبول" : "Pass"}</SelectItem>
-              </SelectContent>
-            </Select>
-            <div>
-              <label className="text-sm font-medium block mb-1">{isAr ? "الشهادة" : "Certificate"}</label>
+        <DialogContent className="max-w-[550px] p-6 rounded-[20px] bg-white border-0 shadow-lg max-h-[90vh] overflow-y-auto">
+          <DialogDescription className="sr-only">
+            {isAr ? "إضافة أو تعديل المؤهل التعليمي" : "Add or edit an education qualification"}
+          </DialogDescription>
+          <div className="flex items-center justify-between mb-5">
+            <DialogTitle className={gradientTitleClasses}>
+              {isAr ? "المؤهلات العلمية" : "Education"}
+            </DialogTitle>
+            <button
+              onClick={() => setShowEducationModal(false)}
+              className="p-1 hover:bg-gray-100 rounded-full transition"
+            >
+              <img src="/portfolio/close-circle.svg" alt="Close" className="w-7 h-7" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {/* University input */}
+            <div className="space-y-1">
+              <label className="text-[14px] font-bold text-[#032C44]">
+                {isAr ? "الجامعة *" : "University *"}
+              </label>
               <Input
-                type="file"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                onChange={(e) => setEducationFile(e.target.files?.[0] || null)}
+                type="text"
+                value={educationForm.university}
+                onChange={(e) => setEducationForm((prev) => ({ ...prev, university: e.target.value }))}
+                placeholder={isAr ? "أدخل اسم الجامعة" : "Enter university name"}
+                className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
               />
             </div>
+
+            {/* Level & Year rows */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[14px] font-bold text-[#032C44]">
+                  {isAr ? "المستوى التعليمي *" : "Level Of Education *"}
+                </label>
+                <div className="relative">
+                  <select
+                    value={educationForm.levelOfEducation}
+                    onChange={(e) =>
+                      setEducationForm((prev) => ({
+                        ...prev,
+                        levelOfEducation: e.target.value as any,
+                      }))
+                    }
+                    className="appearance-none border border-[#E5E7EB] focus:border-[#40A0CA] bg-white rounded-[8px] px-3 py-2 pr-8 text-sm w-full outline-none"
+                  >
+                    <option value="high_school">{isAr ? "ثانوية عامة" : "High School"}</option>
+                    <option value="bachelor">{isAr ? "بكالوريوس" : "Bachelor"}</option>
+                    <option value="master">{isAr ? "ماجستير" : "Master"}</option>
+                    <option value="phd">{isAr ? "دكتوراه" : "PhD"}</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                    <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[14px] font-bold text-[#032C44]">
+                  {isAr ? "سنة التخرج *" : "Graduation Year *"}
+                </label>
+                <div className="relative">
+                  <select
+                    value={educationForm.graduationYear}
+                    onChange={(e) =>
+                      setEducationForm((prev) => ({ ...prev, graduationYear: e.target.value }))
+                    }
+                    className="appearance-none border border-[#E5E7EB] focus:border-[#40A0CA] bg-white rounded-[8px] px-3 py-2 pr-8 text-sm w-full outline-none"
+                  >
+                    {gradYears.map((yr) => (
+                      <option key={yr} value={yr}>
+                        {yr}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                    <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Specialization & Grade rows */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[14px] font-bold text-[#032C44]">
+                  {isAr ? "التخصص *" : "Specialization *"}
+                </label>
+                <Input
+                  type="text"
+                  value={educationForm.specialization}
+                  onChange={(e) =>
+                    setEducationForm((prev) => ({ ...prev, specialization: e.target.value }))
+                  }
+                  placeholder={isAr ? "مثال: هندسة برمجيات" : "e.g. Software Engineering"}
+                  className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[14px] font-bold text-[#032C44]">
+                  {isAr ? "التقدير النهائي *" : "Final Grade *"}
+                </label>
+                <div className="relative">
+                  <select
+                    value={educationForm.finalGrade}
+                    onChange={(e) =>
+                      setEducationForm((prev) => ({
+                        ...prev,
+                        finalGrade: e.target.value as any,
+                      }))
+                    }
+                    className="appearance-none border border-[#E5E7EB] focus:border-[#40A0CA] bg-white rounded-[8px] px-3 py-2 pr-8 text-sm w-full outline-none"
+                  >
+                    <option value="excellent">{isAr ? "ممتاز (A = 90-100%)" : "A = 90-100%"}</option>
+                    <option value="very_good">{isAr ? "جيد جداً (B = 80-89%)" : "B = 80-89%"}</option>
+                    <option value="good">{isAr ? "جيد (C = 70-79%)" : "C = 70-79%"}</option>
+                    <option value="pass">{isAr ? "مقبول (D = 50-69%)" : "D = 50-69%"}</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                    <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Certificate Dropzone */}
+            <div className="space-y-1">
+              <label className="text-[14px] font-bold text-[#032C44]">
+                {isAr ? "المرفقات" : "Attachments"}
+              </label>
+              <div
+                onClick={() => document.getElementById("eduFile")?.click()}
+                className="border-2 border-dashed border-[#40A0CA] bg-[#F4FAFF] hover:bg-[#EBF7FF] transition rounded-[12px] py-6 px-4 flex flex-col items-center justify-center cursor-pointer text-center"
+              >
+                <input
+                  type="file"
+                  id="eduFile"
+                  onChange={(e) =>
+                    setEducationForm((prev) => ({
+                      ...prev,
+                      attachmentFile: e.target.files?.[0] || null,
+                    }))
+                  }
+                  accept=".pdf"
+                  className="hidden"
+                />
+                <img src="/portfolio/drop.svg" alt="Upload" className="w-[36px] h-[36px] mb-2" />
+                <p className="text-[#032C44] text-[13px] font-medium">
+                  {educationForm.attachmentFile ? (
+                    <span className="text-[#006EA8]">{educationForm.attachmentFile.name}</span>
+                  ) : educationForm.attachment ? (
+                    <span className="text-gray-600">{getFilenameFromUrl(educationForm.attachment)}</span>
+                  ) : isAr ? (
+                    <>قم بسحب الملف هنا، أو <span className="text-[#006EA8] underline">تصفح</span></>
+                  ) : (
+                    <>Drop a file, or <span className="text-[#006EA8] underline">browse</span></>
+                  )}
+                </p>
+                <p className="text-[#6B7280] text-[10px] mt-1">
+                  {isAr ? "حجم الملف أقل من 10MB والصيغة PDF فقط" : "File size should be less than 10MB and file type should be pdf"}
+                </p>
+              </div>
+            </div>
           </div>
-          <DialogFooter>
-            <Button onClick={() => setShowEducationModal(false)} variant="outline" disabled={saving}>
+
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <button
+              type="button"
+              onClick={() => setShowEducationModal(false)}
+              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition"
+            >
               {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button onClick={handleAddEducation} className="bg-[#006EA8] hover:bg-[#005685]" disabled={saving}>
-              {isAr ? "إضافة" : "Add"}
-            </Button>
-          </DialogFooter>
+            </button>
+            <PrimaryButton
+              onClick={submitEducation}
+              disabled={saving}
+              className="px-10 w-auto"
+            >
+              {isAr ? "تأكيد" : "Submit"}
+            </PrimaryButton>
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Experience Modal */}
+      {/* ------------------------------------------------------------- */}
+      {/* WORK EXPERIENCE MODAL */}
+      {/* ------------------------------------------------------------- */}
       <Dialog open={showExperienceModal} onOpenChange={setShowExperienceModal}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{isAr ? "إضافة خبرة عملية" : "Add Work Experience"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input
-              placeholder={isAr ? "اسم الشركة *" : "Company Name *"}
-              value={experienceForm.company_name}
-              onChange={(e) => setExperienceForm((prev) => ({ ...prev, company_name: e.target.value }))}
-            />
-            <Input
-              placeholder={isAr ? "القسم *" : "Department *"}
-              value={experienceForm.department}
-              onChange={(e) => setExperienceForm((prev) => ({ ...prev, department: e.target.value }))}
-            />
-            <div>
-              <label className="text-sm font-medium block mb-1">{isAr ? "تاريخ البداية *" : "Start Date *"}</label>
-              <Input
-                type="date"
-                value={experienceForm.start_date}
-                onChange={(e) => setExperienceForm((prev) => ({ ...prev, start_date: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium block mb-1">{isAr ? "تاريخ النهاية" : "End Date"}</label>
-              <Input
-                type="date"
-                value={experienceForm.end_date || ""}
-                onChange={(e) => setExperienceForm((prev) => ({ ...prev, end_date: e.target.value }))}
-                disabled={experienceForm.currently_working}
-              />
-            </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={experienceForm.currently_working || false}
-                onChange={(e) => setExperienceForm((prev) => ({ 
-                  ...prev, 
-                  currently_working: e.target.checked,
-                  end_date: e.target.checked ? undefined : prev.end_date 
-                }))}
-                className="w-4 h-4"
-              />
-              <span className="text-sm">{isAr ? "أعمل هنا حالياً" : "Currently Working Here"}</span>
-            </label>
-            <Textarea
-              placeholder={isAr ? "المسؤوليات" : "Responsibilities"}
-              value={experienceForm.responsibilities || ""}
-              rows={3}
-              onChange={(e) => setExperienceForm((prev) => ({ ...prev, responsibilities: e.target.value }))}
-            />
+        <DialogContent className="max-w-[550px] p-6 rounded-[20px] bg-white border-0 shadow-lg max-h-[90vh] overflow-y-auto">
+          <DialogDescription className="sr-only">
+            {isAr ? "إضافة أو تعديل خبرة عملية في سيرتك الذاتية" : "Add or edit a work experience entry"}
+          </DialogDescription>
+          <div className="flex items-center justify-between mb-5">
+            <DialogTitle className={gradientTitleClasses}>
+              {isAr ? "الخبرات العملية" : "Work Experience"}
+            </DialogTitle>
+            <button
+              onClick={() => setShowExperienceModal(false)}
+              className="p-1 hover:bg-gray-100 rounded-full transition"
+            >
+              <img src="/portfolio/close-circle.svg" alt="Close" className="w-7 h-7" />
+            </button>
           </div>
-          <DialogFooter>
-            <Button onClick={() => setShowExperienceModal(false)} variant="outline" disabled={saving}>
+
+          <div className="space-y-4">
+            {/* Company & Department */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[14px] font-bold text-[#032C44]">
+                  {isAr ? "اسم الشركة *" : "Company Name *"}
+                </label>
+                <Input
+                  type="text"
+                  value={experienceForm.companyName}
+                  onChange={(e) =>
+                    setExperienceForm((prev) => ({ ...prev, companyName: e.target.value }))
+                  }
+                  placeholder={isAr ? "أدخل اسم الشركة" : "Enter company name"}
+                  className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[14px] font-bold text-[#032C44]">
+                  {isAr ? "القسم *" : "Department *"}
+                </label>
+                <Input
+                  type="text"
+                  value={experienceForm.department}
+                  onChange={(e) =>
+                    setExperienceForm((prev) => ({ ...prev, department: e.target.value }))
+                  }
+                  placeholder={isAr ? "مثال: قسم البرمجة" : "e.g. IT Department"}
+                  className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Dates (Employment Period) */}
+            <div className="space-y-1">
+              <label className="text-[14px] font-bold text-[#032C44]">
+                {isAr ? "فترة العمل *" : "Employment Period *"}
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                {/* From Date */}
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={experienceForm.startDate}
+                    onChange={(e) =>
+                      setExperienceForm((prev) => ({ ...prev, startDate: e.target.value }))
+                    }
+                    className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] pl-3 pr-10 py-2 text-sm w-full outline-none"
+                  />
+                  <img src="/portfolio/calender.svg" alt="Calendar" className="w-[18px] h-[18px] absolute right-3 top-[50%] translate-y-[-50%] pointer-events-none" />
+                </div>
+
+                {/* To Date */}
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={experienceForm.endDate || ""}
+                    onChange={(e) =>
+                      setExperienceForm((prev) => ({ ...prev, endDate: e.target.value }))
+                    }
+                    disabled={experienceForm.currentlyWorking}
+                    className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] pl-3 pr-10 py-2 text-sm w-full outline-none disabled:bg-gray-50"
+                  />
+                  <img src="/portfolio/calender.svg" alt="Calendar" className="w-[18px] h-[18px] absolute right-3 top-[50%] translate-y-[-50%] pointer-events-none opacity-60" />
+                </div>
+              </div>
+
+              {/* Currently work here checkbox */}
+              <div className="pt-1 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="currWork"
+                  checked={experienceForm.currentlyWorking}
+                  onChange={(e) =>
+                    setExperienceForm((prev) => ({
+                      ...prev,
+                      currentlyWorking: e.target.checked,
+                      endDate: e.target.checked ? "" : prev.endDate,
+                    }))
+                  }
+                  className="w-4 h-4 text-[#006EA8] border-gray-300 rounded focus:ring-[#006EA8]"
+                />
+                <label htmlFor="currWork" className="text-xs font-semibold text-gray-600 cursor-pointer">
+                  {isAr ? "أعمل هنا حالياً" : "Currently Work Here"}
+                </label>
+              </div>
+            </div>
+
+            {/* Responsibilities */}
+            <div className="space-y-1">
+              <label className="text-[14px] font-bold text-[#032C44]">
+                {isAr ? "المسؤوليات *" : "Responsibilities *"}
+              </label>
+              <Textarea
+                rows={3}
+                value={experienceForm.responsibilities}
+                onChange={(e) =>
+                  setExperienceForm((prev) => ({ ...prev, responsibilities: e.target.value }))
+                }
+                placeholder={isAr ? "اكتب تفاصيل مهامك ومسؤولياتك" : "Write details about your roles and tasks"}
+                className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none resize-none"
+              />
+            </div>
+
+            {/* Attachment */}
+            <div className="space-y-1">
+              <label className="text-[14px] font-bold text-[#032C44]">
+                {isAr ? "المرفقات" : "Attachments"}
+              </label>
+              <div
+                onClick={() => document.getElementById("expFile")?.click()}
+                className="border-2 border-dashed border-[#40A0CA] bg-[#F4FAFF] hover:bg-[#EBF7FF] transition rounded-[12px] py-6 px-4 flex flex-col items-center justify-center cursor-pointer text-center"
+              >
+                <input
+                  type="file"
+                  id="expFile"
+                  onChange={(e) =>
+                    setExperienceForm((prev) => ({
+                      ...prev,
+                      attachmentFile: e.target.files?.[0] || null,
+                    }))
+                  }
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="hidden"
+                />
+                <img src="/portfolio/drop.svg" alt="Upload" className="w-[36px] h-[36px] mb-2" />
+                <p className="text-[#032C44] text-[13px] font-medium">
+                  {experienceForm.attachmentFile ? (
+                    <span className="text-[#006EA8]">{experienceForm.attachmentFile.name}</span>
+                  ) : experienceForm.attachment ? (
+                    <span className="text-gray-600">{getFilenameFromUrl(experienceForm.attachment)}</span>
+                  ) : isAr ? (
+                    <>قم بسحب الملف هنا، أو <span className="text-[#006EA8] underline">تصفح</span></>
+                  ) : (
+                    <>Drop a file, or <span className="text-[#006EA8] underline">browse</span></>
+                  )}
+                </p>
+                <p className="text-[#6B7280] text-[10px] mt-1">
+                  {isAr ? "صيغ الملفات المدعومة: pdf, jpg, jpeg, png وحجم أقل من 10MB" : "File size should be less than 10MB and file type should be jpg, jpeg, png, pdf"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <button
+              type="button"
+              onClick={() => setShowExperienceModal(false)}
+              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition"
+            >
               {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button onClick={handleAddExperience} className="bg-[#006EA8] hover:bg-[#005685]" disabled={saving}>
-              {isAr ? "إضافة" : "Add"}
-            </Button>
-          </DialogFooter>
+            </button>
+            <PrimaryButton
+              onClick={submitExperience}
+              disabled={saving}
+              className="px-10 w-auto"
+            >
+              {isAr ? "تأكيد" : "Submit"}
+            </PrimaryButton>
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Skills Modal */}
+      {/* ------------------------------------------------------------- */}
+      {/* SKILLS MODAL */}
+      {/* ------------------------------------------------------------- */}
       <Dialog open={showSkillModal} onOpenChange={setShowSkillModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{isAr ? "إضافة مهارة" : "Add Skill"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input
-              placeholder={isAr ? "اسم المهارة" : "Skill name"}
-              value={skillForm.skill_name}
-              onChange={(e) => setSkillForm((prev) => ({ ...prev, skill_name: e.target.value }))}
-            />
+        <DialogContent className="max-w-[500px] p-6 rounded-[20px] bg-white border-0 shadow-lg">
+          <DialogDescription className="sr-only">
+            {isAr ? "إضافة وتعديل المهارات في سيرتك الذاتية" : "Add and manage skills in your portfolio"}
+          </DialogDescription>
+          <div className="flex items-center justify-between mb-5">
+            <DialogTitle className={gradientTitleClasses}>
+              {isAr ? "المهارات" : "Skills"}
+            </DialogTitle>
+            <button
+              onClick={() => setShowSkillModal(false)}
+              className="p-1 hover:bg-gray-100 rounded-full transition"
+            >
+              <img src="/portfolio/close-circle.svg" alt="Close" className="w-7 h-7" />
+            </button>
           </div>
-          <DialogFooter>
-            <Button onClick={() => setShowSkillModal(false)} variant="outline" disabled={saving}>
+
+          <div className="space-y-4">
+            {/* Add Skill Input Row */}
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                value={newSkillInput}
+                onChange={(e) => setNewSkillInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addSkillToModal();
+                  }
+                }}
+                placeholder={isAr ? "أدخل اسم المهارة واضغط إضافة" : "Enter skill name and press add"}
+                className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm flex-1 outline-none"
+              />
+              <button
+                onClick={addSkillToModal}
+                className="px-5 py-2 bg-[#006EA8] hover:bg-[#005685] text-white font-bold text-sm rounded-[8px] transition"
+              >
+                {isAr ? "إضافة" : "Add"}
+              </button>
+            </div>
+
+            {/* List of current modal skills as badges */}
+            <div className="border border-[#E5E7EB] rounded-[12px] p-4 min-h-[120px] max-h-[220px] overflow-y-auto flex flex-wrap gap-2 bg-[#F9FAFB]">
+              {modalSkills.map((s, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-1.5 px-3 py-1 border border-[#006EA8] text-[#006EA8] bg-white rounded-full text-xs font-semibold"
+                >
+                  <span>{s.skillName}</span>
+                  <button
+                    onClick={() => removeSkillFromModal(idx)}
+                    className="p-0.5 hover:bg-red-50 rounded-full transition flex items-center justify-center"
+                    title={isAr ? "حذف" : "Remove"}
+                  >
+                    <img src="/portfolio/remove.svg" alt="Remove" className="w-[10px] h-[10px]" />
+                  </button>
+                </div>
+              ))}
+              {modalSkills.length === 0 && (
+                <p className="text-sm text-gray-400 m-auto italic">
+                  {isAr ? "اكتب مهارة في المربع أعلاه لإضافتها" : "Write a skill in the box above to add it"}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <button
+              type="button"
+              onClick={() => setShowSkillModal(false)}
+              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition"
+            >
               {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button onClick={handleAddSkill} className="bg-[#006EA8] hover:bg-[#005685]" disabled={saving}>
-              {isAr ? "إضافة" : "Add"}
-            </Button>
-          </DialogFooter>
+            </button>
+            <PrimaryButton
+              onClick={saveSkillsModal}
+              disabled={saving}
+              className="px-10 w-auto"
+            >
+              {isAr ? "تأكيد" : "Submit"}
+            </PrimaryButton>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

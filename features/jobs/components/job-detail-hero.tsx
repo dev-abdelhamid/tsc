@@ -2,6 +2,9 @@ import Image from "next/image"
 import type { Job } from "@/lib/api/types"
 import { resolveJobImageUrl } from "@/features/jobs/lib/resolve-job-image"
 
+import { useLocale } from "next-intl"
+import { getLocalizedName } from "@/features/jobs/lib/job-display"
+
 type JobDetailHeroProps = {
   job: Job
   companyName: string
@@ -9,8 +12,9 @@ type JobDetailHeroProps = {
 }
 
 export function JobDetailHero({ job, companyName, industryFallback }: JobDetailHeroProps) {
+  const locale = useLocale()
   const industry =
-    job.company?.company_type?.name || job.category?.name || industryFallback
+    job.company?.company_type?.name || getLocalizedName(job.category?.name, locale) || industryFallback
   const bannerSrc = resolveJobImageUrl(job.image) ?? "/home/hero/hero-bg-image.png"
   const displayCompany = job.company?.name ?? companyName
 

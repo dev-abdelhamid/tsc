@@ -3,7 +3,6 @@
 import * as React from "react"
 import { Bookmark } from "lucide-react"
 import { toast } from "sonner"
-import { toggleFavorite } from "@/lib/api/services/jobs.service"
 import { useRouter } from "@/i18n/navigation"
 
 type FavoriteButtonProps = {
@@ -56,7 +55,20 @@ export function FavoriteButton({
     const toastId = toast.loading(locale === "ar" ? "جاري..." : "Loading...")
 
     try {
-      const result = await toggleFavorite(jobId, accessToken, locale)
+      const res = await fetch("/api/user/favourites", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept-Language": locale,
+        },
+        body: JSON.stringify({ job_id: jobId }),
+      })
+
+      const result = await res.json()
+      if (!res.ok) {
+        throw new Error(result.message || "Failed to update favorites")
+      }
+
       setIsFavorite(result.is_favourite)
       toast.dismiss(toastId)
       

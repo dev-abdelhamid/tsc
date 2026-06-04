@@ -1,13 +1,13 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "@/i18n/navigation"
+import { Link } from "@/i18n/navigation"
 import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { X, Plus } from "lucide-react"
-import type { Job, UserPortfolio, Language, Experience, Education, Skill } from "@/lib/api/types"
+import { PrimaryButton } from "@/components/ui/primary-button"
+import { cn } from "@/lib/utils"
+import type { Job, UserPortfolio } from "@/lib/api/types"
 
 type JobApplicationClientProps = {
   jobId: number
@@ -15,18 +15,6 @@ type JobApplicationClientProps = {
   job: Job
   initialPortfolio?: UserPortfolio
   token: string
-}
-
-interface FormState {
-  languages: Language[]
-  experiences: Experience[]
-  skills: Skill[]
-  educations: Education[]
-  newLanguage: { name: string; proficiency: string }
-  newExperience: { job_title: string; company: string; start_date: string; end_date?: string; description?: string }
-  newSkill: { name: string }
-  newEducation: { degree: string; institution: string; field_of_study: string; start_date: string; end_date?: string; grade?: number; description?: string }
-  educationFiles: Record<number, File>
 }
 
 export default function JobApplicationClient({
@@ -38,577 +26,356 @@ export default function JobApplicationClient({
   const router = useRouter()
   const isAr = locale === "ar"
   const [submitting, setSubmitting] = useState(false)
-  const [formState, setFormState] = useState<FormState>({
-    languages: initialPortfolio?.languages || [],
-    experiences: initialPortfolio?.experiences || [],
-    skills: initialPortfolio?.skills || [],
-    educations: initialPortfolio?.educations || [],
-    newLanguage: { name: "", proficiency: "beginner" },
-    newExperience: { job_title: "", company: "", start_date: "" },
-    newSkill: { name: "" },
-    newEducation: { degree: "", institution: "", field_of_study: "", start_date: "" },
-    educationFiles: {},
-  })
 
-  const getJobTitle = useCallback((job: Job) => {
+  const getJobTitle = (job: Job) => {
     if (typeof job.title === "string") return job.title
     if (typeof job.title === "object" && job.title) {
       return job.title[locale as keyof typeof job.title] || job.title.en || job.title.ar || ""
     }
     return ""
-  }, [locale])
-
-  // Add language
-  const addLanguage = () => {
-    if (!formState.newLanguage.name.trim()) {
-      toast.error(isAr ? "أدخل اسم اللغة" : "Enter language name")
-      return
-    }
-    setFormState({
-      ...formState,
-      languages: [...formState.languages, { id: Date.now(), ...formState.newLanguage } as Language],
-      newLanguage: { name: "", proficiency: "beginner" },
-    })
   }
 
-  // Remove language
-  const removeLanguage = (id: number) => {
-    setFormState({
-      ...formState,
-      languages: formState.languages.filter((l) => l.id !== id),
-    })
+  const getFilenameFromUrl = (url?: string | null) => {
+    if (!url) return ""
+    return url.substring(url.lastIndexOf("/") + 1)
   }
 
-  // Add experience
-  const addExperience = () => {
-    if (!formState.newExperience.job_title.trim() || !formState.newExperience.company.trim()) {
-      toast.error(isAr ? "أدخل عنوان الوظيفة والشركة" : "Enter job title and company")
-      return
+  const getEduLevelLabel = (level: string) => {
+    const map: Record<string, string> = {
+      high_school: isAr ? "ثانوية عامة" : "High School",
+      bachelor: isAr ? "بكالوريوس" : "Bachelor's Degree",
+      master: isAr ? "ماجستير" : "Master's Degree",
+      phd: isAr ? "دكتوراه" : "PhD",
     }
-    setFormState({
-      ...formState,
-      experiences: [
-        ...formState.experiences,
-        { id: Date.now(), ...formState.newExperience } as Experience,
-      ],
-      newExperience: { job_title: "", company: "", start_date: "" },
-    })
+    return map[level] || level
   }
 
-  // Remove experience
-  const removeExperience = (id: number) => {
-    setFormState({
-      ...formState,
-      experiences: formState.experiences.filter((e) => e.id !== id),
-    })
+  const getGradeLabel = (grd: string) => {
+    const map: Record<string, string> = {
+      excellent: isAr ? "ممتاز" : "Excellent",
+      very_good: isAr ? "جيد جداً" : "Very Good",
+      good: isAr ? "جيد" : "Good",
+      pass: isAr ? "مقبول" : "Pass",
+    }
+    return map[grd] || grd
   }
 
-  // Add skill
-  const addSkill = () => {
-    if (!formState.newSkill.name.trim()) {
-      toast.error(isAr ? "أدخل اسم المهارة" : "Enter skill name")
-      return
+  const getGraduationYear = (edu: any) => {
+    if (edu.graduation_year) return String(edu.graduation_year)
+    if (edu.end_date) {
+      if (String(edu.end_date).includes("-")) {
+        return String(edu.end_date).split("-")[0]
+      }
+      return String(edu.end_date)
     }
-    setFormState({
-      ...formState,
-      skills: [...formState.skills, { id: Date.now(), ...formState.newSkill } as Skill],
-      newSkill: { name: "" },
-    })
+    return ""
   }
 
-  // Remove skill
-  const removeSkill = (id: number) => {
-    setFormState({
-      ...formState,
-      skills: formState.skills.filter((s) => s.id !== id),
-    })
+  const getGradeDisplay = (edu: any) => {
+    const val = edu.final_grade || edu.grade
+    if (!val) return ""
+    if (typeof val === "number" || !isNaN(Number(val))) {
+      const num = Number(val)
+      if (num >= 85) return getGradeLabel("excellent")
+      if (num >= 75) return getGradeLabel("very_good")
+      if (num >= 65) return getGradeLabel("good")
+      return getGradeLabel("pass")
+    }
+    return getGradeLabel(String(val))
   }
 
-  // Add education
-  const addEducation = () => {
-    if (!formState.newEducation.degree.trim() || !formState.newEducation.institution.trim()) {
-      toast.error(isAr ? "أدخل الدرجة والمؤسسة" : "Enter degree and institution")
-      return
-    }
-    setFormState({
-      ...formState,
-      educations: [
-        ...formState.educations,
-        { id: Date.now(), ...formState.newEducation } as Education,
-      ],
-      newEducation: { degree: "", institution: "", field_of_study: "", start_date: "" },
-    })
-  }
-
-  // Remove education
-  const removeEducation = (id: number) => {
-    setFormState({
-      ...formState,
-      educations: formState.educations.filter((e) => e.id !== id),
-      educationFiles: Object.fromEntries(
-        Object.entries(formState.educationFiles).filter(([key]) => key !== String(id))
-      ),
-    })
-  }
-
-  // Submit application
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (formState.languages.length === 0) {
-      toast.error(isAr ? "أضف حد أدنى لغة واحدة" : "Add at least one language")
-      return
-    }
-
-    if (formState.experiences.length === 0) {
-      toast.error(isAr ? "أضف حد أدنى خبرة واحدة" : "Add at least one experience")
-      return
-    }
-
-    if (formState.skills.length === 0) {
-      toast.error(isAr ? "أضف حد أدنى مهارة واحدة" : "Add at least one skill")
-      return
-    }
-
-    if (formState.educations.length === 0) {
-      toast.error(isAr ? "أضف حد أدنى تعليم واحد" : "Add at least one education")
-      return
-    }
-
+  const handleApply = async () => {
+    if (submitting) return
     setSubmitting(true)
+
     const toastId = toast.loading(isAr ? "جاري التقديم..." : "Submitting...")
 
     try {
-      const formData = new FormData()
-
-      // Add languages
-      formState.languages.forEach((lang, idx) => {
-        formData.append(`languages[${idx}][name]`, lang.name)
-        formData.append(`languages[${idx}][proficiency]`, lang.proficiency)
-      })
-
-      // Add experiences
-      formState.experiences.forEach((exp, idx) => {
-        formData.append(`work_experience[${idx}][job_title]`, exp.job_title)
-        formData.append(`work_experience[${idx}][company]`, exp.company)
-        formData.append(`work_experience[${idx}][start_date]`, exp.start_date)
-        if (exp.end_date) formData.append(`work_experience[${idx}][end_date]`, exp.end_date)
-        if (exp.description) formData.append(`work_experience[${idx}][description]`, exp.description)
-      })
-
-      // Add skills
-      formState.skills.forEach((skill, idx) => {
-        formData.append(`skills[${idx}][name]`, skill.name)
-      })
-
-      // Add educations
-      formState.educations.forEach((edu, idx) => {
-        formData.append(`education[${idx}][degree]`, edu.degree)
-        formData.append(`education[${idx}][institution]`, edu.institution)
-        formData.append(`education[${idx}][field_of_study]`, edu.field_of_study)
-        formData.append(`education[${idx}][start_date]`, edu.start_date)
-        if (edu.end_date) formData.append(`education[${idx}][end_date]`, edu.end_date)
-        if (edu.grade) formData.append(`education[${idx}][grade]`, String(edu.grade))
-        if (edu.description) formData.append(`education[${idx}][description]`, edu.description)
-
-        // Add file if exists
-        const file = formState.educationFiles[edu.id]
-        if (file) {
-          formData.append(`education[${idx}][document]`, file)
-        }
-      })
-
       const res = await fetch(`/api/jobs/${jobId}/apply`, {
         method: "POST",
-        body: formData,
-        headers: { "x-locale": locale },
+        headers: {
+          "Content-Type": "application/json",
+          "x-locale": locale,
+        },
       })
-
-      if (res.status === 401 || res.status === 403) {
-        toast.dismiss(toastId)
-        toast.error(isAr ? "يجب تسجيل الدخول أولاً" : "Please log in first")
-        router.push("/sign-in")
-        return
-      }
 
       const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
-        throw new Error(data?.message || (isAr ? "فشل التقديم" : "Failed to apply"))
+        throw new Error(data?.message || (isAr ? "فشل تقديم الطلب" : "Failed to apply"))
       }
 
       toast.dismiss(toastId)
-      toast.success(data?.message || (isAr ? "تم التقديم بنجاح" : "Application submitted successfully"))
+      toast.success(isAr ? "تم تقديم طلبك بنجاح!" : "Your application has been submitted successfully!")
 
-      // Redirect to my applications
+      // Redirect to user applications
       setTimeout(() => {
         router.push("/dashboard/user/applications")
       }, 1500)
-    } catch (err: Error | unknown) {
+    } catch (err: any) {
       toast.dismiss(toastId)
-      const errorMessage = err instanceof Error ? err.message : "Error occurred"
-      toast.error(errorMessage || (isAr ? "حدث خطأ" : "Error occurred"))
-      console.error("Application error:", err)
+      toast.error(err.message || (isAr ? "فشل التقديم، تأكد من إكمال ملفك الشخصي أولاً" : "Failed to apply. Make sure your profile is complete."))
+      console.error("Job application error:", err)
     } finally {
       setSubmitting(false)
     }
   }
 
+  const labels = {
+    title: isAr ? "تأكيد التقديم على الوظيفة" : "Confirm Job Application",
+    subtitle: isAr
+      ? "سيتم إرسال طلبك باستخدام بيانات سيرتك الذاتية والمؤهلات المسجلة في حسابك أدناه:"
+      : "Your application will be submitted using the CV and qualifications registered under your account below:",
+    cv: isAr ? "السيرة الذاتية" : "CV",
+    noCv: isAr ? "لا توجد سيرة ذاتية مرفوعة" : "No CV uploaded",
+    education: isAr ? "التعليم والمؤهلات" : "Education",
+    noEducation: isAr ? "لا توجد مؤهلات تعليمية مضافة" : "No education added yet",
+    experience: isAr ? "الخبرة المهنية" : "Work Experience",
+    noExperience: isAr ? "لا توجد خبرات مهنية مضافة" : "No work experience added yet",
+    skills: isAr ? "المهارات" : "Skills",
+    noSkills: isAr ? "لا توجد مهارات مضافة" : "No skills added yet",
+    languages: isAr ? "اللغات" : "Languages",
+    noLanguages: isAr ? "لا توجد لغات مضافة" : "No languages added yet",
+    updateNote: isAr
+      ? "لتعديل أو إضافة أي بيانات إلى ملفك، يرجى الانتقال إلى"
+      : "To edit or add any details to your profile, please go to",
+    updateLink: isAr ? "صفحة تعديل السيرة الذاتية" : "CV & Education edit page",
+    confirmQuestion: isAr
+      ? "هل أنت متأكد من رغبتك في التقديم على هذه الوظيفة ببياناتك الحالية؟"
+      : "Are you sure you want to apply to this job with your current details?",
+    confirmBtn: isAr ? "تأكيد وتقديم الطلب" : "Confirm & Apply",
+    cancelBtn: isAr ? "إلغاء" : "Cancel",
+    level: isAr ? "المستوى" : "Level",
+    university: isAr ? "الجامعة" : "University",
+    year: isAr ? "سنة التخرج" : "Graduation Year",
+    grade: isAr ? "التقدير" : "Grade",
+    company: isAr ? "الشركة" : "Company",
+    department: isAr ? "القسم" : "Department",
+    period: isAr ? "الفترة" : "Period",
+  }
+
+  const gradientTitleClasses = cn(
+    "bg-clip-text text-transparent font-bold",
+    isAr ? "bg-gradient-to-r" : "bg-gradient-to-l",
+    "from-[#032C44] to-[#41A0CA]"
+  )
+
+  const hasPortfolioData = initialPortfolio && 
+    (initialPortfolio.cv_url || (initialPortfolio as any).cv ||
+     (initialPortfolio.educations && initialPortfolio.educations.length > 0) ||
+     ((initialPortfolio as any).education && (initialPortfolio as any).education.length > 0) ||
+     (initialPortfolio.experiences && initialPortfolio.experiences.length > 0) ||
+     ((initialPortfolio as any).workExperience && (initialPortfolio as any).workExperience.length > 0))
+
   return (
-    <div className="flex-1 bg-white">
-      <div className="mx-auto max-w-[1000px] px-4 py-8 sm:px-6 lg:px-8">
-        {/* Job Header */}
-        <div className="mb-8 rounded-lg bg-gradient-to-r from-[#006EA8] to-[#005685] p-6 text-white">
-          <h1 className="text-2xl font-bold sm:text-3xl">{getJobTitle(job)}</h1>
-          <p className="mt-2 text-sm opacity-90">
-            {job.company?.name && `${job.company.name} • `}
-            {job.state}
-          </p>
+    <div className="flex-1 bg-[#F9FAFB] min-h-screen py-10" dir={isAr ? "rtl" : "ltr"}>
+      <div className="mx-auto max-w-[800px] px-4 space-y-6">
+        
+        {/* Job Info Summary Header */}
+        <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1.5 text-start">
+            <h1 className={cn("text-[24px] py-0.5", gradientTitleClasses)}>{labels.title}</h1>
+            <p className="text-sm text-gray-500 font-medium">
+              {isAr ? "الوظيفة:" : "Job:"} <span className="text-[#032C44] font-bold">{getJobTitle(job)}</span>
+            </p>
+            {job.company?.name && (
+              <p className="text-xs text-gray-400 font-semibold">
+                {job.company.name} • {job.state || job.location}
+              </p>
+            )}
+          </div>
+          <Link
+            href={`/jobs/${jobId}`}
+            className="text-xs font-bold text-[#006EA8] hover:underline shrink-0"
+          >
+            {isAr ? "عرض تفاصيل الوظيفة" : "View Job Details"}
+          </Link>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Languages Section */}
-          <Card className="space-y-4 p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[#111827]">
-                {isAr ? "اللغات" : "Languages"}
-              </h2>
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-                {formState.languages.length}
-              </span>
-            </div>
+        {/* Informative Subtitle */}
+        <p className="text-sm text-gray-500 text-start leading-relaxed font-medium px-1">
+          {labels.subtitle}
+        </p>
 
-            <div className="space-y-3">
-              {formState.languages.map((lang) => (
-                <div key={lang.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-                  <div>
-                    <p className="font-medium text-[#111827]">{lang.name}</p>
-                    <p className="text-sm text-gray-500">{lang.proficiency}</p>
+        {/* CV File Card */}
+        <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm text-start">
+          <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+            {labels.cv}
+          </h2>
+          {initialPortfolio?.cv_url ? (
+            <div className="flex items-center gap-3 border border-[#E5E7EB] rounded-[12px] p-4 bg-[#F4FAFF]">
+              <img src="/portfolio/pdf.svg" alt="PDF" className="w-10 h-10 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-[#032C44] truncate">
+                  {getFilenameFromUrl(initialPortfolio.cv_url)}
+                </p>
+                <p className="text-[11px] text-gray-500 font-medium mt-0.5">PDF Document</p>
+              </div>
+              <a
+                href={initialPortfolio.cv_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold text-[#006EA8] hover:underline"
+              >
+                {isAr ? "عرض" : "View"}
+              </a>
+            </div>
+          ) : (
+            <div className="text-center py-4 text-gray-400 text-sm font-medium">
+              {labels.noCv}
+            </div>
+          )}
+        </Card>
+
+        {/* Education History Card */}
+        <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm text-start">
+          <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+            {labels.education}
+          </h2>
+          {initialPortfolio?.educations && initialPortfolio.educations.length > 0 ? (
+            <div className="space-y-4">
+              {initialPortfolio.educations.map((edu, idx) => (
+                <div key={idx} className="border-b border-[#E5E7EB] last:border-0 pb-4 last:pb-0">
+                  <h3 className="text-[15px] font-bold text-[#032C44]">
+                    {getEduLevelLabel(edu.degree || (edu as any).level_of_education)}
+                  </h3>
+                  <p className="text-xs text-[#006EA8] font-bold mt-1">
+                    {edu.institution || (edu as any).university} • {edu.field_of_study || (edu as any).specialization}
+                  </p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 font-medium mt-2">
+                    <span>
+                      {labels.year}: <span className="text-[#032C44] font-bold">{getGraduationYear(edu)}</span>
+                    </span>
+                    {(edu.grade || (edu as any).final_grade) ? (
+                      <span>
+                        {labels.grade}: <span className="text-[#032C44] font-bold">{getGradeDisplay(edu)}</span>
+                      </span>
+                    ) : null}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeLanguage(lang.id)}
-                    className="text-red-600 hover:text-red-800"
-                    title={isAr ? "حذف اللغة" : "Remove Language"}
-                  >
-                    <X className="size-5" />
-                  </button>
                 </div>
               ))}
             </div>
+          ) : (
+            <div className="text-center py-4 text-gray-400 text-sm font-medium">
+              {labels.noEducation}
+            </div>
+          )}
+        </Card>
 
-            <div className="space-y-3 border-t pt-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Input
-                  placeholder={isAr ? "اسم اللغة" : "Language name"}
-                  value={formState.newLanguage.name}
-                  onChange={(e) =>
-                    setFormState({
-                      ...formState,
-                      newLanguage: { ...formState.newLanguage, name: e.target.value },
-                    })
-                  }
-                />
-                <select
-                  value={formState.newLanguage.proficiency}
-                  onChange={(e) =>
-                    setFormState({
-                      ...formState,
-                      newLanguage: { ...formState.newLanguage, proficiency: e.target.value },
-                    })
-                  }
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                  title={isAr ? "مستوى الكفاءة" : "Proficiency Level"}
-                >
-                  <option value="beginner">{isAr ? "مبتدئ" : "Beginner"}</option>
-                  <option value="intermediate">{isAr ? "متوسط" : "Intermediate"}</option>
-                  <option value="fluent">{isAr ? "محادثة" : "Fluent"}</option>
-                  <option value="native">{isAr ? "لغة أم" : "Native"}</option>
-                </select>
+        {/* Work Experience Card */}
+        <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm text-start">
+          <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+            {labels.experience}
+          </h2>
+          {(() => {
+            const exps = initialPortfolio?.experiences || (initialPortfolio as any)?.workExperience
+            if (exps && exps.length > 0) {
+              return (
+                <div className="space-y-4">
+                  {exps.map((exp: any, idx: number) => (
+                    <div key={idx} className="border-b border-[#E5E7EB] last:border-0 pb-4 last:pb-0">
+                      <h3 className="text-[15px] font-bold text-[#032C44]">{exp.job_title || exp.department}</h3>
+                      <p className="text-xs text-[#006EA8] font-bold mt-1">
+                        {exp.company || exp.company_name}
+                      </p>
+                      <p className="text-xs text-gray-500 font-semibold mt-1">
+                        {exp.start_date} - {exp.is_current || exp.currently_working || exp.currentlyWorking ? (isAr ? "حتى الآن" : "Present") : exp.end_date || ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )
+            }
+            return (
+              <div className="text-center py-4 text-gray-400 text-sm font-medium">
+                {labels.noExperience}
               </div>
-              <Button
-                type="button"
-                onClick={addLanguage}
-                variant="outline"
-                className="w-full"
-              >
-                <Plus className="mr-2 size-4" />
-                {isAr ? "إضافة لغة" : "Add Language"}
-              </Button>
-            </div>
-          </Card>
+            )
+          })()}
+        </Card>
 
-          {/* Skills Section */}
-          <Card className="space-y-4 p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[#111827]">
-                {isAr ? "المهارات" : "Skills"}
-              </h2>
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-                {formState.skills.length}
-              </span>
-            </div>
-
+        {/* Skills Card */}
+        <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm text-start">
+          <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+            {labels.skills}
+          </h2>
+          {initialPortfolio?.skills && initialPortfolio.skills.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {formState.skills.map((skill) => (
-                <div
-                  key={skill.id}
-                  className="flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1"
+              {initialPortfolio.skills.map((skill, idx) => (
+                <span
+                  key={idx}
+                  className="bg-[#F4FAFF] text-[#006EA8] border border-[#E5F2FF] px-3.5 py-1.5 rounded-full text-xs font-bold"
                 >
-                  <span className="text-sm font-medium text-blue-800">{skill.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeSkill(skill.id)}
-                    className="text-blue-600 hover:text-blue-800"
-                    title={isAr ? "حذف المهارة" : "Remove Skill"}
-                  >
-                    <X className="size-4" />
-                  </button>
+                  {skill.name || (skill as any).skill_name || (skill as any).skillName || ""}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-gray-400 text-sm font-medium">
+              {labels.noSkills}
+            </div>
+          )}
+        </Card>
+
+        {/* Languages Card */}
+        <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm text-start">
+          <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+            {labels.languages}
+          </h2>
+          {initialPortfolio?.languages && initialPortfolio.languages.length > 0 ? (
+            <div className="space-y-2.5">
+              {initialPortfolio.languages.map((lang, idx) => (
+                <div key={idx} className="flex items-center justify-between border border-[#E5E7EB] rounded-[12px] px-4 py-3 bg-[#F9FAFB]">
+                  <span className="text-sm font-bold text-[#032C44]">
+                    {lang.name || (lang as any).language || ""}
+                  </span>
+                  <span className="bg-[#EBF5FF] text-[#006EA8] text-[11px] font-bold px-3 py-1 rounded-full uppercase">
+                    {lang.proficiency || (lang as any).level || ""}
+                  </span>
                 </div>
               ))}
             </div>
-
-            <div className="space-y-3 border-t pt-4">
-              <Input
-                placeholder={isAr ? "أدخل المهارة" : "Enter skill"}
-                value={formState.newSkill.name}
-                onChange={(e) =>
-                  setFormState({
-                    ...formState,
-                    newSkill: { name: e.target.value },
-                  })
-                }
-              />
-              <Button
-                type="button"
-                onClick={addSkill}
-                variant="outline"
-                className="w-full"
-              >
-                <Plus className="mr-2 size-4" />
-                {isAr ? "إضافة مهارة" : "Add Skill"}
-              </Button>
+          ) : (
+            <div className="text-center py-4 text-gray-400 text-sm font-medium">
+              {labels.noLanguages}
             </div>
-          </Card>
+          )}
+        </Card>
 
-          {/* Experience Section */}
-          <Card className="space-y-4 p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[#111827]">
-                {isAr ? "الخبرات العملية" : "Work Experience"}
-              </h2>
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-                {formState.experiences.length}
-              </span>
-            </div>
+        {/* Profile Update Link Notice */}
+        <div className="p-4 rounded-[12px] bg-[#FFF8EE] border border-[#FFE5C4] text-start text-xs text-[#855B14] font-semibold">
+          {labels.updateNote}{" "}
+          <Link
+            href="/dashboard/user/education"
+            className="text-[#006EA8] underline font-bold"
+          >
+            {labels.updateLink}
+          </Link>
+        </div>
 
-            <div className="space-y-3">
-              {formState.experiences.map((exp) => (
-                <div key={exp.id} className="rounded-lg bg-gray-50 p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="font-medium text-[#111827]">{exp.job_title}</p>
-                      <p className="text-sm text-gray-600">{exp.company}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {exp.start_date}
-                        {exp.end_date && ` - ${exp.end_date}`}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeExperience(exp.id)}
-                      className="text-red-600 hover:text-red-800"
-                      title={isAr ? "حذف الخبرة" : "Remove Experience"}
-                    >
-                      <X className="size-5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-3 border-t pt-4">
-              <Input
-                placeholder={isAr ? "عنوان الوظيفة" : "Job title"}
-                value={formState.newExperience.job_title}
-                onChange={(e) =>
-                  setFormState({
-                    ...formState,
-                    newExperience: { ...formState.newExperience, job_title: e.target.value },
-                  })
-                }
-              />
-              <Input
-                placeholder={isAr ? "اسم الشركة" : "Company name"}
-                value={formState.newExperience.company}
-                onChange={(e) =>
-                  setFormState({
-                    ...formState,
-                    newExperience: { ...formState.newExperience, company: e.target.value },
-                  })
-                }
-              />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Input
-                  type="date"
-                  value={formState.newExperience.start_date}
-                  onChange={(e) =>
-                    setFormState({
-                      ...formState,
-                      newExperience: { ...formState.newExperience, start_date: e.target.value },
-                    })
-                  }
-                />
-                <Input
-                  type="date"
-                  value={formState.newExperience.end_date || ""}
-                  onChange={(e) =>
-                    setFormState({
-                      ...formState,
-                      newExperience: { ...formState.newExperience, end_date: e.target.value },
-                    })
-                  }
-                  placeholder={isAr ? "تاريخ الانتهاء (اختياري)" : "End date (optional)"}
-                />
-              </div>
-              <Button
-                type="button"
-                onClick={addExperience}
-                variant="outline"
-                className="w-full"
-              >
-                <Plus className="mr-2 size-4" />
-                {isAr ? "إضافة خبرة" : "Add Experience"}
-              </Button>
-            </div>
-          </Card>
-
-          {/* Education Section */}
-          <Card className="space-y-4 p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[#111827]">
-                {isAr ? "المؤهلات التعليمية" : "Education"}
-              </h2>
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-                {formState.educations.length}
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {formState.educations.map((edu) => (
-                <div key={edu.id} className="rounded-lg bg-gray-50 p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="font-medium text-[#111827]">{edu.degree}</p>
-                      <p className="text-sm text-gray-600">{edu.institution}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {edu.start_date}
-                        {edu.end_date && ` - ${edu.end_date}`}
-                      </p>
-                      {formState.educationFiles[edu.id] && (
-                        <p className="text-xs text-green-600 mt-2">
-                          📎 {formState.educationFiles[edu.id].name}
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeEducation(edu.id)}
-                      className="text-red-600 hover:text-red-800"
-                      title={isAr ? "حذف التعليم" : "Remove Education"}
-                    >
-                      <X className="size-5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-3 border-t pt-4">
-              <Input
-                placeholder={isAr ? "الدرجة العلمية" : "Degree"}
-                value={formState.newEducation.degree}
-                onChange={(e) =>
-                  setFormState({
-                    ...formState,
-                    newEducation: { ...formState.newEducation, degree: e.target.value },
-                  })
-                }
-              />
-              <Input
-                placeholder={isAr ? "المؤسسة التعليمية" : "Institution"}
-                value={formState.newEducation.institution}
-                onChange={(e) =>
-                  setFormState({
-                    ...formState,
-                    newEducation: { ...formState.newEducation, institution: e.target.value },
-                  })
-                }
-              />
-              <Input
-                placeholder={isAr ? "مجال الدراسة" : "Field of study"}
-                value={formState.newEducation.field_of_study}
-                onChange={(e) =>
-                  setFormState({
-                    ...formState,
-                    newEducation: { ...formState.newEducation, field_of_study: e.target.value },
-                  })
-                }
-              />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Input
-                  type="date"
-                  value={formState.newEducation.start_date}
-                  onChange={(e) =>
-                    setFormState({
-                      ...formState,
-                      newEducation: { ...formState.newEducation, start_date: e.target.value },
-                    })
-                  }
-                />
-                <Input
-                  type="date"
-                  value={formState.newEducation.end_date || ""}
-                  onChange={(e) =>
-                    setFormState({
-                      ...formState,
-                      newEducation: { ...formState.newEducation, end_date: e.target.value },
-                    })
-                  }
-                  placeholder={isAr ? "تاريخ الانتهاء (اختياري)" : "End date (optional)"}
-                />
-              </div>
-              <Button
-                type="button"
-                onClick={addEducation}
-                variant="outline"
-                className="w-full"
-              >
-                <Plus className="mr-2 size-4" />
-                {isAr ? "إضافة تعليم" : "Add Education"}
-              </Button>
-            </div>
-          </Card>
-
-          {/* Submit Button */}
-          <div className="flex gap-4">
-            <Button
-              type="submit"
+        {/* Final Apply Confirmation Box */}
+        <div className="border border-[#E5E7EB] rounded-[16px] bg-white p-6 shadow-sm space-y-5">
+          <p className="text-[15px] font-bold text-[#032C44] text-center">
+            {labels.confirmQuestion}
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => router.push(`/jobs/${jobId}`)}
               disabled={submitting}
-              className="flex-1 bg-gradient-to-br from-[#006EA8] to-[#005685] text-white hover:opacity-95"
+              className="w-full sm:w-1/3 h-[44px] border border-[#006EA8] text-[#006EA8] hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition cursor-pointer"
             >
-              {submitting ? (isAr ? "جاري التقديم..." : "Submitting...") : (isAr ? "تقديم الطلب" : "Submit Application")}
-            </Button>
-            <Button
-              type="button"
-              onClick={() => router.back()}
-              variant="outline"
-              className="flex-1"
+              {labels.cancelBtn}
+            </button>
+            <PrimaryButton
+              onClick={handleApply}
+              disabled={submitting}
+              className="w-full sm:w-1/2 h-[44px] cursor-pointer"
             >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
+              {submitting ? (isAr ? "جاري إرسال الطلب..." : "Submitting...") : labels.confirmBtn}
+            </PrimaryButton>
           </div>
-        </form>
+        </div>
+
       </div>
     </div>
   )

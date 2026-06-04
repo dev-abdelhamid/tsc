@@ -21,6 +21,7 @@ type DashboardJobsTableProps = {
   emptyMessage: string
   detailsLabel: string
   isRTL?: boolean
+  locale?: string
   jobTitleLabel?: string
   deadlineLabel?: string
   statusLabel?: string
@@ -34,6 +35,7 @@ export function DashboardJobsTable({
   emptyMessage,
   detailsLabel,
   isRTL,
+  locale,
   jobTitleLabel = "Job Title",
   deadlineLabel = "Deadline",
   statusLabel = "Status",
@@ -108,7 +110,7 @@ export function DashboardJobsTable({
                   {row.deadline}
                 </div>
                 <div className="flex flex-1 justify-center px-2 py-3">
-                  <DashboardStatusBadge status={row.status} />
+                  <DashboardStatusBadge status={row.status} locale={locale} />
                 </div>
                 <div className={"flex flex-1 px-2 py-3 justify-center "}>
                   <div

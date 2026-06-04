@@ -26,6 +26,8 @@ export interface CreateJobPayload {
   image: File | Blob
 }
 
+import { normalizeJob } from "./jobs.service"
+
 export async function getCompanyJob(
   id: number,
   token: string,
@@ -33,7 +35,8 @@ export async function getCompanyJob(
 ): Promise<Job | null> {
   try {
     const response = await api.get<ApiResponse<Job>>(`/jobs/${id}`, { token, locale, next: { revalidate: 60 } })
-    return response.data ?? (response as unknown as Job) ?? null
+    const rawJob = response.data ?? response
+    return normalizeJob(rawJob, locale)
   } catch (error) {
     console.error("[Company Service] getCompanyJob error:", error)
     return null

@@ -36,6 +36,9 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialProfile?.avatar ?? null)
   const [message, setMessage] = useState("")
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [fetching, setFetching] = useState(false)
   const [saving, setSaving] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
@@ -54,7 +57,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
         if (!mounted) return
         const p: any = data.data || {}
         const userProfile = p.Userprofile || {}
-        
+
         // Extract name - use firstName/lastName from Userprofile if available, else split full name
         let firstName = userProfile.firstName || ""
         let lastName = userProfile.lastName || ""
@@ -157,9 +160,9 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
       const dialCode = (selected as any)?.dialCode || selected?.code || "+20"
       const rawPhone = (profile.phone || "").replace(/^\+\d+/, "").trim()
       const newPhone = rawPhone ? `${dialCode}${rawPhone}` : dialCode
-      setProfile((s) => ({ 
-        ...s, 
-        country_id: id, 
+      setProfile((s) => ({
+        ...s,
+        country_id: id,
         country: selected?.name || "",
         phone_code: dialCode,
         phone: newPhone
@@ -183,11 +186,36 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
     setSaving(true)
     setMessage("")
     try {
+      // 1. If password field is filled, update password first
+      if (newPassword) {
+        if (!currentPassword) {
+          throw new Error(isAr ? "الرجاء إدخال كلمة المرور الحالية لتحديث كلمة المرور" : "Please enter the current password to update the password")
+        }
+        if (newPassword !== confirmPassword) {
+          throw new Error(isAr ? "كلمتا المرور غير متطابقتين" : "Passwords do not match")
+        }
+
+        const passRes = await fetch("/api/auth/profile/password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept-Language": locale },
+          body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword,
+            new_password_confirmation: confirmPassword,
+          })
+        })
+        const passData = await passRes.json()
+        if (!passRes.ok) {
+          throw new Error(passData.message || (isAr ? "فشل تحديث كلمة المرور" : "Failed to update password"))
+        }
+      }
+
+      // 2. Update general profile info
       const form = new FormData()
       form.append("name", `${profile.first_name} ${profile.last_name}`)
       form.append("email", profile.email || "")
       form.append("phone", profile.phone || "")
-      
+
       // Build Userprofile nested object
       if (profile.gender) form.append("Userprofile[gender]", profile.gender)
       if (profile.dob) form.append("Userprofile[dateOfBirth]", profile.dob)
@@ -197,7 +225,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
       if (profile.pinterest) form.append("Userprofile[pinterest]", profile.pinterest)
       if (profile.category_id) form.append("Userprofile[categoryId]", String(profile.category_id))
       if (profile.sub_category_id) form.append("Userprofile[subcategoryId]", String(profile.sub_category_id))
-      
+
       // Country and locale
       if (profile.country_id) form.append("country_id", String(profile.country_id))
       if (profile.locale) form.append("locale", profile.locale)
@@ -210,8 +238,14 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || "فشل حفظ البيانات")
+      
       setMessage(locale === "ar" ? "تم حفظ البيانات بنجاح" : "Saved successfully")
       if (data.data?.avatar) setAvatarPreview(data.data.avatar)
+      
+      // Clear password inputs on success
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
     } catch (err: unknown) {
       setMessage(err instanceof Error ? err.message : (locale === "ar" ? "فشل حفظ البيانات" : "Failed to save"))
     } finally {
@@ -330,7 +364,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                   name="gender"
                   value={profile.gender}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
+                  className="w-full h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-sm focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 bg-white text-[#032C44] transition-all"
                 >
                   <option value="">{isAr ? "اختر" : "Select"}</option>
                   <option value="male">{isAr ? "ذكر" : "Male"}</option>
@@ -356,35 +390,35 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                   {isAr ? "الهاتف" : "Phone"}
                 </label>
                 <div className="flex gap-2">
-                    <select
-                      aria-label="phone-code"
-                      name="phone_code"
-                      value={String(profile.phone_code || profile.phone?.match(/^\+\d+/)?.[0] || "+20")}
-                      onChange={(e) => {
-                        const code = e.target.value
-                        const raw = (profile.phone || "").replace(/^\+\d+/, "").trim()
-                        setProfile((s) => ({ ...s, phone: `${code}${raw}`, phone_code: code }))
-                      }}
-                      className="px-3 py-2 border border-gray-300 rounded text-xs bg-white focus:outline-none focus:border-blue-500 w-auto"
-                    >
-                      <option value="">{isAr ? "رمز" : "Code"}</option>
-                      {COUNTRIES.map((c) => (
-                        <option key={c.id} value={c.dialCode}>
-                          {c.flag} {c.dialCode}
-                        </option>
-                      ))}
-                    </select>
-                    <Input
-                      name="phone"
-                      value={(profile.phone || "").replace(/^\+\d+/, "")}
-                      onChange={(e) => {
-                        const raw = e.target.value
-                        const code = profile.phone_code || profile.phone?.match(/^\+\d+/)?.[0] || "+20"
-                        setProfile((s) => ({ ...s, phone: `${code}${raw}` }))
-                      }}
-                      placeholder={isAr ? "رقم الهاتف" : "1003630088"}
-                      className="text-sm flex-1"
-                    />
+                  <select
+                    aria-label="phone-code"
+                    name="phone_code"
+                    value={String(profile.phone_code || profile.phone?.match(/^\+\d+/)?.[0] || "+20")}
+                    onChange={(e) => {
+                      const code = e.target.value
+                      const raw = (profile.phone || "").replace(/^\+\d+/, "").trim()
+                      setProfile((s) => ({ ...s, phone: `${code}${raw}`, phone_code: code }))
+                    }}
+                    className="h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-xs bg-white focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 w-auto text-[#032C44] transition-all"
+                  >
+                    <option value="">{isAr ? "رمز" : "Code"}</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.id} value={c.dialCode}>
+                        {c.flag} {c.dialCode}
+                      </option>
+                    ))}
+                  </select>
+                  <Input
+                    name="phone"
+                    value={(profile.phone || "").replace(/^\+\d+/, "")}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      const code = profile.phone_code || profile.phone?.match(/^\+\d+/)?.[0] || "+20"
+                      setProfile((s) => ({ ...s, phone: `${code}${raw}` }))
+                    }}
+                    placeholder={isAr ? "رقم الهاتف" : "1003630088"}
+                    className="text-sm flex-1"
+                  />
                 </div>
               </div>
 
@@ -397,7 +431,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                   name="country"
                   value={profile.country_id || ""}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
+                  className="w-full h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-sm focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 bg-white text-[#032C44] transition-all"
                 >
                   <option value="">{isAr ? "اختر البلد" : "Select Country"}</option>
                   {countries.map((c) => (
@@ -417,7 +451,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                   name="category"
                   value={profile.category_id || ""}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
+                  className="w-full h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-sm focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 bg-white text-[#032C44] transition-all"
                 >
                   <option value="">{isAr ? "اختر التخصص" : "Select Category"}</option>
                   {categories.map((c) => (
@@ -437,7 +471,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                   name="sub_category"
                   value={profile.sub_category_id || ""}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
+                  className="w-full h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-sm focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 bg-white text-[#032C44] transition-all"
                 >
                   <option value="">{isAr ? "اختر" : "Select Sub Category"}</option>
                   {subCategories.map((s) => (
@@ -458,7 +492,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                 name="locale"
                 value={profile.locale || locale}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
+                className="w-full h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-sm focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 bg-white text-[#032C44] transition-all"
               >
                 <option value="ar">العربية (Arabic)</option>
                 <option value="en">English</option>
@@ -468,10 +502,25 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
 
             <div>
               <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+                {isAr ? "كلمة المرور الحالية" : "Current password"}
+              </label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder={isAr ? "••••••••••" : "••••••••••"}
+                className="text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
                 {isAr ? "كلمة المرور الجديدة" : "New password"}
               </label>
               <Input
                 type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
                 placeholder={isAr ? "••••••••••" : "••••••••••"}
                 className="text-sm"
               />
@@ -483,6 +532,8 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
               </label>
               <Input
                 type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder={isAr ? "••••••••••" : "••••••••••"}
                 className="text-sm"
               />

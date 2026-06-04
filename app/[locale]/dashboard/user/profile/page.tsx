@@ -21,7 +21,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ lo
     if (user) {
       // Handle nested Userprofile object with camelCase fields from API
       const userProfile = (user as any).Userprofile || {}
-      
+
       // Extract name - use firstName/lastName from Userprofile if available, else split full name
       let firstName = userProfile.firstName || ""
       let lastName = userProfile.lastName || ""

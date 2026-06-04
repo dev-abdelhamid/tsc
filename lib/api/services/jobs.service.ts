@@ -64,9 +64,7 @@ function normalizeNestedValue<T extends { name?: string }>(
 ): T | undefined {
   if (!raw || typeof raw !== "object") return undefined
   const row = raw as Record<string, unknown>
-  const name = pickLocalizedField(row, "name", locale)
-
-  if (!name) return raw as T
+  const name = pickLocalizedField(row, "name", locale) || ""
   return { ...row, name } as T
 }
 
@@ -128,32 +126,29 @@ export function normalizeJob(item: unknown, locale: string): Job | null {
   const id = Number(row.id)
   if (!Number.isFinite(id) || id <= 0) return null
 
-  const title =
-    typeof row.title === "object" && row.title !== null
-      ? (row.title as Job["title"])
-      : pickLocalizedField(row, "title", locale) ||
-        pickLocalizedField(row, "name", locale) ||
-        (typeof row.title === "string" ? row.title : undefined) ||
-        (typeof row.name === "string" ? row.name : undefined)
+  // Always resolve to a localized string – never keep a {ar,en,de} object as-is
+  const title: string | undefined =
+    pickLocalizedField(row, "title", locale) ||
+    pickLocalizedString(row.title, locale) ||
+    pickLocalizedField(row, "name", locale) ||
+    (typeof row.title === "string" ? row.title : undefined) ||
+    (typeof row.name === "string" ? row.name : undefined)
 
-  const description =
-    typeof row.description === "object" && row.description !== null
-      ? (row.description as Job["description"])
-      : pickLocalizedField(row, "description", locale) ||
-        pickLocalizedField(row, "content", locale) ||
-        (typeof row.description === "string" ? row.description : undefined)
+  const description: string | undefined =
+    pickLocalizedField(row, "description", locale) ||
+    pickLocalizedString(row.description, locale) ||
+    pickLocalizedField(row, "content", locale) ||
+    (typeof row.description === "string" ? row.description : undefined)
 
-  const requirements =
-    typeof row.requirements === "object" && row.requirements !== null
-      ? (row.requirements as Job["requirements"])
-      : pickLocalizedField(row, "requirements", locale) ||
-        (typeof row.requirements === "string" ? row.requirements : undefined)
+  const requirements: string | undefined =
+    pickLocalizedField(row, "requirements", locale) ||
+    pickLocalizedString(row.requirements, locale) ||
+    (typeof row.requirements === "string" ? row.requirements : undefined)
 
-  const responsibilities =
-    typeof row.responsibilities === "object" && row.responsibilities !== null
-      ? (row.responsibilities as Job["responsibilities"])
-      : pickLocalizedField(row, "responsibilities", locale) ||
-        (typeof row.responsibilities === "string" ? row.responsibilities : undefined)
+  const responsibilities: string | undefined =
+    pickLocalizedField(row, "responsibilities", locale) ||
+    pickLocalizedString(row.responsibilities, locale) ||
+    (typeof row.responsibilities === "string" ? row.responsibilities : undefined)
 
   const salary = readRange(row, "salary_from", "salary_to", "salary")
   const age = readRange(row, "age_from", "age_to", "age")
@@ -346,12 +341,14 @@ export async function toggleFavorite(
   token: string,
   locale = "ar"
 ): Promise<{ is_favourite: boolean }> {
-  const response = await api.post<ApiResponse<{ is_favourite: boolean }>>(
+  const response = await api.post<any>(
     "/favourite-jobs/toggle",
     { job_id: jobId },
     { token, locale }
   )
-  return response.data
+  const message = response?.message || ""
+  const isAdded = message.includes("إضافة") || message.toLowerCase().includes("add") || message.toLowerCase().includes("saved")
+  return { is_favourite: isAdded }
 }
 
 export async function getFavoriteJobs(

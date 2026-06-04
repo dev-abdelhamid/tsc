@@ -128,13 +128,15 @@ export async function CategoriesSection({ override }: CategoriesSectionProps) {
                     <p className="text-[48px] font-medium leading-[1.16] sm:text-[64px]">{metricDisplay}</p>
                     <p className="text-[16px] font-normal capitalize leading-[1.16]">{t("metricLabel")}</p>
                   </div>
-                  <Button
-                    variant="outline"
-                    className="h-10 w-full justify-between rounded-xl border-white/40 bg-transparent px-4 text-[16px] font-medium text-white shadow-[0_0_0_4px_#E8F2FF,0_0_0_5px_#FFFFFF,inset_0_1px_18px_2px_#E8F2FF,inset_0_1px_4px_2px_#C2DDFF] hover:bg-white/10 hover:text-white"
-                  >
-                    {t("showMore")}
-                    <MoveUpRight className="h-5 w-5 shrink-0 rtl:-scale-x-100" />
-                  </Button>
+                  <Link locale={locale} href="/jobs" className="block w-full">
+                    <Button
+                      variant="outline"
+                      className="h-10 w-full justify-between rounded-xl border-white/40 bg-transparent px-4 text-[16px] font-medium text-white shadow-[0_0_0_4px_#E8F2FF,0_0_0_5px_#FFFFFF,inset_0_1px_18px_2px_#E8F2FF,inset_0_1px_4px_2px_#C2DDFF] hover:bg-white/10 hover:text-white"
+                    >
+                      {t("showMore")}
+                      <MoveUpRight className="h-5 w-5 shrink-0 rtl:-scale-x-100" />
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             </StaggerItem>

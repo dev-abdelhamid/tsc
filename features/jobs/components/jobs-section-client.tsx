@@ -15,6 +15,7 @@ import {
   formatJobSalary,
   formatJobEmploymentForCard,
   getJobTitle,
+  getLocalizedName,
 } from "@/features/jobs/lib/job-display"
 
 type JobsSectionClientProps = {
@@ -61,7 +62,7 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
     return jobs
       .filter((job) => {
         const jobCategoryId = job.category?.id
-        const jobCategoryName = job.category?.name?.trim().toLowerCase()
+        const jobCategoryName = getLocalizedName(job.category?.name, locale).trim().toLowerCase()
 
         if (jobCategoryId != null && jobCategoryId === activeFilter) return true
         if (selectedLabel && jobCategoryName === selectedLabel) return true
@@ -167,7 +168,7 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
                 >
                   <CardContent className="space-y-4 p-5 sm:p-6">
                     <Badge className="w-fit rounded-full bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] px-3 py-1 text-[12px] text-white group-hover:border group-hover:border-white/30 group-hover:bg-white/15">
-                      {job.category?.name ?? "—"}
+                      {getLocalizedName(job.category?.name, locale) || "—"}
                     </Badge>
                     <div className="flex items-start justify-between gap-3">
                       <h3 className="text-start text-[18px] font-bold leading-[1.16] text-[#262626] group-hover:text-white sm:text-[20px]">

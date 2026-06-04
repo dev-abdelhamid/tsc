@@ -1,7 +1,7 @@
 import Image from "next/image"
 import { Link } from "@/i18n/navigation"
 import type { Job } from "@/lib/api/types"
-import { formatPostedLabel, getJobTitle } from "@/features/jobs/lib/job-display"
+import { formatPostedLabel, getJobTitle, getLocalizedName } from "@/features/jobs/lib/job-display"
 
 type RelatedJobCardProps = {
   job: Job
@@ -18,7 +18,7 @@ export function RelatedJobCard({
 }: RelatedJobCardProps) {
   const title = getJobTitle(job, locale)
   const industry =
-    job.company?.company_type?.name || job.category?.name || companySubLabel
+    job.company?.company_type?.name || getLocalizedName(job.category?.name, locale) || companySubLabel
   const posted = formatPostedLabel(job, locale, postedAgoFallback)
 
   return (

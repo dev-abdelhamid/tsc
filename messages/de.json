@@ -869,6 +869,8 @@
       "locationRequired": "Ort ist erforderlich"
     },
     "faqs": {
+      "title": "Häufig gestellte Fragen (FAQs)",
+      "description": "Verwalten Sie die auf der Plattform veröffentlichten häufig gestellten Fragen (FAQs).",
       "columns": {
         "question": "Frage",
         "answer": "Antwort",

@@ -39,7 +39,7 @@ export function DashboardStatCard({
       </div>
 
       {/* Value row */}
-      <div className="flex items-end gap-0.5">
+      <div className="flex items-end gap-1.5">
         <span className="text-[36px] font-bold leading-[150%] text-[#262626]">{value}</span>
         {unit && (
           <span className="mb-1 text-xs font-medium leading-[150%] text-[#A3A3A3]">{unit}</span>

@@ -86,7 +86,7 @@ export default async function UserApplicationsPage({
   }))
 
   return (
-    <DashboardPageShell title={labels.title} description={labels.description}>
+    <DashboardPageShell title={labels.title} description={labels.description} isRTL={isAr}>
       <div className="flex flex-col gap-6">
         <div className="grid gap-4 xl:grid-cols-4">
           <DashboardStatCard

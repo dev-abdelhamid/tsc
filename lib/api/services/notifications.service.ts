@@ -99,7 +99,7 @@ export async function markAsRead(
   token: string,
   locale = "ar"
 ): Promise<Notification> {
-  const response = await api.post<ApiResponse<unknown>>(
+  const response = await api.put<ApiResponse<unknown>>(
     `/notifications/${notificationId}/read`,
     {},
     { token, locale }
@@ -141,4 +141,16 @@ export async function getUnreadCount(
   } catch (err) {
     return { unread_count: 0 }
   }
+}
+
+export async function registerDeviceToken(
+  deviceToken: string,
+  deviceType: "web" | "android" | "ios",
+  token: string,
+  locale = "ar"
+): Promise<void> {
+  const formData = new FormData()
+  formData.append("device_token", deviceToken)
+  formData.append("device_type", deviceType)
+  await api.post("/notifications/token", formData, { token, locale })
 }

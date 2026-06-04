@@ -1,7 +1,8 @@
 import Image from "next/image"
-import { getTranslations } from "next-intl/server"
+import { getTranslations, getLocale } from "next-intl/server"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home"
+import { Link } from "@/i18n/navigation"
 
 type HeroSectionProps = {
   title?: string
@@ -11,6 +12,7 @@ type HeroSectionProps = {
 
 export async function HeroSection({ title: titleOverride, description: descriptionOverride, image }: HeroSectionProps) {
   const t = await getTranslations("Landing.hero")
+  const locale = await getLocale()
   const title = titleOverride || t("title")
   const description = descriptionOverride || t("description")
   const heroBackgroundImage = image || "/home/hero/hero-bg-image.png"
@@ -105,9 +107,11 @@ export async function HeroSection({ title: titleOverride, description: descripti
         </StaggerItem>
 
         <StaggerItem>
-          <PrimaryButton className="mt-4 h-[52px] w-[220px]">
-            {t("cta")}
-          </PrimaryButton>
+          <Link locale={locale} href="/jobs">
+            <PrimaryButton className="mt-4 h-[52px] w-[220px]">
+              {t("cta")}
+            </PrimaryButton>
+          </Link>
         </StaggerItem>
       </StaggerInView>
     </SectionShell>

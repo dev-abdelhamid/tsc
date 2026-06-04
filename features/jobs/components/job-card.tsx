@@ -10,6 +10,7 @@ import {
   formatJobEmploymentForCard,
   formatJobSalary,
   getJobTitle,
+  getLocalizedName,
 } from "@/features/jobs/lib/job-display"
 
 const CARD_HOVER_SHADOW =
@@ -48,7 +49,7 @@ export function JobCard({ job, locale, isRtl, labels }: JobCardProps) {
     >
       <CardContent className="space-y-4 p-5 sm:p-6">
         <Badge className="w-fit rounded-full bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] px-3 py-1 text-[12px] text-white group-hover:border group-hover:border-white/30 group-hover:bg-white/15">
-          {job.category?.name ?? labels.department}
+          {getLocalizedName(job.category?.name, locale) || labels.department}
         </Badge>
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-start text-[18px] font-bold leading-[1.16] text-[#262626] group-hover:text-white sm:text-[20px]">

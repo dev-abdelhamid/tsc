@@ -3,7 +3,7 @@ import { getSession } from "@/lib/session"
 import { markAsRead } from "@/lib/api/services/notifications.service"
 import { ApiError } from "@/lib/api/client"
 
-export async function POST(
+export async function PUT(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {

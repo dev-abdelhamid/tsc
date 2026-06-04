@@ -8,7 +8,7 @@ import { JobsFilterTrigger } from "@/features/jobs/components/jobs-filter-trigge
 import { JobCard } from "@/features/jobs/components/job-card"
 import { StaggerInView, StaggerItem } from "@/features/shared-home"
 import type { Category, Job } from "@/lib/api/types"
-import { getJobTitle, salaryFromSliderPercent } from "@/features/jobs/lib/job-display"
+import { getJobTitle, salaryFromSliderPercent, getLocalizedName } from "@/features/jobs/lib/job-display"
 import { cn } from "@/lib/utils"
 
 type JobsListingProps = {
@@ -133,7 +133,7 @@ export function JobsListing({
 
       list = list.filter((job) => {
         const jobCategoryId = job.category?.id
-        const jobCategoryName = job.category?.name?.trim().toLowerCase()
+        const jobCategoryName = getLocalizedName(job.category?.name, locale).trim().toLowerCase()
 
         if (jobCategoryId != null && selectedCategoryIds.includes(jobCategoryId)) {
           return true

@@ -5,6 +5,9 @@ import type { ApiResponse, Ticket, PaginationMeta } from "../types"
 export interface CreateTicketData {
   subject: string
   message: string
+  priority?: "low" | "medium" | "high"
+  receiver_id?: string
+  file?: File | null
 }
 
 export async function createTicket(
@@ -13,8 +16,20 @@ export async function createTicket(
   locale = "ar"
 ): Promise<Ticket> {
   const formData = new FormData()
-  Object.entries(data).forEach(([key, value]) => {
-    formData.append(key, value)
+  
+  // Set default receiver_id if not present
+  const payload = {
+    receiver_id: "1",
+    priority: "medium",
+    ...data
+  }
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value instanceof File) {
+      formData.append(key, value)
+    } else if (value !== null && value !== undefined) {
+      formData.append(key, String(value))
+    }
   })
 
   const response = await api.post<ApiResponse<Ticket>>(

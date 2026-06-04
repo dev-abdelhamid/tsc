@@ -251,7 +251,7 @@ export function SiteHeader({
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
     setUnreadCount((prev) => Math.max(0, prev - 1))
     try {
-      await fetch(`/api/notifications/${id}/read`, { method: "POST", credentials: "include" })
+      await fetch(`/api/notifications/${id}/read`, { method: "PUT", credentials: "include" })
     } catch {
       // Silently handle notification read error
     }

@@ -265,7 +265,7 @@ export async function resetPassword(
 }
 
 export async function getProfile(token: string, locale = "ar"): Promise<User> {
-  const response = await api.get<ApiResponse<User>>("/auth/profile", { token, locale, timeout: 20000 }) // 20s timeout for slow auth endpoint
+  const response = await api.get<ApiResponse<User>>("/auth/profile", { token, locale, timeout: 8000 }) // 8s timeout for slow auth endpoint
   return response.data
 }
 

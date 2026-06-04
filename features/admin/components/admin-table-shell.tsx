@@ -19,14 +19,7 @@ export function AdminTableShell({
     <div className="overflow-hidden rounded-[8px] bg-white shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)]">
       <div className="overflow-x-auto">
         <div className="min-w-[720px]">
-          <div
-            className={cn(
-              "flex items-center rounded-t-[8px] text-white",
-              isRTL
-                ? "bg-gradient-to-r from-[#032C44] to-[#41A0CA]"
-                : "bg-gradient-to-l from-[#032C44] to-[#41A0CA]"
-            )}
-          >
+          <div className={cn("flex items-center rounded-t-[8px] text-white bg-gradient-to-l from-[#032C44] to-[#41A0CA]")}>
             {columns.map((col) => (
               <div
                 key={col.key}

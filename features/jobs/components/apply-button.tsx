@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "@/i18n/navigation"
+import { PrimaryButton } from "@/components/ui/primary-button"
 
 type ApplyButtonProps = {
   jobId: number
@@ -12,6 +13,21 @@ type ApplyButtonProps = {
 export default function ApplyButton({ jobId, locale = "ar", label = "Apply" }: ApplyButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = React.useState(false)
+  const [shouldHide, setShouldHide] = React.useState(false)
+
+  React.useEffect(() => {
+    const userStr = localStorage.getItem("auth_user")
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        if (user && (user.role === "company" || user.role === "admin")) {
+          setShouldHide(true)
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [])
 
   const handleApply = () => {
     if (loading) return
@@ -19,16 +35,17 @@ export default function ApplyButton({ jobId, locale = "ar", label = "Apply" }: A
     router.push(`/jobs/${jobId}/apply`)
   }
 
+  if (shouldHide) return null
+
   return (
-    <button
+    <PrimaryButton
       type="button"
       onClick={handleApply}
       disabled={loading}
-      className="mt-8 h-[44px] w-full rounded-[12px] text-[16px] font-medium bg-gradient-to-br from-[#006EA8] to-[#005685] text-white hover:opacity-95 disabled:opacity-60 transition"
-      title={label}
+      className="mt-8"
     >
       {loading ? (locale === "ar" ? "جاري..." : "Loading...") : label}
-    </button>
+    </PrimaryButton>
   )
 }
 

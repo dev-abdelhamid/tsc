@@ -134,24 +134,41 @@ export async function getMyApplicationDetail(
       locale,
     })
 
-    if (!response || typeof response !== "object") return null
-    const root = response as Record<string, unknown>
-    const data = root.data ?? response
+    if (response && typeof response === "object") {
+      const root = response as Record<string, unknown>
+      const data = root.data ?? response
 
-    if (!data || typeof data !== "object") return null
-    const appData = data as Record<string, unknown>
-
-    return {
-      id: Number(appData.id) || applicationId,
-      job: appData.job as Job,
-      user: appData.user as User,
-      status: (appData.status as "pending" | "accepted" | "rejected") || "pending",
-      applied_at: String(appData.applied_at || ""),
-      cv_url: appData.cv_url as string | undefined,
-    } satisfies JobApplication
-  } catch {
-    return null
+      if (data && typeof data === "object") {
+        const appData = data as Record<string, unknown>
+        // Check if we got a valid object
+        if (appData.id || appData.job) {
+          return {
+            id: Number(appData.id) || applicationId,
+            job: appData.job as Job,
+            user: appData.user as User,
+            status: (appData.status as "pending" | "accepted" | "rejected") || "pending",
+            applied_at: String(appData.applied_at || appData.appliedAt || ""),
+            cv_url: (appData.cv_url || appData.cvUrl) as string | undefined,
+          } satisfies JobApplication
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[getMyApplicationDetail] direct fetch failed, trying list fallback:", err)
   }
+
+  // Fallback: Fetch all applications and find the matching one
+  try {
+    const listResult = await getMyApplications(token, 1, locale)
+    const found = listResult.data.find((app) => app.id === applicationId)
+    if (found) {
+      return found
+    }
+  } catch (err) {
+    console.error("[getMyApplicationDetail] list fallback failed:", err)
+  }
+
+  return null
 }
 
 export async function getUserStats(

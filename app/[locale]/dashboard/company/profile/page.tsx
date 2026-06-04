@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getProfile, refreshToken as refreshTokenService } from "@/lib/api/services/auth.service"
+import { getProfile } from "@/lib/api/services/auth.service"
 import { ApiError } from "@/lib/api/client"
-import { getSession } from "@/lib/session"
+import { getSession, withTokenRefresh } from "@/lib/session"
 import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
 import CompanyProfileForm from "@/features/company-profile/components/company-profile-form"
 
@@ -29,24 +29,12 @@ export default async function CompanyProfilePage({
   let initialProfile: InitialProfileData | null = null
 
   try {
-    initialProfile = (await getProfile(session.accessToken, session.locale || "ar")) as InitialProfileData
+    initialProfile = (await withTokenRefresh(session, session.locale || "ar", (token) =>
+      getProfile(token, session.locale || "ar")
+    )) as InitialProfileData
   } catch (err: unknown) {
-    const status = err instanceof ApiError ? err.status : ((err as Record<string, unknown>)['status'] as number | undefined)
-    if (status === 401) {
-      if (session.refreshToken) {
-        try {
-          const tokens = await refreshTokenService(session.refreshToken, session.locale || "ar")
-          session.accessToken = tokens.access_token
-          session.refreshToken = tokens.refresh_token
-          await session.save()
-          initialProfile = (await getProfile(session.accessToken, session.locale || "ar")) as InitialProfileData
-        } catch (refreshErr) {
-          console.warn("Failed to refresh token:", refreshErr)
-          redirect(`/${locale}/sign-in`)
-        }
-      } else {
-        redirect(`/${locale}/sign-in`)
-      }
+    if (err instanceof ApiError && err.status === 401) {
+      redirect(`/${locale}/sign-in`)
     } else {
       throw err
     }
@@ -57,6 +45,7 @@ export default async function CompanyProfilePage({
     <DashboardPageShell
       title={isAr ? "ملف الشركة" : "Company Profile"}
       description={isAr ? "تعديل بيانات الشركة" : "Edit company profile"}
+      isRTL={isAr}
     >
       <CompanyProfileForm initialProfile={initialProfile} />
     </DashboardPageShell>

@@ -1,5 +1,24 @@
 import type { Job } from "@/lib/api/types"
 
+export function getLocalizedName(value: any, locale: string): string {
+  if (!value) return ""
+  if (typeof value === "string") {
+    if (value.startsWith("{") && value.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(value)
+        return parsed[locale] || parsed.ar || parsed.en || parsed.de || value
+      } catch {
+        // ignore
+      }
+    }
+    return value
+  }
+  if (value && typeof value === "object") {
+    return value[locale] || value.ar || value.en || value.de || ""
+  }
+  return ""
+}
+
 export function getJobTitle(job: Pick<Job, "title">, locale: string): string {
   const { title } = job
   if (typeof title === "string") return title
@@ -59,9 +78,31 @@ export function formatJobEmploymentForCard(
 
 export function formatDetailEmployment(
   job: Pick<Job, "employment_type" | "gender">,
-  fallback = "Full-time"
+  locale = "ar"
 ): string | null {
-  if (job.employment_type?.trim()) return job.employment_type.trim()
+  const type = job.employment_type?.trim()?.toLowerCase();
+  if (type) {
+    if (locale === "ar") {
+      if (type.includes("full")) return "دوام كامل";
+      if (type.includes("part")) return "دوام جزئي";
+      if (type.includes("remote")) return "عن بعد";
+      if (type.includes("contract")) return "عقد";
+      if (type.includes("intern")) return "تدريب عملي";
+      if (type.includes("free")) return "عمل حر";
+      return job.employment_type ?? null;
+    }
+    if (locale === "de") {
+      if (type.includes("full")) return "Vollzeit";
+      if (type.includes("part")) return "Teilzeit";
+      if (type.includes("remote")) return "Remote";
+      if (type.includes("contract")) return "Vertrag";
+      if (type.includes("intern")) return "Praktikum";
+      if (type.includes("free")) return "Freiberuflich";
+      return job.employment_type ?? null;
+    }
+    return job.employment_type ?? null;
+  }
+
   if (job.gender?.trim() && !isGenderOnlyValue(job.gender)) {
     return job.gender.trim()
   }
@@ -85,26 +126,29 @@ export function formatJobType(
   return formatJobEmploymentForCard(gender)
 }
 
-export function formatGenderForDetail(gender?: string, fallback = "All"): string {
+export function formatGenderForDetail(gender?: string, locale = "ar"): string {
+  const fallback = locale === "ar" ? "الكل" : locale === "de" ? "Alle" : "All"
   if (!gender?.trim()) return fallback
   if (isGenderOnlyValue(gender)) {
     const normalized = gender.trim()
-    if (/male|m|ذكر/i.test(normalized)) return "Male"
-    if (/female|f|أنثى|انثى/i.test(normalized)) return "Female"
-    return "All"
+    if (/male|m|ذكر/i.test(normalized)) return locale === "ar" ? "ذكر" : locale === "de" ? "Männlich" : "Male"
+    if (/female|f|أنثى|انثى/i.test(normalized)) return locale === "ar" ? "أنثى" : locale === "de" ? "Weiblich" : "Female"
+    return fallback
   }
   return fallback
 }
 
 export function formatAgeRange(
   job: Pick<Job, "age_from" | "age_to">,
-  fallback = "—"
+  locale = "ar"
 ): string {
-  const { age_from: from, age_to: to } = job
-  if (from != null && to != null) return `${from} - ${to}`
-  if (from != null) return `${from}+`
-  if (to != null) return `≤ ${to}`
-  return fallback
+  const from = job.age_from && job.age_from > 0 ? job.age_from : null
+  const to = job.age_to && job.age_to > 0 ? job.age_to : null
+  const suffix = locale === "ar" ? " سنة" : locale === "de" ? " Jahre" : " years"
+  if (from != null && to != null) return `${from} - ${to}${suffix}`
+  if (from != null) return `+${from}${suffix}`
+  if (to != null) return `≤ ${to}${suffix}`
+  return "—"
 }
 
 export function formatApplicationDeadline(
