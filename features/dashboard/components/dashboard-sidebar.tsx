@@ -213,6 +213,11 @@ function getAdminGroups(locale: string): SidebarGroup[] {
           href: "/dashboard/admin/contact",
         },
         {
+          icon: "/dashboard/tickets.svg",
+          label: getLabel(locale, "التذاكر", "Tickets", "Tickets"),
+          href: "/dashboard/admin/tickets",
+        },
+        {
           icon: "/dashboard/favourites.svg",
           label: getLabel(locale, "الإعدادات", "Settings", "Einstellungen"),
           href: "/dashboard/admin/settings",
