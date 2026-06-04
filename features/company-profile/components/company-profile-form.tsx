@@ -92,7 +92,7 @@ const selectBase =
 // ============================================================================
 // Main Component
 // ============================================================================
-export default function CompanyProfileForm({ initialProfile }: { initialProfile?: InitialProfileData | Record<string, unknown> | null }) {
+export default function CompanyProfileForm({ initialProfile }: { initialProfile?: InitialProfileData }) {
   const locale = useLocale();
   const isAr = locale === "ar";
   const isMounted = useSyncExternalStore(

@@ -1,24 +1,18 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
+import { getProfile } from "@/lib/api/services/auth.service"
 import { ApiError } from "@/lib/api/client"
 import { getSession, withTokenRefresh } from "@/lib/session"
+import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
 import CompanyProfileForm from "@/features/company-profile/components/company-profile-form"
-import { api } from "@/lib/api/client"
-import type { ApiResponse } from "@/lib/api/types"
 
-/**
- * Fetches the full company profile from the backend.
- * We use `Record<string, unknown>` instead of the narrow `User` type
- * so that ALL backend fields (company_name, ceo_name, description,
- * website, postal_code, num_of_employees, company_type_id, etc.)
- * are preserved and forwarded to the client form.
- */
-async function getFullCompanyProfile(token: string, locale: string) {
-  const response = await api.get<ApiResponse<Record<string, unknown>>>(
-    "/auth/profile",
-    { token, locale, timeout: 8000 }
-  )
-  return response.data
+type InitialProfileData = {
+  name: string
+  email: string
+  phone?: string
+  company_name?: string | Record<string, unknown>
+  country_id?: number
+  avatar?: string | null
 }
 
 export default async function CompanyProfilePage({
@@ -32,12 +26,12 @@ export default async function CompanyProfilePage({
   if (!session.user || session.user.role !== "company") redirect(`/${locale}/dashboard`)
   if (!session.accessToken) redirect(`/${locale}/dashboard`)
 
-  let initialProfile: Record<string, unknown> | null = null
+  let initialProfile: InitialProfileData | null = null
 
   try {
-    initialProfile = await withTokenRefresh(session, session.locale || locale, (token) =>
-      getFullCompanyProfile(token, session.locale || locale)
-    )
+    initialProfile = (await withTokenRefresh(session, session.locale || "ar", (token) =>
+      getProfile(token, session.locale || "ar")
+    )) as InitialProfileData
   } catch (err: unknown) {
     if (err instanceof ApiError && err.status === 401) {
       redirect(`/${locale}/sign-in`)
@@ -46,5 +40,14 @@ export default async function CompanyProfilePage({
     }
   }
 
-  return <CompanyProfileForm initialProfile={initialProfile} />
+  const isAr = locale === "ar"
+  return (
+    <DashboardPageShell
+      title={isAr ? "ملف الشركة" : "Company Profile"}
+      description={isAr ? "تعديل بيانات الشركة" : "Edit company profile"}
+      isRTL={isAr}
+    >
+      <CompanyProfileForm initialProfile={initialProfile} />
+    </DashboardPageShell>
+  )
 }
