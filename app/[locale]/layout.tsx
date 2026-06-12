@@ -52,13 +52,9 @@ export function generateStaticParams() {
 type Props = {
   children: React.ReactNode
   params: Promise<{ locale: string }>
-  // `searchParams` is provided by Next.js for layouts/pages when present.
-  // We accept it here so dev-only query flags (like `?impersonate=...`)
-  // can be used to force an SSR impersonation for debugging.
-  searchParams?: { [key: string]: string | string[] | undefined }
 }
 
-export default async function LocaleLayout({ children, params, searchParams }: Props) {
+export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params
 
   if (!hasLocale(routing.locales, locale)) {
