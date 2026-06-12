@@ -8,7 +8,7 @@ export function getLocalizedName(value: any, locale: string): string {
         const parsed = JSON.parse(value)
         return parsed[locale] || parsed.ar || parsed.en || parsed.de || value
       } catch {
-        // ignore
+        return value
       }
     }
     return value
@@ -16,7 +16,7 @@ export function getLocalizedName(value: any, locale: string): string {
   if (value && typeof value === "object") {
     return value[locale] || value.ar || value.en || value.de || ""
   }
-  return ""
+  return String(value)
 }
 
 export function getJobTitle(job: Pick<Job, "title">, locale: string): string {
@@ -80,29 +80,7 @@ export function formatDetailEmployment(
   job: Pick<Job, "employment_type" | "gender">,
   locale = "ar"
 ): string | null {
-  const type = job.employment_type?.trim()?.toLowerCase();
-  if (type) {
-    if (locale === "ar") {
-      if (type.includes("full")) return "دوام كامل";
-      if (type.includes("part")) return "دوام جزئي";
-      if (type.includes("remote")) return "عن بعد";
-      if (type.includes("contract")) return "عقد";
-      if (type.includes("intern")) return "تدريب عملي";
-      if (type.includes("free")) return "عمل حر";
-      return job.employment_type ?? null;
-    }
-    if (locale === "de") {
-      if (type.includes("full")) return "Vollzeit";
-      if (type.includes("part")) return "Teilzeit";
-      if (type.includes("remote")) return "Remote";
-      if (type.includes("contract")) return "Vertrag";
-      if (type.includes("intern")) return "Praktikum";
-      if (type.includes("free")) return "Freiberuflich";
-      return job.employment_type ?? null;
-    }
-    return job.employment_type ?? null;
-  }
-
+  if (job.employment_type?.trim()) return job.employment_type.trim()
   if (job.gender?.trim() && !isGenderOnlyValue(job.gender)) {
     return job.gender.trim()
   }
@@ -114,7 +92,6 @@ export function formatPostedLabel(
   locale: string,
   relativeFallback: string
 ): string {
-  if (job.created_at_human?.trim()) return job.created_at_human.trim()
   return formatPostedAgo(job.created_at, locale, relativeFallback)
 }
 

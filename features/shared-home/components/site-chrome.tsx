@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
+import { stripLocalePrefix } from "@/i18n/navigation"
 import { DashboardMobileMenuProvider } from "@/features/shared-home/components/dashboard-mobile-menu-context"
 import { SiteHeader } from "@/features/shared-home/components/site-header"
 
@@ -20,6 +21,19 @@ type SiteChromeProps = {
   }
 }
 
+// Type the global window marker to avoid `any` casts and lint errors.
+declare global {
+  interface Window {
+    __CANONICAL_USER?: {
+      id?: number
+      name?: string
+      email?: string
+      role?: string | Record<string, unknown>
+      avatar?: string
+    }
+  }
+}
+
 const AUTH_ROUTES = new Set(["sign-in", "sign-up", "forgot-password"])
 
 export function SiteChrome({ children, footer, session }: SiteChromeProps) {
@@ -31,8 +45,26 @@ export function SiteChrome({ children, footer, session }: SiteChromeProps) {
     return lastSegment ? AUTH_ROUTES.has(lastSegment) : false
   }, [pathname])
 
+  // Use the server-provided `session` prop as the authoritative initial
+  // client state. Provide a stable plain object to avoid undefined props
+  // reaching `SiteHeader` which would cause transient skeleton renders.
+  const [initialSessionState, setInitialSessionState] = React.useState<typeof session>(() => session ?? { isLoggedIn: false, user: null })
+
+  // Keep the initial session state in sync when the server re-renders
+  // (for example after `SessionPersist` calls `router.refresh()`). We
+  // intentionally use state so the value is stable during the first
+  // hydration but accepts updates from subsequent server renders.
+  React.useEffect(() => {
+    setInitialSessionState(session ?? { isLoggedIn: false, user: null })
+  }, [session])
+
+  // Compute `isDashboard` dynamically on every render based on the current pathname.
+  // This ensures that navigating between dashboard and public pages updates the
+  // layout, headers, and footers correctly. Since usePathname is consistent between
+  // SSR and hydration, this will not cause hydration mismatches.
   const isDashboard = React.useMemo(() => {
-    const segments = pathname.split("/").filter(Boolean)
+    const normalizedPath = stripLocalePrefix(pathname)
+    const segments = (normalizedPath ?? "/").split("/").filter(Boolean)
     return segments.includes("dashboard")
   }, [pathname])
 
@@ -40,8 +72,8 @@ export function SiteChrome({ children, footer, session }: SiteChromeProps) {
     <DashboardMobileMenuProvider>
       {!isAuthPage && (
         <SiteHeader
-          initialIsLoggedIn={session?.isLoggedIn}
-          initialUser={session?.user}
+          initialIsLoggedIn={initialSessionState?.isLoggedIn}
+          initialUser={initialSessionState?.user}
           isDashboard={isDashboard}
         />
       )}
@@ -52,3 +84,4 @@ export function SiteChrome({ children, footer, session }: SiteChromeProps) {
     </DashboardMobileMenuProvider>
   )
 }
+

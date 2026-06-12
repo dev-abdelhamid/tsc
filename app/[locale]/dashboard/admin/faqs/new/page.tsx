@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
 import { AdminFaqEditForm } from "@/features/admin/components/admin-faq-edit-form"
 
@@ -16,7 +17,7 @@ export default async function AdminFaqNewPage({ params }: PageProps) {
   if (!session.isLoggedIn || !session.user || !session.accessToken) {
     redirect(`/${locale}/sign-in`)
   }
-  if (session.user.role !== "admin") {
+  if (normalizeRole(session.user) !== "admin") {
     redirect(`/${locale}/dashboard`)
   }
 

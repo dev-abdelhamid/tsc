@@ -18,7 +18,7 @@ export function RelatedJobCard({
 }: RelatedJobCardProps) {
   const title = getJobTitle(job, locale)
   const industry =
-    job.company?.company_type?.name || getLocalizedName(job.category?.name, locale) || companySubLabel
+    getLocalizedName(job.company?.company_type?.name || job.category?.name, locale) || companySubLabel
   const posted = formatPostedLabel(job, locale, postedAgoFallback)
 
   return (
@@ -35,7 +35,7 @@ export function RelatedJobCard({
       <div className="mt-6 flex items-center gap-2">
         <div className="relative size-[38px] shrink-0 overflow-hidden rounded-full border border-[#e8f2ff] bg-[#e8f2ff]">
           {job.company?.logo ? (
-            <Image src={job.company.logo} alt="" fill className="object-cover" sizes="38px" />
+            <img src={job.company.logo} alt="" className="absolute inset-0 h-full w-full object-cover" />
           ) : (
             <span className="absolute inset-0 grid place-items-center text-[10px] font-bold text-[#006EA8]">
               {(job.company?.name ?? "?").slice(0, 2).toUpperCase()}

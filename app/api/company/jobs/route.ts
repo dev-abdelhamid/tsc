@@ -4,7 +4,7 @@ import { createJob } from "@/lib/api/services/company.service"
 import { ApiError } from "@/lib/api/client"
 import { formatApiValidationMessage } from "@/features/company-jobs/lib/format-api-error"
 import { parseJobFormData } from "@/features/company-jobs/lib/parse-job-form-data"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 
 export async function POST(request: NextRequest) {
   const session = await getSession()
@@ -39,3 +39,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, message }, { status })
   }
 }
+

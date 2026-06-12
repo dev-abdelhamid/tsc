@@ -28,7 +28,7 @@ export function AdminNotificationsPanel({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-lg font-bold text-[#111827]">
-          {locale === "ar" ? "الإشعارات الواردة" : "System Notifications"}
+          {locale === "ar" ? "آخر الأحداث" : "System Notifications"}
         </h2>
         {notifications.length > 0 && hasUnread && (
           <button

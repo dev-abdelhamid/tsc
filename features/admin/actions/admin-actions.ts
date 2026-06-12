@@ -36,7 +36,7 @@ import {
   deleteCategoryAdmin,
 } from "@/lib/api/services/categories.service"
 import { ApiError } from "@/lib/api/client"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { deleteContactMessage } from "@/lib/api/services/contact-messages.service"
 
 async function requireAdmin(locale: string) {
@@ -234,8 +234,9 @@ export async function markNotificationReadAction(id: number, locale: string) {
     await markAsRead(id, token, locale)
     revalidatePath(`/${locale}/dashboard/admin/notifications`)
     return { ok: true as const }
-  } catch {
-    return { ok: false as const, message: "Failed" }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to mark notification read"
+    return { ok: false as const, message }
   }
 }
 
@@ -245,8 +246,9 @@ export async function markAllNotificationsReadAction(locale: string) {
     await markAllAsRead(token, locale)
     revalidatePath(`/${locale}/dashboard/admin/notifications`)
     return { ok: true as const }
-  } catch {
-    return { ok: false as const, message: "Failed" }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to mark all as read"
+    return { ok: false as const, message }
   }
 }
 
@@ -256,8 +258,9 @@ export async function deleteNotificationAction(id: number, locale: string) {
     await deleteNotification(id, token, locale)
     revalidatePath(`/${locale}/dashboard/admin/notifications`)
     return { ok: true as const }
-  } catch {
-    return { ok: false as const, message: "Failed" }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to delete notification"
+    return { ok: false as const, message }
   }
 }
 
@@ -348,3 +351,4 @@ export async function deleteContactMessageAction(id: number, locale: string) {
     return { ok: false as const, message }
   }
 }
+

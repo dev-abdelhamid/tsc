@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { getUnreadCount } from "@/lib/api/services/notifications.service"
 
 export async function GET() {
@@ -17,3 +17,4 @@ export async function GET() {
     return NextResponse.json({ unread_count: 0 })
   }
 }
+

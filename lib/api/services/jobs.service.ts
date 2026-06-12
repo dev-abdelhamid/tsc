@@ -2,6 +2,7 @@
 import { api } from "../client"
 import type { ApiResponse, Job, PaginationMeta, PublicJobDetail } from "../types"
 import { getJobTitle } from "@/features/jobs/lib/job-display"
+import { resolveImageUrl } from "@/lib/utils"
 
 export interface JobsFilter {
   per_page?: number
@@ -184,7 +185,7 @@ export function normalizeJob(item: unknown, locale: string): Job | null {
       if (!row.company || typeof row.company !== "object") {
         return row.company as unknown as Job["company"]
       }
-      const company = normalizeNestedValue(row.company, locale) as Record<string, unknown>
+      const company = normalizeNestedValue(row.company, locale) as Record<string, any>
       if (company.company_type && typeof company.company_type === "object") {
         company.company_type = normalizeNestedValue(company.company_type, locale)
       }
@@ -193,6 +194,14 @@ export function normalizeJob(item: unknown, locale: string): Job | null {
       }
       if (company.city && typeof company.city === "object") {
         company.city = normalizeNestedValue(company.city, locale)
+      }
+      // Resolve company logo/avatar URL if present
+      const logoVal = company.logo || company.logoUrl || company.logo_url || company.avatar || company.avatar_url
+      if (logoVal) {
+        const resolved = resolveImageUrl(logoVal)
+        company.logo = resolved
+        company.logoUrl = resolved
+        company.logo_url = resolved
       }
       return company as unknown as Job["company"]
     })(),
@@ -209,10 +218,22 @@ export function normalizeJob(item: unknown, locale: string): Job | null {
       (typeof row.created_at_human === "string" && row.created_at_human) ||
       (typeof row.createdAtHuman === "string" && row.createdAtHuman) ||
       undefined,
-    applications_count:
-      row.applications_count != null
-        ? Number(row.applications_count)
-        : undefined,
+    applications_count: (() => {
+      const candidates = [
+        row.applications_count,
+        row.applicationsCount,
+        row.applications_total,
+        row.applicationsTotal,
+        row.applied_candidates,
+        row.appliedCandidates,
+        row.candidates_count,
+        row.candidatesCount,
+      ]
+      for (const value of candidates) {
+        if (value != null && !Number.isNaN(Number(value))) return Number(value)
+      }
+      return undefined
+    })(),
   }
 }
 
@@ -258,13 +279,13 @@ export async function getPublicJobs(
     try {
       const response = await api.get<unknown>(endpoint, {
         locale,
-        next: { revalidate: 60 },
+        cache: "no-store",
         timeout: 15000, // Increase timeout for slow jobs endpoint
       })
       const parsed = parseJobsResponse(response, locale)
       if (parsed.data.length > 0) return parsed
     } catch (err) {
-      console.error(err)
+      if (process.env.NODE_ENV !== "production") console.error(err)
       // try next
     }
   }
@@ -272,11 +293,11 @@ export async function getPublicJobs(
   try {
     const response = await api.get<ApiResponse<Job[]>>(
       `/public/jobs${query}`,
-      { locale, next: { revalidate: 60 }, timeout: 15000 }
+      { locale, cache: "no-store", timeout: 15000 }
     )
     return parseJobsResponse(response, locale)
   } catch (err) {
-    console.error(err)
+    if (process.env.NODE_ENV !== "production") console.error(err)
     return { data: [] }
   }
 }
@@ -296,7 +317,7 @@ export async function getPublicJobDetail(
     try {
       const response = await api.get<unknown>(endpoint, {
         locale,
-        next: { revalidate: 60 },
+        cache: "no-store",
         timeout: 20000, // Increase timeout to 20 seconds for slow API
       })
 
@@ -320,7 +341,7 @@ export async function getPublicJobDetail(
       const normalized = normalizeJob(payload, locale)
       if (normalized) return { job: normalized, related: [] }
     } catch (err) {
-      console.error(err)
+      if (process.env.NODE_ENV !== "production") console.error(err)
       // try next
     }
   }

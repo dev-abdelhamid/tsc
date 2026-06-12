@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getTranslations, setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { getAdminSuccessStories } from "@/lib/api/services/success-stories.service"
 import { AdminSuccessStoriesPanel } from "@/features/admin/components/admin-success-stories-panel"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
@@ -15,7 +16,7 @@ export default async function AdminSuccessStoriesPage({
   const session = await getSession()
   const t = await getTranslations("Admin.successStories")
 
-  if (!session.user || session.user.role !== "admin") {
+  if (!session.user || normalizeRole(session.user) !== "admin") {
     redirect(`/${locale}/dashboard`)
   }
 

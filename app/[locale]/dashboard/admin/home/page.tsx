@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getTranslations, setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { getAdminHomePageContent } from "@/lib/api/services/home-page.service"
 import { AdminHomePanel } from "@/features/admin/components/admin-home-panel"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
@@ -19,7 +20,7 @@ export default async function AdminHomePage({
     redirect(`/${locale}/sign-in`)
   }
 
-  if (session.user.role !== "admin") {
+  if (normalizeRole(session.user) !== "admin") {
     redirect(`/${locale}/dashboard`)
   }
 

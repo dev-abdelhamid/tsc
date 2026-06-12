@@ -1,7 +1,7 @@
 // app/[locale]/dashboard/user/applications/page.tsx
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { getMyApplications } from "@/lib/api/services/user.service"
 import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
 import { DashboardJobsTable } from "@/features/dashboard/components/dashboard-jobs-table"
@@ -58,9 +58,10 @@ export default async function UserApplicationsPage({
     actions: isAr ? "الإجراءات" : "Actions",
   }
 
-  const applications = await getMyApplications(session.accessToken, 1, locale as "ar" | "en" | "de")
-    .then((result) => result.data)
-    .catch(() => [])
+  const appsResult = await getMyApplications(session.accessToken, 1, locale as "ar" | "en" | "de")
+    .catch(() => ({ data: [], meta: { total: 0 } }))
+  const applications = appsResult.data ?? []
+  const totalApplications = appsResult.meta?.total ?? applications.length
 
   const statusCounts = applications.reduce(
     (acc, app) => {
@@ -81,7 +82,7 @@ export default async function UserApplicationsPage({
       ? "accepted"
       : app.status === "rejected"
         ? "rejected"
-        : "pending") as "accepted" | "rejected" | "pending",
+        : "pending") as any,
     detailsHref: `/dashboard/user/applications/${app.id}`,
   }))
 
@@ -92,7 +93,7 @@ export default async function UserApplicationsPage({
           <DashboardStatCard
             iconSrc="/dashboard/jobs.svg"
             title={labels.total}
-            value={applications.length}
+            value={totalApplications}
             viewAllHref="/dashboard/user/applications"
             viewAllLabel={labels.viewAll}
             isRTL={isAr}
@@ -129,11 +130,12 @@ export default async function UserApplicationsPage({
           col2Label={labels.company}
           emptyMessage={labels.empty}
           detailsLabel={labels.details}
+          locale={locale}
+          isRTL={isAr}
           jobTitleLabel={labels.jobTitle}
           deadlineLabel={labels.deadline}
           statusLabel={labels.status}
           actionsLabel={labels.actions}
-          isRTL={isAr}
         />
       </div>
     </DashboardPageShell>

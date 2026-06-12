@@ -5,6 +5,16 @@ import {
   buildJobFormData,
   buildJobFormDataForUpdate,
 } from "@/features/company-jobs/lib/build-job-form-data"
+import {
+  extractApplications,
+  extractApplicationsMeta,
+  mapApplicationStatus,
+  normalizeCompanyApplication,
+  toApiApplicationStatus,
+  unwrapCompanyStats,
+  type CompanyApplication,
+} from "@/features/company-jobs/lib/application-utils"
+import { normalizeJob } from "./jobs.service"
 
 export type LocalizedText = { ar: string; en: string; de: string }
 
@@ -26,8 +36,6 @@ export interface CreateJobPayload {
   image: File | Blob
 }
 
-import { normalizeJob } from "./jobs.service"
-
 export async function getCompanyJob(
   id: number,
   token: string,
@@ -37,8 +45,7 @@ export async function getCompanyJob(
     const response = await api.get<ApiResponse<Job>>(`/jobs/${id}`, { token, locale, next: { revalidate: 60 } })
     const rawJob = response.data ?? response
     return normalizeJob(rawJob, locale)
-  } catch (error) {
-    console.error("[Company Service] getCompanyJob error:", error)
+  } catch {
     return null
   }
 }
@@ -48,37 +55,63 @@ export async function getCompanyJobs(
   page = 1,
   locale = "ar"
 ): Promise<{ data: Job[]; meta: PaginationMeta }> {
-  try {
-    const response = await api.get<unknown>(`/jobs?page=${page}`, { token, locale, next: { revalidate: 60 } }) // Cache for 60 seconds
-    const typedResponse = response as
-      | { data?: Job[]; meta?: PaginationMeta }
-      | Job[]
-      | undefined
+  const response = await api.get<unknown>(`/jobs?page=${page}`, { token, locale, next: { revalidate: 60 } })
+  const typedResponse = response as
+    | { data?: unknown[]; meta?: PaginationMeta }
+    | unknown[]
+    | undefined
 
-    const data = Array.isArray(typedResponse)
-      ? typedResponse
-      : Array.isArray(typedResponse?.data)
-        ? typedResponse.data
-        : []
-    const meta = Array.isArray(typedResponse)
-      ? {
-          current_page: page,
-          last_page: 1,
-          per_page: 10,
-          total: data.length,
-        }
-      : typedResponse?.meta || {
-          current_page: page,
-          last_page: 1,
-          per_page: 10,
-          total: data.length,
-        }
+  const rawData = Array.isArray(typedResponse)
+    ? typedResponse
+    : Array.isArray(typedResponse?.data)
+      ? typedResponse.data
+      : []
 
-    return { data, meta }
-  } catch (error) {
-    console.error("[Company Service] getCompanyJobs error:", error)
-    throw error
-  }
+  const data: Job[] = (rawData as unknown[])
+    .map((item) => normalizeJob(item, locale))
+    .filter((j): j is Job => j != null)
+
+  const meta = Array.isArray(typedResponse)
+    ? {
+        current_page: page,
+        last_page: 1,
+        per_page: 10,
+        total: data.length,
+      }
+    : typedResponse?.meta || {
+        current_page: page,
+        last_page: 1,
+        per_page: 10,
+        total: data.length,
+      }
+
+  return { data, meta }
+}
+
+export async function enrichJobsWithApplicationCounts(
+  jobs: Job[],
+  token: string,
+  locale = "ar"
+): Promise<Job[]> {
+  const missing = jobs.filter((job) => job.applications_count == null)
+  if (missing.length === 0) return jobs
+
+  const counts = new Map<number, number>()
+  await Promise.all(
+    missing.map(async (job) => {
+      try {
+        const { meta, data } = await getJobApplications(job.id, token, 1, locale)
+        counts.set(job.id, meta.total ?? data.length)
+      } catch {
+        counts.set(job.id, 0)
+      }
+    })
+  )
+
+  return jobs.map((job) => ({
+    ...job,
+    applications_count: job.applications_count ?? counts.get(job.id) ?? 0,
+  }))
 }
 
 export async function createJob(
@@ -146,77 +179,196 @@ export async function getJobApplications(
   token: string,
   page = 1,
   locale = "ar"
-): Promise<{ data: JobApplication[]; meta: PaginationMeta }> {
-  // The backend exposes company applications via /company/applications?job_id=... according to Postman
+): Promise<{ data: CompanyApplication[]; meta: PaginationMeta }> {
   const response = await api.get<unknown>(
     `/company/applications?job_id=${jobId}&page=${page}`,
     { token, locale }
   )
-  const typedResponse = response as
-    | { data?: JobApplication[]; meta?: PaginationMeta }
-    | JobApplication[]
-    | undefined
 
-  const data = Array.isArray(typedResponse)
-    ? typedResponse
-    : Array.isArray(typedResponse?.data)
-      ? typedResponse.data
-      : []
-  const meta = Array.isArray(typedResponse)
-    ? {
-        current_page: page,
-        last_page: 1,
-        per_page: 10,
-        total: data.length,
-      }
-    : typedResponse?.meta || {
-        current_page: page,
-        last_page: 1,
-        per_page: 10,
-        total: data.length,
-      }
+  const data = extractApplications(response)
+  const meta = extractApplicationsMeta(response, page, data.length)
 
   return { data, meta }
 }
 
+export async function getCompanyApplication(
+  jobId: number,
+  applicationId: number,
+  token: string,
+  locale = "ar"
+): Promise<CompanyApplication | null> {
+  // Optimize: try fetching with high per_page count first to minimize sequential loops during SSR
+  try {
+    const response = await api.get<unknown>(
+      `/company/applications?job_id=${jobId}&per_page=100&page=1`,
+      { token, locale }
+    )
+    const data = extractApplications(response)
+    const found = data.find((application) => application.id === applicationId)
+    if (found) return found
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn("[getCompanyApplication] Direct large-page fetch failed, falling back to standard paging loop:", err)
+  }
+
+  let page = 1
+  let lastPage = 1
+
+  do {
+    const { data, meta } = await getJobApplications(jobId, token, page, locale)
+    const found = data.find((application) => application.id === applicationId)
+    if (found) return found
+    lastPage = meta.last_page ?? 1
+    page += 1
+  } while (page <= lastPage)
+
+  return null
+}
+
+export async function getAllCompanyApplications(
+  token: string,
+  locale = "ar",
+  jobs?: Job[]
+): Promise<Array<CompanyApplication & { jobId: number; jobTitle?: string }>> {
+  try {
+    const response = await api.get<any>("/company/applications", { token, locale })
+    const rawList = Array.isArray(response)
+      ? response
+      : Array.isArray(response?.data)
+        ? response.data
+        : []
+        
+    const data = rawList.map((item: any) => {
+      const normalized = normalizeCompanyApplication(item)
+      return {
+        ...normalized,
+        jobId: normalized.job?.id ?? 0,
+        jobTitle: normalized.job?.title
+          ? typeof normalized.job.title === "string"
+            ? normalized.job.title
+            : (normalized.job.title[locale as "ar" | "en" | "de"] || "")
+          : "",
+      }
+    })
+    return data
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn("[getAllCompanyApplications] Direct fetch failed, falling back to per-job query loop:", err)
+  }
+
+  const jobList = jobs ?? (await getCompanyJobs(token, 1, locale)).data
+  const aggregated: Array<CompanyApplication & { jobId: number; jobTitle?: string }> = []
+
+  // Optimize: Fetch applications in parallel using Promise.all
+  await Promise.all(
+    jobList.map(async (job) => {
+      let page = 1
+      let lastPage = 1
+      const jobApplications: CompanyApplication[] = []
+
+      do {
+        try {
+          const { data, meta } = await getJobApplications(job.id, token, page, locale)
+          jobApplications.push(...data)
+          lastPage = meta.last_page ?? 1
+        } catch {
+          break
+        }
+        page += 1
+      } while (page <= lastPage)
+
+      for (const application of jobApplications) {
+        aggregated.push({
+          ...application,
+          jobId: job.id,
+          job: application.job ?? job,
+        })
+      }
+    })
+  )
+
+  return aggregated
+}
+
 export async function updateApplicationStatus(
   applicationId: number,
-  status: "accepted" | "rejected",
+  status: "accepted" | "rejected" | "approved",
   token: string,
   locale = "ar"
 ): Promise<JobApplication> {
-  // Backend expects company application status updates at /company/applications/:id/status
-  const response = await api.patch<ApiResponse<JobApplication>>(
+  const formData = new FormData()
+  formData.append("status", toApiApplicationStatus(status))
+
+  const response = await api.post<ApiResponse<JobApplication>>(
     `/company/applications/${applicationId}/status`,
-    { status },
+    formData,
     { token, locale }
   )
-  return response.data ?? (response as unknown as JobApplication)
+
+  const payload = response.data ?? response
+  return normalizeCompanyApplication(payload)
 }
 
 export async function getCompanyStats(
   token: string,
-  locale = "ar"
+  locale = "ar",
+  jobs?: Job[]
 ): Promise<{
   total_jobs: number
   total_applications: number
   pending_applications: number
 }> {
+  let parsed = {
+    total_jobs: 0,
+    total_applications: 0,
+    pending_applications: 0,
+  }
+
   try {
     const response = await api.get<unknown>("/company/dashboard/stats", { token, locale })
-    const typedResponse = response as { data?: Record<string, unknown> } | Record<string, unknown>
-    const stats =
-      typedResponse && typeof typedResponse === "object" && "data" in typedResponse
-        ? typedResponse.data
-        : typedResponse
+    parsed = unwrapCompanyStats(response)
+    // If the API call succeeds, we return immediately to save redundant calls
+    return parsed
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn("[getCompanyStats] Stats API failed, using client-side fallback:", err)
+  }
 
-    return {
-      total_jobs: Number((stats as Record<string, unknown>)?.total_jobs || 0),
-      total_applications: Number((stats as Record<string, unknown>)?.total_applications || 0),
-      pending_applications: Number((stats as Record<string, unknown>)?.pending_applications || 0),
+  // Fetch job list (all pages) unless caller provided one
+  let jobList = jobs ?? []
+  if (!jobs) {
+    const firstPage = await getCompanyJobs(token, 1, locale)
+    jobList = firstPage.data
+    const meta = (firstPage as any).meta
+    const lastPage = meta?.last_page ?? 1
+    if (lastPage > 1) {
+      for (let p = 2; p <= lastPage; p++) {
+        try {
+          const next = await getCompanyJobs(token, p, locale)
+          jobList = jobList.concat(next.data)
+        } catch {
+          // ignore page failures and continue
+        }
+      }
     }
-  } catch (error) {
-    console.error("[Company Service] getCompanyStats error:", error)
-    return { total_jobs: 0, total_applications: 0, pending_applications: 0 }
+  }
+
+  const enriched = await enrichJobsWithApplicationCounts(jobList, token, locale)
+
+  let computedApplications = enriched.reduce((sum, job) => sum + (job.applications_count ?? 0), 0)
+  let pendingApplications = parsed.pending_applications
+
+  if (computedApplications === 0 && enriched.length > 0) {
+    const allApplications = await getAllCompanyApplications(token, locale, enriched)
+    computedApplications = allApplications.length
+    pendingApplications =
+      pendingApplications ||
+      allApplications.filter((application) => mapApplicationStatus(application.status) === "pending").length
+  }
+
+  return {
+    total_jobs: parsed.total_jobs || enriched.length,
+    total_applications: parsed.total_applications || computedApplications,
+    pending_applications: pendingApplications,
   }
 }

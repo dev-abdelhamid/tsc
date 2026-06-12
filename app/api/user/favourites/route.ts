@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { getFavoriteJobs, toggleFavorite } from "@/lib/api/services/jobs.service"
 
 export async function GET(request: Request) {
@@ -48,3 +48,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ message }, { status: 500 })
   }
 }
+

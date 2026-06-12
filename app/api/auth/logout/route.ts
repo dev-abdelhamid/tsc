@@ -1,23 +1,34 @@
-import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
-import { logout as logoutApi } from "@/lib/api/services/auth.service"
+import { NextRequest, NextResponse } from "next/server"
+import { getTokenFromRequest, clearAuthCookies } from "@/lib/auth-token"
 
-export async function POST() {
-  try {
-    const session = await getSession()
-    const token = session.accessToken
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://cv.subcodeco.com/api/v1"
 
-    if (token) {
-      try {
-        await logoutApi(token)
-      } catch {
-        // Continue local logout even if API fails
-      }
+async function handleLogout(request: NextRequest) {
+  const token = getTokenFromRequest(request)
+  
+  if (token) {
+    try {
+      await fetch(`${BACKEND_URL}/auth/logout`, {
+        method: "POST",
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      })
+    } catch (e) {
+      console.warn('[api/auth/logout] upstream logout failed', e)
     }
-
-    session.destroy()
-    return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ message: "Failed to logout" }, { status: 500 })
   }
+
+  const response = NextResponse.json({ success: true })
+  clearAuthCookies(response)
+  return response
+}
+
+export async function POST(request: NextRequest) {
+  return handleLogout(request)
+}
+
+export async function GET(request: NextRequest) {
+  return handleLogout(request)
 }

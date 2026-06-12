@@ -6,7 +6,7 @@ import { getJobDetailForLocale } from "@/features/jobs/lib/jobs-for-locale"
 import { JobDetailHero } from "@/features/jobs/components/job-detail-hero"
 import { JobDetailSidebar } from "@/features/jobs/components/job-detail-sidebar"
 import { JobDetailShare } from "@/features/jobs/components/job-detail-share"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { getFavoriteJobs } from "@/lib/api/services/jobs.service"
 
 type JobDetailPageProps = {
@@ -159,3 +159,4 @@ export async function JobDetailPage({ jobId, locale: propLocale }: JobDetailPage
     </main>
   )
 }
+

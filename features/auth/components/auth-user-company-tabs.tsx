@@ -7,8 +7,8 @@ type TabsProps = {
   userLabel: string
   companyLabel: string
   tabListLabel: string
-  activeTab?: "user" | "company"
-  onTabChange?: (value: "user" | "company") => void
+  activeTab?: "user" | "company" | "admin"
+  onTabChange?: (value: "user" | "company" | "admin") => void
 }
 
 const baseTabClassName =
@@ -27,10 +27,10 @@ export function AuthUserCompanyTabs({
   activeTab: activeTabProp,
   onTabChange,
 }: TabsProps) {
-  const [internalTab, setInternalTab] = useState<"user" | "company">("user")
+  const [internalTab, setInternalTab] = useState<"user" | "company" | "admin">("user")
   const activeTab = activeTabProp ?? internalTab
 
-  const handleChange = (value: "user" | "company") => {
+  const handleChange = (value: "user" | "company" | "admin") => {
     if (onTabChange) onTabChange(value)
     if (activeTabProp === undefined) setInternalTab(value)
   }

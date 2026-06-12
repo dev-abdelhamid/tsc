@@ -17,7 +17,7 @@ type FormValues = {
 
 export default function SignInPage() {
   const t = useTranslations("Auth.signIn")
-  const { signIn, loading, error: authError } = useAuth()
+  const { signIn, isLoading, error: authError } = useAuth()
   const locale = useLocale()
   const {
     register,
@@ -25,7 +25,7 @@ export default function SignInPage() {
     formState: { errors },
   } = useForm<FormValues>()
   const [error, setError] = useState<string | null>(null)
-  const [accountType, setAccountType] = useState<"user" | "company">("user")
+  const [accountType, setAccountType] = useState<"user" | "company" | "admin">("user")
   const [showPassword, setShowPassword] = useState(false)
 
   async function onSubmit(values: FormValues) {
@@ -115,9 +115,9 @@ export default function SignInPage() {
         <button
           type="submit"
           className="w-full rounded-md bg-[#40A0CA] py-3 text-white font-semibold shadow-md transition-all hover:bg-[#3490b8] active:translate-y-px disabled:opacity-60 flex items-center justify-center gap-2"
-          disabled={loading}
+          disabled={isLoading}
         >
-          {loading ? (
+          {isLoading ? (
             <>
               <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

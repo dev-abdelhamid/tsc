@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { CompanyJobReviewPage } from "@/features/company-jobs/components/company-job-review-page"
 
 export default async function CompanyJobReviewRoutePage({

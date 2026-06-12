@@ -154,7 +154,7 @@ export async function getMyApplicationDetail(
       }
     }
   } catch (err) {
-    console.warn("[getMyApplicationDetail] direct fetch failed, trying list fallback:", err)
+    // Direct detail fetch not supported by upstream API. Fall back to searching in the application list.
   }
 
   // Fallback: Fetch all applications and find the matching one

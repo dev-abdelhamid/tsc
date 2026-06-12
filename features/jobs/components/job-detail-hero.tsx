@@ -14,7 +14,7 @@ type JobDetailHeroProps = {
 export function JobDetailHero({ job, companyName, industryFallback }: JobDetailHeroProps) {
   const locale = useLocale()
   const industry =
-    job.company?.company_type?.name || getLocalizedName(job.category?.name, locale) || industryFallback
+    getLocalizedName(job.company?.company_type?.name || job.category?.name, locale) || industryFallback
   const bannerSrc = resolveJobImageUrl(job.image) ?? "/home/hero/hero-bg-image.png"
   const displayCompany = job.company?.name ?? companyName
 
@@ -36,12 +36,10 @@ export function JobDetailHero({ job, companyName, industryFallback }: JobDetailH
         <div className="relative z-10 -mt-10 flex flex-col gap-4 sm:-mt-12 sm:flex-row sm:items-end sm:gap-4">
           <div className="relative size-[72px] shrink-0 overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_8px_24px_rgba(0,43,70,0.12)] sm:size-[88px]">
             {job.company?.logo ? (
-              <Image
+              <img
                 src={job.company.logo}
                 alt=""
-                fill
-                className="object-cover"
-                sizes="88px"
+                className="absolute inset-0 h-full w-full object-cover"
               />
             ) : (
               <span className="absolute inset-0 grid place-items-center bg-[#e8f2ff] text-[18px] font-bold text-[#006EA8]">

@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { getMyApplicationDetail } from "@/lib/api/services/user.service"
+import { getUserPortfolio } from "@/lib/api/services/portfolio.service"
+import { getProfile } from "@/lib/api/services/auth.service"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
+import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 function formatDate(date: string | undefined, locale: string) {
@@ -60,18 +63,23 @@ export default async function ApplicationDetailPage({
   }
 
   let application: any = null
+  let portfolio: any = null
+  let userProfile: any = null
+
   try {
-    application = await getMyApplicationDetail(
-      session.accessToken,
-      applicationId,
-      locale as "ar" | "en" | "de"
-    )
+    const [appDetail, portResult, profResult] = await Promise.all([
+      getMyApplicationDetail(session.accessToken, applicationId, locale as "ar" | "en" | "de"),
+      getUserPortfolio(session.accessToken, locale).catch(() => undefined),
+      getProfile(session.accessToken, locale).catch(() => undefined),
+    ])
+    application = appDetail
+    portfolio = portResult
+    userProfile = profResult
   } catch (err) {
     console.error("[ApplicationDetail] fetch error:", err)
   }
 
   if (!application) {
-    // Show a not-found state instead of hard redirect
     const gradientClasses = cn(
       "bg-clip-text text-transparent font-bold",
       isAr ? "bg-gradient-to-r" : "bg-gradient-to-l",
@@ -117,6 +125,81 @@ export default async function ApplicationDetailPage({
     employmentType: isAr ? "نوع التوظيف" : "Employment Type",
     salary: isAr ? "الراتب" : "Salary",
     jobDetails: isAr ? "تفاصيل الوظيفة" : "Job Details",
+    personalDetails: isAr ? "البيانات الشخصية" : "Personal Details",
+    name: isAr ? "الاسم" : "Name",
+    email: isAr ? "البريد الإلكتروني" : "Email",
+    phone: isAr ? "رقم الهاتف" : "Phone",
+    gender: isAr ? "الجنس" : "Gender",
+    dateOfBirth: isAr ? "تاريخ الميلاد" : "Date of Birth",
+    maritalStatus: isAr ? "الحالة الاجتماعية" : "Marital Status",
+    male: isAr ? "ذكر" : "Male",
+    female: isAr ? "أنثى" : "Female",
+    single: isAr ? "أعزب" : "Single",
+    married: isAr ? "متزوج" : "Married",
+    cv: isAr ? "السيرة الذاتية المرفقة" : "Attached CV",
+    noCv: isAr ? "لا توجد سيرة ذاتية مرفوعة" : "No CV uploaded",
+    education: isAr ? "التعليم والمؤهلات" : "Education",
+    noEducation: isAr ? "لا توجد مؤهلات تعليمية مضافة" : "No education added yet",
+    experience: isAr ? "الخبرة المهنية" : "Work Experience",
+    noExperience: isAr ? "لا توجد خبرات مهنية مضافة" : "No work experience added yet",
+    skills: isAr ? "المهارات" : "Skills",
+    noSkills: isAr ? "لا توجد مهارات مضافة" : "No skills added yet",
+    languages: isAr ? "اللغات" : "Languages",
+    noLanguages: isAr ? "لا توجد لغات مضافة" : "No languages added yet",
+    year: isAr ? "سنة التخرج" : "Graduation Year",
+    grade: isAr ? "التقدير" : "Grade",
+  }
+
+  const getEduLevelLabel = (level: string) => {
+    const map: Record<string, string> = {
+      high_school: isAr ? "ثانوية عامة" : "High School",
+      bachelor: isAr ? "بكالوريوس" : "Bachelor's Degree",
+      master: isAr ? "ماجستير" : "Master's Degree",
+      phd: isAr ? "دكتوراه" : "PhD",
+    }
+    return map[level] || level
+  }
+
+  const getGradeLabel = (grd: string) => {
+    const map: Record<string, string> = {
+      excellent: isAr ? "ممتاز" : "Excellent",
+      very_good: isAr ? "جيد جداً" : "Very Good",
+      good: isAr ? "جيد" : "Good",
+      pass: isAr ? "مقبول" : "Pass",
+    }
+    return map[grd] || grd
+  }
+
+  const getGraduationYear = (edu: any) => {
+    const candidates = [
+      edu.graduation_year,
+      edu.graduationYear,
+      edu.end_date,
+      edu.start_date,
+      edu.endDate,
+      edu.startDate,
+    ]
+    for (const c of candidates) {
+      if (!c && c !== 0) continue
+      const s = String(c)
+      if (!s) continue
+      if (s.includes("-")) return s.split("-")[0]
+      return s
+    }
+    return ""
+  }
+
+  const getGradeDisplay = (edu: any) => {
+    const val = edu.final_grade || edu.grade
+    if (!val) return ""
+    if (typeof val === "number" || !isNaN(Number(val))) {
+      const num = Number(val)
+      if (num >= 85) return getGradeLabel("excellent")
+      if (num >= 75) return getGradeLabel("very_good")
+      if (num >= 65) return getGradeLabel("good")
+      return getGradeLabel("pass")
+    }
+    return getGradeLabel(String(val))
   }
 
   const statusColors: Record<string, { bg: string; text: string; border: string }> = {
@@ -144,6 +227,11 @@ export default async function ApplicationDetailPage({
     "from-[#032C44] to-[#41A0CA]"
   )
 
+  const getFilenameFromUrl = (url?: string | null) => {
+    if (!url) return ""
+    return url.substring(url.lastIndexOf("/") + 1)
+  }
+
   return (
     <div
       className="flex w-full flex-col gap-6 text-start"
@@ -168,129 +256,303 @@ export default async function ApplicationDetailPage({
         </Link>
       </div>
 
-      {/* Application Info Card */}
-      <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
-        <div className="space-y-6">
-          {/* Job Title & Company Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E7EB] pb-6">
-            <div className="space-y-2">
-              <h2 className="text-[22px] font-bold text-[#032C44]">{jobTitle}</h2>
-              <div className="flex items-center gap-2">
-                {application.job?.company?.logo && (
-                  <img
-                    src={application.job.company.logo}
-                    alt=""
-                    className="w-8 h-8 rounded-full object-cover border border-gray-100"
-                  />
+      {/* Main Details Wrapper */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        
+        {/* Left Side: Job & Application Overview (2 cols on large screens) */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* Application Details Card */}
+          <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+            <div className="space-y-6">
+              
+              {/* Job Title & Company Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E7EB] pb-6">
+                <div className="space-y-2">
+                  <h2 className="text-[22px] font-bold text-[#032C44]">{jobTitle}</h2>
+                  <div className="flex items-center gap-2">
+                    {application.job?.company?.logo && (
+                      <img
+                        src={application.job.company.logo}
+                        alt=""
+                        className="w-8 h-8 rounded-full object-cover border border-gray-100"
+                      />
+                    )}
+                    <span className="text-[15px] text-[#6B7280] font-medium">{companyName}</span>
+                  </div>
+                </div>
+
+                {/* Status Badge */}
+                <span
+                  className={cn(
+                    "self-start px-4 py-1.5 rounded-full text-[12px] font-bold border",
+                    statusStyle.bg,
+                    statusStyle.text,
+                    statusStyle.border
+                  )}
+                >
+                  {statusLabels[status]}
+                </span>
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid gap-6 sm:grid-cols-2">
+                {/* Applied On */}
+                <div className="space-y-1">
+                  <p className="text-[13px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                    {labels.appliedOn}
+                  </p>
+                  <div className="flex items-center gap-2 text-[#032C44]">
+                    <img src="/portfolio/calender.svg" alt="" className="w-4 h-4 opacity-60" />
+                    <span className="font-medium">{formatDate(application.applied_at, locale)}</span>
+                  </div>
+                </div>
+
+                {/* Status Text */}
+                <div className="space-y-1">
+                  <p className="text-[13px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                    {labels.status}
+                  </p>
+                  <p className="font-medium text-[#032C44]">{statusLabels[status]}</p>
+                </div>
+              </div>
+
+              {/* Job Details Section */}
+              {application.job && (
+                <div className="border-t border-[#E5E7EB] pt-6">
+                  <h3 className={cn("text-[18px] mb-4", gradientClasses)}>
+                    {labels.jobDetails}
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {application.job.location && (
+                      <div className="rounded-[12px] border border-[#E5E7EB] p-4 bg-[#F9FAFB]">
+                        <p className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider mb-1">
+                          {labels.location}
+                        </p>
+                        <p className="text-[#032C44] font-medium">{application.job.location}</p>
+                      </div>
+                    )}
+                    {application.job.employment_type && (
+                      <div className="rounded-[12px] border border-[#E5E7EB] p-4 bg-[#F9FAFB]">
+                        <p className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider mb-1">
+                          {labels.employmentType}
+                        </p>
+                        <p className="text-[#032C44] font-medium">{application.job.employment_type}</p>
+                      </div>
+                    )}
+                    {application.job.salary_from && (
+                      <div className="rounded-[12px] border border-[#E5E7EB] p-4 bg-[#F9FAFB] sm:col-span-2">
+                        <p className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider mb-1">
+                          {labels.salary}
+                        </p>
+                        <p className="text-[#032C44] font-medium">
+                          {application.job.salary_from}
+                          {application.job.salary_to && ` - ${application.job.salary_to}`}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* View Job Link */}
+              <div className="flex flex-col gap-3 border-t border-[#E5E7EB] pt-6 sm:flex-row">
+                {application.job?.id && (
+                  <Link
+                    href={`/jobs/${application.job.id}`}
+                    className="inline-flex items-center justify-center gap-2 h-[44px] px-6 bg-gradient-to-b from-[#006EA8] to-[#005685] text-white font-bold rounded-[12px] text-[14px] transition hover:brightness-105 shadow-[inset_0px_1px_18px_2px_#E8F2FF,inset_0px_1px_4px_2px_#C2DDFF]"
+                  >
+                    {labels.viewJob}
+                  </Link>
                 )}
-                <span className="text-[15px] text-[#6B7280] font-medium">{companyName}</span>
               </div>
             </div>
-
-            {/* Status Badge */}
-            <span
-              className={cn(
-                "self-start px-4 py-1.5 rounded-full text-[12px] font-bold border",
-                statusStyle.bg,
-                statusStyle.text,
-                statusStyle.border
-              )}
-            >
-              {statusLabels[status]}
-            </span>
           </div>
 
-          {/* Details Grid */}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Applied On */}
-            <div className="space-y-1">
-              <p className="text-[13px] font-semibold text-[#6B7280] uppercase tracking-wider">
-                {labels.appliedOn}
-              </p>
-              <div className="flex items-center gap-2 text-[#032C44]">
-                <img src="/portfolio/calender.svg" alt="" className="w-4 h-4 opacity-60" />
-                <span className="font-medium">{formatDate(application.applied_at, locale)}</span>
+          {/* Education History */}
+          <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm">
+            <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+              {labels.education}
+            </h2>
+            {portfolio?.educations && portfolio.educations.length > 0 ? (
+              <div className="space-y-4">
+                {portfolio.educations.map((edu: any, idx: number) => (
+                  <div key={idx} className="border-b border-[#E5E7EB] last:border-0 pb-4 last:pb-0">
+                    <h3 className="text-[15px] font-bold text-[#032C44]">
+                      {getEduLevelLabel(edu.degree || edu.level_of_education)}
+                    </h3>
+                    <p className="text-xs text-[#006EA8] font-bold mt-1">
+                      {edu.institution || edu.university} • {edu.field_of_study || edu.specialization}
+                    </p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 font-medium mt-2">
+                      <span>
+                        {labels.year}: <span className="text-[#032C44] font-bold">{getGraduationYear(edu)}</span>
+                      </span>
+                      {(edu.grade || edu.final_grade) ? (
+                        <span>
+                          {labels.grade}: <span className="text-[#032C44] font-bold">{getGradeDisplay(edu)}</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <div className="text-center py-4 text-gray-400 text-sm font-medium">
+                {labels.noEducation}
+              </div>
+            )}
+          </Card>
 
-            {/* Status */}
-            <div className="space-y-1">
-              <p className="text-[13px] font-semibold text-[#6B7280] uppercase tracking-wider">
-                {labels.status}
-              </p>
-              <p className="font-medium text-[#032C44]">{statusLabels[status]}</p>
-            </div>
+          {/* Work Experience */}
+          <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm">
+            <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+              {labels.experience}
+            </h2>
+            {portfolio?.experiences && portfolio.experiences.length > 0 ? (
+              <div className="space-y-4">
+                {portfolio.experiences.map((exp: any, idx: number) => (
+                  <div key={idx} className="border-b border-[#E5E7EB] last:border-0 pb-4 last:pb-0">
+                    <h3 className="text-[15px] font-bold text-[#032C44]">{exp.job_title || exp.department}</h3>
+                    <p className="text-xs text-[#006EA8] font-bold mt-1">
+                      {exp.company || exp.company_name}
+                    </p>
+                    <p className="text-xs text-gray-500 font-semibold mt-1">
+                      {exp.start_date} - {exp.is_current || exp.currently_working ? (isAr ? "حتى الآن" : "Present") : exp.end_date || ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-400 text-sm font-medium">
+                {labels.noExperience}
+              </div>
+            )}
+          </Card>
 
-            {/* CV Download */}
-            {application.cv_url && (
-              <div className="space-y-1">
-                <p className="text-[13px] font-semibold text-[#6B7280] uppercase tracking-wider">
-                  {labels.cvUrl}
-                </p>
+        </div>
+
+        {/* Right Side: Candidate Details & Skills/Langs (1 col) */}
+        <div className="space-y-6">
+          
+          {/* Candidate Profile Info */}
+          {userProfile && (
+            <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm">
+              <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+                {labels.personalDetails}
+              </h2>
+              <div className="space-y-3">
+                {([
+                  { label: labels.name, value: userProfile.name },
+                  { label: labels.email, value: userProfile.email },
+                  { label: labels.phone, value: userProfile.phone || "—" },
+                  {
+                    label: labels.gender,
+                    value: (() => {
+                      const g = String(userProfile.Userprofile?.gender || "").toLowerCase()
+                      if (g.includes("female")) return labels.female
+                      if (g.includes("male")) return labels.male
+                      return userProfile.Userprofile?.gender || "—"
+                    })(),
+                  },
+                  {
+                    label: labels.dateOfBirth,
+                    value: userProfile.Userprofile?.dateOfBirth
+                      ? new Intl.DateTimeFormat(isAr ? "ar-EG" : "en-GB", { year: "numeric", month: "short", day: "numeric" }).format(new Date(userProfile.Userprofile.dateOfBirth))
+                      : "—",
+                  },
+                ] as { label: string; value: string }[]).map((item) => (
+                  <div key={item.label} className="flex flex-col gap-0.5 rounded-[10px] border border-[#E8F2FF] bg-[#F9FBFD] px-4 py-3">
+                    <span className="text-[11px] text-[#6B7280]">{item.label}</span>
+                    <span className="text-sm font-semibold text-[#032C44] break-all">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Attached CV */}
+          <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm">
+            <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+              {labels.cv}
+            </h2>
+            {application.cv_url ? (
+              <div className="flex items-center gap-3 border border-[#E5E7EB] rounded-[12px] p-4 bg-[#F4FAFF]">
+                <img src="/portfolio/pdf.svg" alt="PDF" className="w-10 h-10 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-[#032C44] truncate">
+                    {getFilenameFromUrl(application.cv_url)}
+                  </p>
+                  <p className="text-[10px] text-gray-500 font-medium mt-0.5">PDF Document</p>
+                </div>
                 <a
                   href={application.cv_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-[#006EA8] hover:underline font-medium"
+                  className="text-xs font-bold text-[#006EA8] hover:underline"
                 >
-                  <img src="/portfolio/pdf.svg" alt="" className="w-5 h-5" />
-                  {labels.download}
+                  {isAr ? "عرض" : "View"}
                 </a>
               </div>
-            )}
-          </div>
-
-          {/* Job Details Section */}
-          {application.job && (
-            <div className="border-t border-[#E5E7EB] pt-6">
-              <h3 className={cn("text-[18px] mb-4", gradientClasses)}>
-                {labels.jobDetails}
-              </h3>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {application.job.location && (
-                  <div className="rounded-[12px] border border-[#E5E7EB] p-4 bg-[#F9FAFB]">
-                    <p className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider mb-1">
-                      {labels.location}
-                    </p>
-                    <p className="text-[#032C44] font-medium">{application.job.location}</p>
-                  </div>
-                )}
-                {application.job.employment_type && (
-                  <div className="rounded-[12px] border border-[#E5E7EB] p-4 bg-[#F9FAFB]">
-                    <p className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider mb-1">
-                      {labels.employmentType}
-                    </p>
-                    <p className="text-[#032C44] font-medium">{application.job.employment_type}</p>
-                  </div>
-                )}
-                {application.job.salary_from && (
-                  <div className="rounded-[12px] border border-[#E5E7EB] p-4 bg-[#F9FAFB]">
-                    <p className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider mb-1">
-                      {labels.salary}
-                    </p>
-                    <p className="text-[#032C44] font-medium">
-                      {application.job.salary_from}
-                      {application.job.salary_to && ` - ${application.job.salary_to}`}
-                    </p>
-                  </div>
-                )}
+            ) : (
+              <div className="text-center py-2 text-gray-400 text-sm font-medium">
+                {labels.noCv}
               </div>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex flex-col gap-3 border-t border-[#E5E7EB] pt-6 sm:flex-row">
-            {application.job?.id && (
-              <Link
-                href={`/jobs/${application.job.id}`}
-                className="inline-flex items-center justify-center gap-2 h-[44px] px-6 bg-gradient-to-b from-[#006EA8] to-[#005685] text-white font-bold rounded-[12px] text-[14px] transition hover:brightness-105 shadow-[inset_0px_1px_18px_2px_#E8F2FF,inset_0px_1px_4px_2px_#C2DDFF]"
-              >
-                {labels.viewJob}
-              </Link>
             )}
-          </div>
+          </Card>
+
+          {/* Skills */}
+          <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm">
+            <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+              {labels.skills}
+            </h2>
+            {portfolio?.skills && portfolio.skills.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {portfolio.skills.map((skill: any, idx: number) => (
+                  <span
+                    key={idx}
+                    className="bg-[#F4FAFF] text-[#006EA8] border border-[#E5F2FF] px-3 py-1.5 rounded-full text-xs font-bold"
+                  >
+                    {skill.name || skill.skill_name || skill.skillName || ""}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-2 text-gray-400 text-sm font-medium">
+                {labels.noSkills}
+              </div>
+            )}
+          </Card>
+
+          {/* Languages */}
+          <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm">
+            <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+              {labels.languages}
+            </h2>
+            {portfolio?.languages && portfolio.languages.length > 0 ? (
+              <div className="space-y-2.5">
+                {portfolio.languages.map((lang: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between border border-[#E5E7EB] rounded-[12px] px-3.5 py-2.5 bg-[#F9FAFB]">
+                    <span className="text-sm font-bold text-[#032C44]">
+                      {lang.name || lang.language || ""}
+                    </span>
+                    <span className="bg-[#EBF5FF] text-[#006EA8] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+                      {lang.proficiency || lang.level || ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-2 text-gray-400 text-sm font-medium">
+                {labels.noLanguages}
+              </div>
+            )}
+          </Card>
+
         </div>
+
       </div>
+
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { markAllAsRead } from "@/lib/api/services/notifications.service"
 
 export async function POST() {
@@ -17,3 +17,4 @@ export async function POST() {
     return NextResponse.json({ message }, { status: 500 })
   }
 }
+

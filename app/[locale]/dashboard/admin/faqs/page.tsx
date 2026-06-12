@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { getAdminFaqs } from "@/lib/api/services/faqs.service"
 import { AdminFaqsPanel } from "@/features/admin/components/admin-faqs-panel"
 import type { Faq } from "@/lib/api/services/faqs.service"
@@ -10,7 +11,7 @@ export default async function AdminFaqsPage({ params }: { params: Promise<{ loca
   setRequestLocale(locale)
   const session = await getSession()
 
-  if (!session.user || session.user.role !== "admin" || !session.accessToken) {
+  if (!session.user || normalizeRole(session.user) !== "admin" || !session.accessToken) {
     redirect(`/${locale}/dashboard`)
   }
 

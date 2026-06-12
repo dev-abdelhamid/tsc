@@ -11,6 +11,7 @@ import Image from "next/image"
 import { MoveUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Category, Job } from "@/lib/api/types"
+import { JobCard } from "./job-card"
 import {
   formatJobSalary,
   formatJobEmploymentForCard,
@@ -160,43 +161,20 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {visibleJobs.map((job) => (
               <StaggerItem key={`${job.id}-${activeFilter}`}>
-                <Card
-                  className={cn(
-                    "group mx-auto w-full  cursor-pointer overflow-hidden rounded-lg border border-[#78A3BE] bg-white transition-all duration-300",
-                    "hover:border-[#4BB7E7] hover:bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] hover:bg-size-[150px_150px,auto] hover:bg-blend-[plus-lighter,normal] hover:text-white hover:shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19)]"
-                  )}
-                >
-                  <CardContent className="space-y-4 p-5 sm:p-6">
-                    <Badge className="w-fit rounded-full bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] px-3 py-1 text-[12px] text-white group-hover:border group-hover:border-white/30 group-hover:bg-white/15">
-                      {getLocalizedName(job.category?.name, locale) || "—"}
-                    </Badge>
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-start text-[18px] font-bold leading-[1.16] text-[#262626] group-hover:text-white sm:text-[20px]">
-                        {getJobTitle(job, locale)}
-                      </h3>
-                      <p className="shrink-0 text-end text-[14px] font-medium leading-[1.16] text-[#002B46] group-hover:text-white sm:text-[16px]">
-                        {formatJobEmploymentForCard(job.gender, "Full-time")}
-                      </p>
-                    </div>
-                    <p className="text-start text-[16px] font-medium leading-[1.16] text-[#40A0CA] group-hover:text-[#E8F2FF]">
-                      {formatJobSalary(job, t("salaryPeriod") || "/month")}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <div className="grid size-8 shrink-0 place-items-center rounded-full border border-[#78A3BE] group-hover:border-white/60">
-                        <span className="size-4 rounded-full border border-[#78A3BE] group-hover:border-white/70" />
-                      </div>
-                      <p className="text-start text-[14px] leading-[1.16] text-[#525252] group-hover:text-[#e8f2ff] sm:text-[16px]">
-                        {job.company?.name ?? "—"}
-                      </p>
-                    </div>
-                    <PrimaryButton asChild className="h-11 rounded-[10px] text-[16px] font-medium sm:text-[18px]">
-                      <Link locale={locale} href={`/jobs/${job.id}`}>
-                        {t("moreDetails")}
-                        <MoveUpRight className="size-5 shrink-0 rtl:-scale-x-100" />
-                      </Link>
-                    </PrimaryButton>
-                  </CardContent>
-                </Card>
+                <JobCard
+                  job={job}
+                  locale={locale}
+                  isRtl={locale === "ar"}
+                  labels={{
+                    department: "—",
+                    postedAgo: "",
+                    salaryPeriod: t("salaryPeriod") || "/month",
+                    employmentDefault: "Full-time",
+                    companyName: "—",
+                    companySubLabel: "",
+                    moreDetails: t("moreDetails"),
+                  }}
+                />
               </StaggerItem>
             ))}
           </div>

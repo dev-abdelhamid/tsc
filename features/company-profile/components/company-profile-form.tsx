@@ -4,9 +4,13 @@
 import React, { useEffect, useState, useSyncExternalStore, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useLocale } from "next-intl";
-import { Camera, Globe, ChevronDown, Eye, EyeOff } from "lucide-react";
+import { Globe, Eye, EyeOff } from "lucide-react";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { toast } from "sonner";
+import { invalidateSessionCache, updateSessionUser } from "@/hooks/use-auth";
+import Image from "next/image";
+import { COUNTRIES } from "@/lib/countries";
+import { resolveImageUrl } from "@/lib/utils";
 
 // FontAwesome
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -68,17 +72,15 @@ type InitialProfileData = {
   website?: string
 }
 
-const DIALING_CODES = [
-  { code: "+49", country: "DE", flag: "🇩🇪" },
-  { code: "+20", country: "EG", flag: "🇪🇬" },
-  { code: "+212", country: "MA", flag: "🇲🇦" },
-  { code: "+962", country: "JO", flag: "🇯🇴" },
-  { code: "+967", country: "YE", flag: "🇾🇪" },
-  { code: "+966", country: "SA", flag: "🇸🇦" },
-  { code: "+971", country: "AE", flag: "🇦🇪" },
-  { code: "+1", country: "US", flag: "🇺🇸" },
-  { code: "+44", country: "GB", flag: "🇬🇧" },
-];
+const DIALING_CODES = [...COUNTRIES]
+  .sort((a, b) => b.dialCode.length - a.dialCode.length)
+  .map((c, idx) => ({
+    code: c.dialCode,
+    country: c.code,
+    uniqueKey: `${c.code}-${idx}`,
+    flag: c.flag,
+    name: c.name,
+  }));
 
 // ============================================================================
 // Styles
@@ -126,6 +128,7 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
 
   const [message, setMessage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const lastFetchedCountryIdRef = React.useRef<string | null>(null);
 
   // Password visibility
   const [showNewPw, setShowNewPw] = useState(false);
@@ -140,11 +143,13 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
   useEffect(() => {
     let active = true;
 
+    
+
     const loadMetadata = async () => {
       try {
         const [countriesRes, companyTypesRes] = await Promise.all([
           fetch(`/api/countries?locale=${locale}`).then((r) => r.json()),
-          fetch(`/api/company-types?locale=${locale}`).then((r) => r.json()),
+          fetch(`/api/categories?locale=${locale}`).then((r) => r.json()),
         ]);
         if (!active) return;
         if (countriesRes.data) setCountries(countriesRes.data);
@@ -157,51 +162,52 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
     loadMetadata();
 
     if (initialProfile) {
-      const p = initialProfile as InitialProfileData;
+      const raw = normalizeProfile(initialProfile as any)
 
       const companyName = String(
-        typeof p.company_name === "string"
-          ? p.company_name
-          : (p.company_name && (p.company_name as Record<string, unknown>)[locale]) ||
-              (p.company_name && (p.company_name as Record<string, unknown>).ar) ||
-              (p.company_name && (p.company_name as Record<string, unknown>).en) ||
+        typeof raw.company_name === "string"
+          ? raw.company_name
+          : (raw.company_name && (raw.company_name as Record<string, unknown>)[locale]) ||
+              (raw.company_name && (raw.company_name as Record<string, unknown>).ar) ||
+              (raw.company_name && (raw.company_name as Record<string, unknown>).en) ||
               ""
       );
 
       const ceoName = String(
-        typeof p.ceo_name === "string"
-          ? p.ceo_name
-          : (p.ceo_name && (p.ceo_name as Record<string, unknown>)[locale]) ||
-              (p.ceo_name && (p.ceo_name as Record<string, unknown>).ar) ||
-              (p.ceo_name && (p.ceo_name as Record<string, unknown>).en) ||
+        typeof raw.ceo_name === "string"
+          ? raw.ceo_name
+          : (raw.ceo_name && (raw.ceo_name as Record<string, unknown>)[locale]) ||
+              (raw.ceo_name && (raw.ceo_name as Record<string, unknown>).ar) ||
+              (raw.ceo_name && (raw.ceo_name as Record<string, unknown>).en) ||
               ""
       );
 
       const descriptionText = String(
-        typeof p.description === "string"
-          ? p.description
-          : (p.description && (p.description as Record<string, unknown>)[locale]) ||
-              (p.description && (p.description as Record<string, unknown>).ar) ||
-              (p.description && (p.description as Record<string, unknown>).en) ||
+        typeof raw.description === "string"
+          ? raw.description
+          : (raw.description && (raw.description as Record<string, unknown>)[locale]) ||
+              (raw.description && (raw.description as Record<string, unknown>).ar) ||
+              (raw.description && (raw.description as Record<string, unknown>).en) ||
               ""
       );
-      const rawCompanyTypeId = (p as { company_type_id?: number | string }).company_type_id
-      const companyTypeId = p.company_type?.id ?? rawCompanyTypeId
+      const rawCompanyTypeId = (raw as { company_type_id?: number | string }).company_type_id
+      const companyTypeId = (raw.company_type && (raw.company_type as { id?: number }).id) ?? rawCompanyTypeId
 
       setValue("name", companyName);
       setValue("ceo_name", ceoName);
-      setValue("email", p.email || "");
-      setValue("website", p.website || "");
-      setValue("postal_code", p.postal_code || "");
-      setValue("num_of_employees", String(p.num_of_employees || ""));
+      setValue("email", raw.email || "");
+      setValue("website", raw.website || "");
+      setValue("postal_code", raw.postal_code || "");
+      setValue("num_of_employees", String(raw.num_of_employees || ""));
       setValue("company_type_id", String(companyTypeId ?? ""));
       setValue("description", descriptionText);
 
-      const countryId = p.country_id ?? (p.country && typeof p.country === "object" ? (p.country as { id?: number }).id : undefined) ?? "";
+      const countryId = raw.country_id ?? (raw.country && typeof raw.country === "object" ? (raw.country as { id?: number }).id : undefined) ?? "";
       setValue("country_id", String(countryId));
 
-      const cityId = p.city ? (typeof p.city === "object" ? (p.city as { id?: number }).id : p.city) : "";
+      const cityId = raw.city ? (typeof raw.city === "object" ? (raw.city as { id?: number }).id : raw.city) : "";
       if (countryId) {
+        lastFetchedCountryIdRef.current = String(countryId);
         fetch(`/api/cities?countryId=${countryId}&locale=${locale}`)
           .then((r) => r.json())
           .then((cData) => {
@@ -213,7 +219,7 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
       }
 
       // Phone & dial code
-      const rawPhone = p.phone || "";
+      const rawPhone = raw.phone || "";
       let parsedPhone = rawPhone;
       let parsedDial = "+20";
       for (const d of DIALING_CODES) {
@@ -227,13 +233,13 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
       setValue("phone", parsedPhone);
 
       // Socials
-      setValue("facebook", p.facebook || "");
-      setValue("linkedin", p.linkedin || "");
-      setValue("twitter_x", p.twitter_x || "");
-      setValue("pinterest", p.pinterest || "");
+      setValue("facebook", raw.facebook || "");
+      setValue("linkedin", raw.linkedin || "");
+      setValue("twitter_x", raw.twitter_x || "");
+      setValue("pinterest", raw.pinterest || "");
 
-      setAvatarUrl(p.avatar || null);
-      setCoverUrl(p.cover_image || null);
+      setAvatarUrl(raw.avatar ? resolveImageUrl(raw.avatar) : null);
+      setCoverUrl(raw.cover_image ? resolveImageUrl(raw.cover_image) : null);
     }
 
     return () => {
@@ -241,13 +247,46 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
     };
   }, [setValue, locale, initialProfile]);
 
+  // Re-populate company_type_id once companyTypes options have loaded (they load
+  // asynchronously so setValue runs before <option> elements exist in the DOM).
+  useEffect(() => {
+    if (!initialProfile || companyTypes.length === 0) return;
+    const raw = normalizeProfile(initialProfile as any);
+    const companyTypeId =
+      (raw.company_type && (raw.company_type as { id?: number }).id) ??
+      (raw as { company_type_id?: number | string }).company_type_id;
+    if (companyTypeId) {
+      setValue("company_type_id", String(companyTypeId));
+    }
+  }, [companyTypes, initialProfile, setValue]);
+
+  // Re-populate country_id once countries options have loaded.
+  useEffect(() => {
+    if (!initialProfile || countries.length === 0) return;
+    const raw = normalizeProfile(initialProfile as any);
+    const countryId =
+      raw.country_id ??
+      (raw.country && typeof raw.country === "object"
+        ? (raw.country as { id?: number }).id
+        : undefined) ??
+      "";
+    if (countryId) {
+      setValue("country_id", String(countryId));
+    }
+  }, [countries, initialProfile, setValue]);
+
   // Load cities when country changes
   useEffect(() => {
     if (!selectedCountryId) {
       setCities([]);
+      lastFetchedCountryIdRef.current = null;
+      return;
+    }
+    if (selectedCountryId === lastFetchedCountryIdRef.current) {
       return;
     }
     let active = true;
+    lastFetchedCountryIdRef.current = selectedCountryId;
     fetch(`/api/cities?countryId=${selectedCountryId}&locale=${locale}`)
       .then((r) => r.json())
       .then((cData) => {
@@ -274,7 +313,7 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
         }
 
         const fd = new FormData();
-        if (avatarFile) fd.append("avatar", avatarFile);
+        if (avatarFile) fd.append("logo", avatarFile);
         if (coverFile) fd.append("cover_image", coverFile);
 
         fd.append("name", data.name);
@@ -306,6 +345,85 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
         const payload = await res.json();
         if (!res.ok) throw new Error(payload?.message || "Failed to update profile");
 
+        // Step 1: invalidate the client-side cache so the stale session is cleared
+        invalidateSessionCache();
+
+        // Step 2: immediately re-fetch /api/auth/session — the profile POST set the
+        // updated_user cookie which the session GET will merge and return, giving us
+        // the fresh avatar without a full re-login.
+        try {
+          const sessRes = await fetch("/api/auth/session", {
+            credentials: "include",
+            cache: "no-store",
+            headers: { "Content-Type": "application/json" },
+          });
+          if (sessRes.ok) {
+            const sessData = await sessRes.json();
+            if (sessData?.user) {
+              updateSessionUser(sessData.user);
+            }
+          } else {
+            // Fallback: apply optimistic update from the profile response directly
+            const updated = payload?.data || payload;
+            const norm = normalizeProfile(updated);
+            const sessionUpdate: Record<string, unknown> = {};
+            if (norm.avatar) sessionUpdate.avatar = resolveImageUrl(norm.avatar) || norm.avatar;
+            if (norm.name) sessionUpdate.name = norm.name;
+            if (Object.keys(sessionUpdate).length > 0) updateSessionUser(sessionUpdate);
+          }
+        } catch {
+          // Non-critical fallback
+          try {
+            const updated = payload?.data || payload;
+            const norm = normalizeProfile(updated);
+            const sessionUpdate: Record<string, unknown> = {};
+            if (norm.avatar) sessionUpdate.avatar = resolveImageUrl(norm.avatar) || norm.avatar;
+            if (norm.name) sessionUpdate.name = norm.name;
+            if (Object.keys(sessionUpdate).length > 0) updateSessionUser(sessionUpdate);
+          } catch {}
+        }
+
+
+        // Update local form state from server response so saved values appear immediately
+        try {
+          const updated = payload?.data || payload
+          const norm = normalizeProfile(updated)
+
+          setValue("name", norm.name || "")
+          setValue("ceo_name", (typeof norm.ceo_name === "string" ? norm.ceo_name : "") || "")
+          setValue("email", norm.email || "")
+          setValue("website", norm.website || "")
+          setValue("postal_code", norm.postal_code || "")
+          setValue("num_of_employees", String(norm.num_of_employees || ""))
+          setValue("company_type_id", String((norm.company_type_id as any) ?? ""))
+          setValue("description", typeof norm.description === "string" ? norm.description : "")
+          setValue("facebook", norm.facebook || "")
+          setValue("linkedin", norm.linkedin || "")
+          setValue("twitter_x", norm.twitter_x || "")
+          setValue("pinterest", norm.pinterest || "")
+
+          if (norm.country_id) {
+            setValue("country_id", String(norm.country_id))
+            lastFetchedCountryIdRef.current = String(norm.country_id)
+            // reload cities for the country
+            fetch(`/api/cities?countryId=${norm.country_id}&locale=${locale}`)
+              .then((r) => r.json())
+              .then((cData) => {
+                if (cData.data) {
+                  setCities(cData.data)
+                  const cityId = norm.city ? (typeof norm.city === "object" ? (norm.city as any).id : norm.city) : ""
+                  setValue("city_id", String(cityId))
+                }
+              })
+              .catch(() => {})
+          }
+
+          setAvatarUrl(norm.avatar ? resolveImageUrl(norm.avatar) : null)
+          setCoverUrl(norm.cover_image ? resolveImageUrl(norm.cover_image) : null)
+        } catch (e) {
+          // ignore update-state errors
+        }
+
         if (data.new_password) {
           const pwRes = await fetch("/api/auth/profile/password", {
             method: "POST",
@@ -332,7 +450,7 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
         setLoading(false);
       }
     },
-    [avatarFile, coverFile, isAr]
+    [avatarFile, coverFile, isAr, locale]
   );
 
   // File handlers
@@ -354,6 +472,59 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
 
   const activeDialObj = DIALING_CODES.find((d) => d.code === selectedDialCode) || DIALING_CODES[0];
 
+  const normalizeProfile = (raw: any): InitialProfileData => {
+    if (!raw) return {}
+
+    // If wrapped in { data }
+    if (raw && typeof raw === "object" && "data" in raw) raw = (raw as any).data
+
+    const out: InitialProfileData = {}
+
+    // Top-level fallbacks (snake_case) or camelCase nested companyProfile
+    const cp = raw.companyProfile || raw.company_profile || raw.company || null
+
+    // Basic fields
+    out.name = raw.name || (cp && (cp.companyName || cp.name)) || raw.company_name || ""
+    out.email = raw.email || raw.email_address || ""
+    out.phone = raw.phone || raw.mobile || ""
+
+    // Company name (may be localized object or string)
+    out.company_name = raw.company_name || (cp && (cp.companyName || cp.name)) || undefined
+
+    // CEO name
+    out.ceo_name = raw.ceo_name || (cp && (cp.ceoName || cp.ceo_name)) || undefined
+
+    // Description (localized or string)
+    out.description = raw.description || (cp && (cp.description || cp.desc)) || undefined
+
+    // Website / postal / num_of_employees
+    out.website = raw.website || (cp && (cp.website || cp.website_url)) || undefined
+    out.postal_code = raw.postal_code || (cp && (cp.postalCode || cp.postal_code)) || undefined
+    out.num_of_employees = (raw.num_of_employees as any) ?? (cp && (cp.numOfEmployees || cp.num_of_employees)) ?? undefined
+
+    // Company type id
+    out.company_type_id = raw.company_type_id ?? (raw.company_type && (raw.company_type.id ?? raw.company_type_id)) ?? (cp && (cp.company_type_id || cp.companyType?.id)) ?? undefined
+
+    // Country / city
+    out.country_id = raw.country_id ?? (raw.country && (raw.country.id ?? undefined)) ?? (cp && (cp.country?.id ?? undefined))
+    out.city = raw.city ?? (cp && (cp.city ?? undefined)) ?? undefined
+
+    // Avatar / cover
+    // For companies, prefer the company logo (cp.logoUrl) over the generic user avatar.
+    // raw.avatar is the user's personal avatar which stays unchanged when a company
+    // logo is uploaded — always read the company logo first.
+    out.avatar = (cp && (cp.logoUrl || cp.logo || cp.logo_url)) || raw.logoUrl || raw.logo || raw.logo_url || raw.avatar || raw.avatar_url || null
+    out.cover_image = raw.cover_image || raw.coverImage || (cp && (cp.coverImageUrl || cp.cover_image)) || null
+
+    // Socials
+    out.facebook = raw.facebook || (cp && (cp.socialMedia?.facebook || cp.facebook)) || undefined
+    out.linkedin = raw.linkedin || (cp && (cp.socialMedia?.linkedin || cp.linkedin)) || undefined
+    out.twitter_x = raw.twitter_x || (cp && (cp.socialMedia?.twitterX || cp.twitter_x)) || undefined
+    out.pinterest = raw.pinterest || (cp && (cp.socialMedia?.pinterest || cp.pinterest)) || undefined
+
+    return out
+  }
+
   // --------------------------------------------------------------------------
   // Render
   // --------------------------------------------------------------------------
@@ -362,14 +533,8 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* ==================== COMPANY BASIC INFO CARD ==================== */}
         <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
-          <div className="px-8 pt-8 pb-4">
-            <h2 className="text-[22px] font-bold italic text-start bg-gradient-to-r from-[#032C44] via-[#0e5f83] to-[#41A0CA] bg-clip-text text-transparent">
-              {isAr ? "بيانات الشركة الأساسية" : "Company Basic Info"}
-            </h2>
-          </div>
-
           {/* Cover + Avatar */}
-          <div className="px-8">
+          <div className="px-8 pt-8">
             <div className="relative w-full rounded-xl h-[260px]">
               <div className="absolute inset-0 overflow-hidden rounded-xl">
                 {coverUrl ? (
@@ -410,7 +575,7 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                 <span
                   className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(0,110,168,0.3),_inset_0_1px_2px_rgba(255,255,255,0.2)] bg-gradient-to-b from-[#006EA8] to-[#005685] transition-all hover:scale-105 active:scale-95"
                 >
-                  <Camera className="h-4 w-4" />
+                  <img src="/update.svg" alt="update" className="h-4 w-4" />
                   {isAr ? "تغيير الغلاف" : "Replace Cover"}
                 </span>
                 <input type="file" accept="image/*" aria-label={isAr ? "تحميل صورة الغلاف" : "Upload cover image"} className="hidden" onChange={handleCoverChange} />
@@ -428,7 +593,7 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                   <label
                     className="absolute bottom-2 right-2 h-9 w-9 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-transform hover:scale-105 bg-gradient-to-b from-[#006EA8] to-[#005685]"
                   >
-                    <Camera className="h-4 w-4 text-white" />
+                    <img src="/update.svg" alt="update" className="h-4 w-4 text-white" />
                     <input type="file" accept="image/*" aria-label={isAr ? "تحميل صورة الشعار" : "Upload avatar image"} className="hidden" onChange={handleAvatarChange} />
                   </label>
                 </div>
@@ -484,7 +649,8 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                 <div className="relative">
                   <input
                     type={showNewPw ? "text" : "password"}
-                    placeholder="••••••••••••"
+                    placeholder={isAr ? "كلمة مرور جديدة (اختياري)" : "New password (optional)"}
+                    autoComplete="new-password"
                     className={fieldBase + " pe-10"}
                     {...register("new_password")}
                   />
@@ -502,12 +668,13 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
               {/* Confirm Password */}
               <div className="flex flex-col gap-1.5 text-start">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "تأكيد كلمة المرور" : "Confirm password"} <span className="text-red-500">*</span>
+                  {isAr ? "تأكيد كلمة المرور الجديدة" : "Confirm new password"}
                 </label>
                 <div className="relative">
                   <input
                     type={showConfirmPw ? "text" : "password"}
-                    placeholder="••••••••••••"
+                    placeholder={isAr ? "تأكيد كلمة المرور الجديدة (اختياري)" : "Confirm new password (optional)"}
+                    autoComplete="new-password"
                     className={fieldBase + " pe-10"}
                     {...register("confirm_password")}
                   />
@@ -534,7 +701,13 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2 text-[#40A0CA]" />
+                  <Image
+                    src="/portfolio/arrow-down.svg"
+                    alt="arrow"
+                    width={20}
+                    height={20}
+                    className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2"
+                  />
                 </div>
               </div>
 
@@ -544,13 +717,19 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                   {isAr ? "المدينة" : "City"} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative w-full">
-                  <select required className={selectBase} {...register("city_id")} disabled={!selectedCountryId}>
+                  <select required className={selectBase} {...register("city_id")} disabled={isMounted ? !selectedCountryId : false}>
                     <option value="" disabled>{isAr ? "اختر المدينة" : "Select City"}</option>
                     {cities.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2 text-[#40A0CA]" />
+                  <Image
+                    src="/portfolio/arrow-down.svg"
+                    alt="arrow"
+                    width={20}
+                    height={20}
+                    className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2"
+                  />
                 </div>
               </div>
 
@@ -563,7 +742,7 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                   <div className="relative flex items-center shrink-0 pe-2 me-2 border-e border-[#D4D4D4]">
                     <select className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" {...register("dial_code")}>
                       {DIALING_CODES.map((d) => (
-                        <option key={d.code} value={d.code}>{d.flag} {d.code}</option>
+                        <option key={d.uniqueKey} value={d.code}>{d.flag} {d.code}</option>
                       ))}
                     </select>
                     {isMounted && (
@@ -572,9 +751,15 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                         <span className="text-sm text-[#525252] font-medium">{activeDialObj.code}</span>
                       </>
                     )}
-                    <ChevronDown className="h-4 w-4 text-[#A3A3A3] ms-1 pointer-events-none" />
+                    <Image
+                      src="/portfolio/arrow-down.svg"
+                      alt="arrow"
+                      width={16}
+                      height={16}
+                      className="h-4 w-4 text-[#A3A3A3] ms-1 pointer-events-none"
+                    />
                   </div>
-                  <input type="tel" required dir="ltr" className="w-full min-w-0 bg-transparent text-sm text-[#525252] outline-none" {...register("phone")} />
+                  <input type="tel" required dir={isAr ? "rtl" : "ltr"} className={`w-full min-w-0 bg-transparent text-sm text-[#525252] outline-none ${isAr ? "text-right" : "text-left"}`} {...register("phone")} />
                 </div>
               </div>
 
@@ -592,15 +777,21 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
 
               {/* Company Type */}
               <div className="flex flex-col gap-1.5 text-start">
-                <label className="text-sm font-medium text-[#262626]">{isAr ? "نوع الشركة" : "Type Of Company"}</label>
+                <label className="text-sm font-medium text-[#262626]">{isAr ? "تصنيف الشركة (القطاع)" : "Company Category (Sector)"}</label>
                 <div className="relative w-full">
                   <select className={selectBase} {...register("company_type_id")}>
-                    <option value="">{isAr ? "اختر النوع" : "Select Type"}</option>
+                    <option value="">{isAr ? "اختر القطاع" : "Select Sector"}</option>
                     {companyTypes.map((t) => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2 text-[#40A0CA]" />
+                  <Image
+                    src="/portfolio/arrow-down.svg"
+                    alt="arrow"
+                    width={20}
+                    height={20}
+                    className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2"
+                  />
                 </div>
               </div>
 
@@ -748,3 +939,4 @@ function SocialLinkButton({
     </div>
   );
 }
+

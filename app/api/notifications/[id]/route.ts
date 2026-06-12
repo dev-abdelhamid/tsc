@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { deleteNotification } from "@/lib/api/services/notifications.service"
 
 export async function DELETE(_request: any, context: any) {

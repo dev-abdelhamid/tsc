@@ -1,92 +1,74 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { setAuthCookies, callBackend, normalizeRole, getTokenFromCookie } from "@/lib/auth-token"
 
-export async function GET() {
-  const session = await getSession()
-  return NextResponse.json({
-    isLoggedIn: session.isLoggedIn,
-    user: session.user ?? null,
-  })
+export async function GET(request: NextRequest) {
+  try {
+    const token = await getTokenFromCookie()
+    if (!token) {
+      return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
+    }
+
+    const locale = request.headers.get("accept-language")?.split(",")[0] || "ar"
+    const { data: profile, error, status } = await callBackend<any>('/auth/profile', {
+      method: 'GET',
+      headers: { 'Accept-Language': locale }
+    }, token)
+
+    if (error || !profile) {
+      return NextResponse.json({ message: error || "Invalid token" }, { status: status || 401 })
+    }
+
+    const user = profile.data || profile
+    return NextResponse.json({ success: true, user })
+  } catch (err) {
+    return NextResponse.json(
+      { message: err instanceof Error ? err.message : "Unexpected error in session GET endpoint" },
+      { status: 500 }
+    )
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as Record<string, unknown>
+    const body = await request.json().catch(() => ({}))
+    const token = body?.data?.tokens?.access_token || body?.tokens?.access_token || body?.access_token || body?.accessToken
 
-    const data = (body["data"] as Record<string, unknown> | undefined) || body
-
-    const user =
-      (body["user"] as Record<string, unknown> | undefined) ??
-      (data["user"] as Record<string, unknown> | undefined) ??
-      (data["id"] ? data : undefined)
-
-    const tokens =
-      (body["tokens"] as Record<string, unknown> | undefined) ??
-      (data["tokens"] as Record<string, unknown> | undefined) ??
-      {
-        access_token:
-          (data["access_token"] as string | undefined) ??
-          (data["token"] as string | undefined) ??
-          (data["accessToken"] as string | undefined) ??
-          (body["access_token"] as string | undefined) ??
-          (body["token"] as string | undefined) ??
-          (body["accessToken"] as string | undefined),
-        refresh_token:
-          (data["refresh_token"] as string | undefined) ??
-          (data["refreshToken"] as string | undefined) ??
-          (body["refresh_token"] as string | undefined) ??
-          (body["refreshToken"] as string | undefined),
-        token_type:
-          (data["token_type"] as string | undefined) ??
-          (data["tokenType"] as string | undefined) ??
-          (body["token_type"] as string | undefined) ??
-          (body["tokenType"] as string | undefined) ??
-          "Bearer",
-        expires_in:
-          (data["expires_in"] as number | undefined) ??
-          (data["expiresIn"] as number | undefined) ??
-          (body["expires_in"] as number | undefined) ??
-          (body["expiresIn"] as number | undefined) ??
-          0,
-      }
-
-    if (!user || !tokens?.access_token) {
-      return NextResponse.json({ message: "بيانات الجلسة غير كاملة" }, { status: 400 })
+    if (!token) {
+      return NextResponse.json({ message: "No token provided" }, { status: 400 })
     }
 
-    const mapRole = (u: unknown): "user" | "company" | "admin" => {
-      const obj = u as Record<string, unknown> | undefined
-      const rolesVal = obj?.roles
-      if (Array.isArray(rolesVal)) {
-        const rolesArr = rolesVal.map((r) => String(r).toLowerCase())
-        if (rolesArr.includes("company")) return "company"
-        if (rolesArr.includes("admin")) return "admin"
-        if (rolesArr.includes("user")) return "user"
-      }
-      const roleStr = String(obj?.role ?? "").toLowerCase()
-      if (roleStr.includes("company")) return "company"
-      if (roleStr.includes("admin")) return "admin"
-      if (roleStr.includes("user")) return "user"
-      return "user"
+    // Call Laravel backend profile API using the provided token to verify it and fetch the user's role
+    const locale = request.headers.get("accept-language")?.split(",")[0] || "ar"
+    const { data: profile, error, status } = await callBackend<any>('/auth/profile', {
+      method: 'GET',
+      headers: { 'Accept-Language': locale }
+    }, token)
+
+    if (error || !profile) {
+      return NextResponse.json({ message: error || "Invalid token" }, { status: status || 401 })
     }
 
-    const session = await getSession()
-    session.user = {
-      id: Number(user.id),
-      name: String(user.name || ""),
-      email: String(user.email || ""),
-      role: mapRole(user),
-      avatar: user.avatar as string | undefined,
+    // Extract and normalize the user's role
+    const user = profile.data || profile
+    let role = 'user'
+    if (user.roles && user.roles.length > 0) {
+      const firstRole = user.roles[0]
+      role = typeof firstRole === 'object' ? (firstRole.name || firstRole.role) : firstRole
+    } else if (user.role) {
+      role = user.role
     }
-    session.accessToken = tokens.access_token as string
-    session.refreshToken = tokens.refresh_token as string | undefined
-    session.isLoggedIn = true
 
-    await session.save()
+    const normalized = normalizeRole(role)
 
-    return NextResponse.json({ success: true }, { status: 200 })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "فشل إنشاء الجلسة"
-    return NextResponse.json({ message }, { status: 500 })
+    // Set the HttpOnly cookies for access_token and user_role
+    const response = NextResponse.json({ success: true, user, role: normalized })
+    setAuthCookies(response, token, normalized)
+
+    return response
+  } catch (err) {
+    return NextResponse.json(
+      { message: err instanceof Error ? err.message : "Unexpected error in session endpoint" },
+      { status: 500 }
+    )
   }
 }

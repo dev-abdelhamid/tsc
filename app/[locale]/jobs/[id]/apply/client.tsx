@@ -7,13 +7,14 @@ import { toast } from "sonner"
 import { Card } from "@/components/ui/card"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import { cn } from "@/lib/utils"
-import type { Job, UserPortfolio } from "@/lib/api/types"
+import type { Job, User, UserPortfolio } from "@/lib/api/types"
 
 type JobApplicationClientProps = {
   jobId: number
   locale: string
   job: Job
   initialPortfolio?: UserPortfolio
+  userProfile?: User
   token: string
 }
 
@@ -22,6 +23,7 @@ export default function JobApplicationClient({
   locale,
   job,
   initialPortfolio,
+  userProfile,
 }: JobApplicationClientProps) {
   const router = useRouter()
   const isAr = locale === "ar"
@@ -61,13 +63,24 @@ export default function JobApplicationClient({
   }
 
   const getGraduationYear = (edu: any) => {
-    if (edu.graduation_year) return String(edu.graduation_year)
-    if (edu.end_date) {
-      if (String(edu.end_date).includes("-")) {
-        return String(edu.end_date).split("-")[0]
-      }
-      return String(edu.end_date)
+    // Support multiple possible shapes coming from different portfolio sources
+    const candidates = [
+      edu.graduation_year,
+      (edu as any).graduationYear,
+      edu.end_date,
+      edu.start_date,
+      (edu as any).endDate,
+      (edu as any).startDate,
+    ]
+
+    for (const c of candidates) {
+      if (!c && c !== 0) continue
+      const s = String(c)
+      if (!s) continue
+      if (s.includes("-")) return s.split("-")[0]
+      return s
     }
+
     return ""
   }
 
@@ -91,6 +104,23 @@ export default function JobApplicationClient({
     const toastId = toast.loading(isAr ? "جاري التقديم..." : "Submitting...")
 
     try {
+      // Pre-check: ensure there's no existing open/pending application for this job
+      try {
+        const chk = await fetch(`/api/jobs/${jobId}/has-open-application`, { headers: { "x-locale": locale } })
+        if (chk.ok) {
+          const body = await chk.json().catch(() => ({}))
+          if (body?.hasOpen) {
+            toast.dismiss(toastId)
+            toast.error(isAr ? "لديك طلب مفتوح لهذه الوظيفة. الرجاء إغلاقه أولاً." : "You already have an open application for this job. Please close it first.")
+            setSubmitting(false)
+            return
+          }
+        }
+      } catch (e) {
+        // If pre-check fails for network reasons, continue and let server handle duplicates
+        console.warn("Pre-check for open application failed:", e)
+      }
+
       const res = await fetch(`/api/jobs/${jobId}/apply`, {
         method: "POST",
         headers: {
@@ -152,6 +182,17 @@ export default function JobApplicationClient({
     company: isAr ? "الشركة" : "Company",
     department: isAr ? "القسم" : "Department",
     period: isAr ? "الفترة" : "Period",
+    personalDetails: isAr ? "البيانات الشخصية" : "Personal Details",
+    name: isAr ? "الاسم" : "Name",
+    email: isAr ? "البريد الإلكتروني" : "Email",
+    phone: isAr ? "رقم الهاتف" : "Phone",
+    gender: isAr ? "الجنس" : "Gender",
+    dateOfBirth: isAr ? "تاريخ الميلاد" : "Date of Birth",
+    maritalStatus: isAr ? "الحالة الاجتماعية" : "Marital Status",
+    male: isAr ? "ذكر" : "Male",
+    female: isAr ? "أنثى" : "Female",
+    single: isAr ? "أعزب" : "Single",
+    married: isAr ? "متزوج" : "Married",
   }
 
   const gradientTitleClasses = cn(
@@ -196,6 +237,51 @@ export default function JobApplicationClient({
         <p className="text-sm text-gray-500 text-start leading-relaxed font-medium px-1">
           {labels.subtitle}
         </p>
+
+        {/* Personal Details Card */}
+        {userProfile && (
+          <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm text-start">
+            <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
+              {labels.personalDetails}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {([
+                { label: labels.name, value: userProfile.name },
+                { label: labels.email, value: userProfile.email },
+                { label: labels.phone, value: userProfile.phone || "—" },
+                {
+                  label: labels.gender,
+                  value: (() => {
+                    const g = String(userProfile.Userprofile?.gender || "").toLowerCase()
+                    if (g.includes("female")) return labels.female
+                    if (g.includes("male")) return labels.male
+                    return userProfile.Userprofile?.gender || "—"
+                  })(),
+                },
+                {
+                  label: labels.dateOfBirth,
+                  value: userProfile.Userprofile?.dateOfBirth
+                    ? new Intl.DateTimeFormat(isAr ? "ar-EG" : "en-GB", { year: "numeric", month: "short", day: "numeric" }).format(new Date(userProfile.Userprofile.dateOfBirth))
+                    : "—",
+                },
+                {
+                  label: labels.maritalStatus,
+                  value: (() => {
+                    const ms = String((userProfile.Userprofile as any)?.maritalStatus || "").toLowerCase()
+                    if (ms === "single") return labels.single
+                    if (ms === "married") return labels.married
+                    return (userProfile.Userprofile as any)?.maritalStatus || "—"
+                  })(),
+                },
+              ] as { label: string; value: string }[]).map((item) => (
+                <div key={item.label} className="flex flex-col gap-0.5 rounded-[10px] border border-[#E8F2FF] bg-[#F9FBFD] px-4 py-3">
+                  <span className="text-xs text-[#6B7280]">{item.label}</span>
+                  <span className="text-sm font-semibold text-[#032C44]">{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* CV File Card */}
         <Card className="p-6 border-[#E5E7EB] rounded-[16px] shadow-sm text-start">

@@ -45,7 +45,7 @@ export async function AdminJobApplicationsPage({
     notFound()
   }
 
-  const { data: applications } = await getAdminJobApplications(jobId, accessToken, 1, locale)
+  const { data: applications, meta } = await getAdminJobApplications(jobId, accessToken, 1, locale)
   const title = getJobTitle(job, locale)
   const statusLabels: Record<string, string> = {
     pending: safeT("applicationsPage.status.pending", "Pending"),
@@ -85,7 +85,7 @@ export async function AdminJobApplicationsPage({
           "from-[#032C44] to-[#41A0CA]"
         )}>
           <p className="text-sm font-semibold">{t("applicationsPage.summary")}</p>
-          <p className="mt-2 text-[24px] font-bold">{applications.length}</p>
+          <p className="mt-2 text-[24px] font-bold">{meta?.total ?? applications.length}</p>
         </div>
 
         <div className="overflow-x-auto">
@@ -106,16 +106,24 @@ export async function AdminJobApplicationsPage({
               applications.map((application, index) => {
                 const appStatus = mapStatus(application.status)
                 const cvUrl = application.cv_url
+
+                const user = application.user as any
+                const candidateName = user?.name ||
+                  [user?.first_name, user?.firstName, user?.first].find(Boolean) ||
+                  [user?.last_name, user?.lastName, user?.last].find(Boolean)
+                  ? `${user?.first_name || user?.firstName || user?.first || ""} ${user?.last_name || user?.lastName || user?.last || ""}`.trim()
+                  : null
+
                 return (
                   <div
-                    key={application.id}
+                    key={application.id ?? `application-${index}`}
                     className={cn(
                       "flex items-center border-b border-[#F0F4F8] last:border-0",
                       index % 2 === 0 ? "bg-white" : "bg-[#F9FBFD]"
                     )}
                   >
                     <div className="w-[25%] px-4 py-4 text-sm font-semibold text-[#111827]">
-                      {application.user?.name ?? safeT("applicationsPage.unknownCandidate", "Unknown")}
+                      {candidateName ?? application.user?.name ?? safeT("applicationsPage.unknownCandidate", "Unknown")}
                     </div>
                     <div className="w-[18%] px-4 py-4 text-center">
                       <DashboardStatusBadge status={appStatus} label={statusLabels[appStatus]} />

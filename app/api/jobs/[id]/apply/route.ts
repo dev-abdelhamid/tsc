@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { api } from "@/lib/api/client"
+import { getMyApplications } from "@/lib/api/services/user.service"
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -14,6 +15,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const locale = request.headers.get("x-locale") || request.headers.get("accept-language") || "ar"
     const { id } = await params
     const jobId = id
+
+    // Server-side guard: check if user already has an open/pending application for this job
+    try {
+      const appsResult = await getMyApplications(token, 1, locale as "ar" | "en" | "de").catch(() => ({ data: [] }))
+      const existing = (appsResult.data || []).find((a: any) => {
+        const jid = a.job?.id || a.job?.job_id || a.job?.jobId || a.job
+        return Number(jid) === Number(jobId) && (a.status === "pending" || a.status === "open")
+      })
+      if (existing) {
+        return NextResponse.json({ ok: false, message: "You have an open application for this job" }, { status: 409 })
+      }
+    } catch (e) {
+      // ignore pre-check errors and continue - the external API will handle duplicates if needed
+    }
 
     // If an external jobs API base is configured, prefer forwarding the request there.
     const externalBase = process.env.JOBS_API_URL || process.env.NEXT_PUBLIC_JOBS_API_URL || process.env.NEXT_PUBLIC_API_URL

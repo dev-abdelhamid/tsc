@@ -97,6 +97,17 @@
       }
     }
   },
+  "Ui": {
+    "common": {
+      "loading": "Wird geladen...",
+      "pleaseWait": "Bitte warten...",
+      "newTicket": "Neues Ticket"
+    },
+    "dialog": {
+      "close": "Schließen",
+      "description": "Dialog-Inhalt"
+    }
+  },
   "Landing": {
     "hero": {
       "brand": "Talent Seeker",
@@ -774,11 +785,14 @@
         "backToJobs": "Zurück zur Admin-Stellen",
         "summary": "Bewerber",
         "candidate": "Kandidat",
+        "actions": "Aktionen",
+        "actionsLabel": "Aktionen",
         "statusLabel": "Status",
         "appliedAt": "Bewerbung am",
         "email": "E-Mail",
         "empty": "Für diese Stelle gibt es noch keine Bewerbungen.",
         "unknownCandidate": "Unbenannter Kandidat",
+        "viewCv": "Lebenslauf anzeigen",
         "status": {
           "pending": "Ausstehend",
           "accepted": "Akzeptiert",
@@ -1012,10 +1026,12 @@
   },
   "Ui": {
     "common": {
-      "loading": "Wird geladen"
+      "loading": "Wird geladen",
+      "pleaseWait": "Bitte warten..."
     },
     "dialog": {
-      "close": "Schließen"
+      "close": "Schließen",
+      "description": "Inhalt des Dialogs"
     },
     "sheet": {
       "title": "Seitenleisten-Drawer",

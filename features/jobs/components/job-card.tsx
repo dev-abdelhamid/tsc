@@ -9,6 +9,7 @@ import type { Job } from "@/lib/api/types"
 import {
   formatJobEmploymentForCard,
   formatJobSalary,
+  formatJobSalaryRange,
   getJobTitle,
   getLocalizedName,
 } from "@/features/jobs/lib/job-display"
@@ -59,18 +60,19 @@ export function JobCard({ job, locale, isRtl, labels }: JobCardProps) {
             {employmentLabel}
           </p>
         </div>
-        <p className="text-start text-[16px] font-medium leading-[1.16] text-[#40A0CA] group-hover:text-[#E8F2FF]">
-          {formatJobSalary(job, labels.salaryPeriod)}
+        <p className="text-start text-[16px] font-medium leading-[1.16] text-[#40A0CA] group-hover:text-[#E8F2FF] flex items-center gap-1">
+          <span dir="ltr">{formatJobSalaryRange(job)}</span>
+          <span>{labels.salaryPeriod}</span>
         </p>
         <div className="flex items-center gap-2">
           <div className="grid size-8 shrink-0 place-items-center rounded-full border border-[#78A3BE] group-hover:border-white/60">
             {job.company?.logo ? (
-              <Image
+              <img
                 src={job.company.logo}
                 alt=""
                 width={32}
                 height={32}
-                className="rounded-full object-cover"
+                className="rounded-full object-cover size-8"
               />
             ) : (
               <span className="text-[10px] font-semibold text-[#006EA8] group-hover:text-white/80">

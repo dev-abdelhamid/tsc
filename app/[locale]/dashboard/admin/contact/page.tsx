@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { getContactMessages } from "@/lib/api/services/contact-messages.service"
 import { AdminContactMessagesPanel } from "@/features/admin/components/admin-contact-messages-panel"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
@@ -18,7 +19,7 @@ export default async function AdminContactPage({
     redirect(`/${locale}/sign-in`)
   }
 
-  if (session.user.role !== "admin") {
+  if (normalizeRole(session.user) !== "admin") {
     redirect(`/${locale}/dashboard`)
   }
 

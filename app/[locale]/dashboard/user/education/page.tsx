@@ -1,7 +1,7 @@
 // server wrapper to provide locale + session to the client component
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import UserEducationClient from "./client"
 import { getUserPortfolio } from "@/lib/api/services/portfolio.service"
 

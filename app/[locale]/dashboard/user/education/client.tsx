@@ -160,7 +160,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       endDate: e.endDate || e.end_date || "",
       currentlyWorking: e.currentlyWorking || e.currently_working === 1 || e.currently_working === "1" || e.currently_working === true || e.is_current === true || false,
       responsibilities: e.responsibilities || e.description || "",
-      attachment: e.attachment || null,
+      attachment: e.attachment || e.document_url || null,
     }));
     setExperiences(exps);
 
@@ -277,7 +277,8 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
           }
           formData.append(`work_experience[${idx}][currently_working]`, exp.currentlyWorking ? "1" : "0");
           formData.append(`work_experience[${idx}][responsibilities]`, exp.responsibilities || "");
-          if (exp.id) formData.append(`work_experience[${idx}][id]`, String(exp.id));
+          // Do not send ID due to non-existent 'user_work_experiences' table validation bug on Laravel backend
+          // if (exp.id) formData.append(`work_experience[${idx}][id]`, String(exp.id));
           if (exp.attachmentFile) formData.append(`work_experience[${idx}][attachment]`, exp.attachmentFile);
         });
       }

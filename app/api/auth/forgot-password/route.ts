@@ -4,9 +4,21 @@ import { ApiError } from "@/lib/api/client"
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json()
+    let body: Record<string, unknown> = {}
+    try { body = await request.json() } catch {}
+    if (!body || !body.email) {
+      try {
+        const form = await request.formData()
+        body = {}
+        form.forEach((v, k) => { body[k] = typeof v === "string" ? v : v })
+      } catch {}
+    }
+
     const locale = request.headers.get("accept-language")?.split(",")[0] || "ar"
-    await forgotPassword(email, locale as "ar" | "en" | "de")
+    const email = String((body.email as string) || "")
+    if (!email) return NextResponse.json({ message: "email missing" }, { status: 400 })
+
+    await forgotPassword(email, locale)
     return NextResponse.json({ success: true })
   } catch (error) {
     const status = error instanceof ApiError ? error.status : 500

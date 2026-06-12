@@ -1,20 +1,21 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
-import { updatePassword } from "@/lib/api/services/auth.service"
+import { getSession } from "@/lib/auth-token"
 import { ApiError } from "@/lib/api/client"
+import { updatePassword } from "@/lib/api/services/auth.service"
 
 export async function POST(request: Request) {
   try {
     const session = await getSession()
-    if (!session.accessToken) return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
 
-    const body = await request.json()
-    const { current_password, new_password, new_password_confirmation } = body
+    const body = await request.json().catch(() => ({} as Record<string, unknown>))
+    const { current_password, new_password, new_password_confirmation } = body as Record<string, string>
     if (!current_password || !new_password || !new_password_confirmation) {
       return NextResponse.json({ message: "Missing fields" }, { status: 400 })
     }
 
-    await updatePassword(current_password, new_password, new_password_confirmation, session.accessToken, session.locale || "ar")
+    if (!session || !session.accessToken) return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
+
+    await updatePassword(current_password, new_password, new_password_confirmation, session.accessToken as string, session.locale || "ar")
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     const status = error instanceof ApiError ? error.status : 500
@@ -22,3 +23,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ message }, { status })
   }
 }
+

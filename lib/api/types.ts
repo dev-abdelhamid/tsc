@@ -18,12 +18,15 @@ export interface UserProfile {
   lastName?: string | null
   gender?: string | null
   dateOfBirth?: string | null
+  maritalStatus?: string | null
+  categoryId?: number | null
+  subcategoryId?: number | null
+  categoryName?: string | null
+  subcategoryName?: string | null
   facebook?: string | null
   linkedin?: string | null
   twitterX?: string | null
   pinterest?: string | null
-  categoryId?: number | null
-  subcategoryId?: number | null
 }
 
 export interface CompanyProfileData {
@@ -118,7 +121,7 @@ export interface JobApplication {
   id: number
   job: Job
   user: User
-  status: "pending" | "accepted" | "rejected"
+  status: "pending" | "accepted" | "approved" | "rejected"
   applied_at: string
   cv_url?: string
 }
@@ -274,6 +277,7 @@ export interface Experience {
   is_current?: boolean
   description?: string
   location?: string
+  document_url?: string
 }
 
 export interface Language {

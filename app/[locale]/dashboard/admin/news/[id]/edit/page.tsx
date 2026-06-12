@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { getAdminNewsItem, getAdminNewsItemRaw } from "@/lib/api/services/news.service"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
 import { AdminNewsEditForm } from "@/features/admin/components/admin-news-edit-form"
@@ -17,7 +18,7 @@ export default async function AdminNewsEditPage({ params }: PageProps) {
   if (!session.isLoggedIn || !session.user || !session.accessToken) {
     redirect(`/${locale}/sign-in`)
   }
-  if (session.user.role !== "admin") {
+  if (normalizeRole(session.user) !== "admin") {
     redirect(`/${locale}/dashboard`)
   }
 

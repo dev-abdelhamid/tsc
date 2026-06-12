@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getCategoriesForForm } from "@/lib/api/services/categories.service"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 
 export async function GET(request: NextRequest) {
   const localeParam = request.nextUrl.searchParams.get("locale")
@@ -21,3 +21,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: [] })
   }
 }
+

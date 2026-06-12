@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getCities } from "@/lib/api/services/auth.service"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 
 export async function GET(request: NextRequest) {
   const locale = request.nextUrl.searchParams.get("locale") || "ar"
@@ -19,3 +19,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: [], error: "Failed to fetch cities" }, { status: 500 })
   }
 }
+

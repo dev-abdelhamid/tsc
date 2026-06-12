@@ -203,6 +203,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
     const map: Record<string, string> = {
       pending: isAr ? "معلق" : "Pending",
       open: isAr ? "مفتوح" : "Open",
+      answered: isAr ? "تم الرد" : "Answered",
       closed: isAr ? "مغلق" : "Closed",
       rejected: isAr ? "مرفوض" : "Rejected",
     };
@@ -262,13 +263,19 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
   const filteredTickets =
     statusFilter === "all"
       ? tickets
-      : tickets.filter((t) => (t.status || "pending") === statusFilter);
+      : tickets.filter((t) => {
+          const status = t.status || "pending";
+          if (statusFilter === "open") {
+            return status === "open" || status === "answered";
+          }
+          return status === statusFilter;
+        });
 
   // Status counts
   const statusCounts = {
     all: tickets.length,
     pending: tickets.filter((t) => (t.status || "pending") === "pending").length,
-    open: tickets.filter((t) => t.status === "open").length,
+    open: tickets.filter((t) => t.status === "open" || t.status === "answered").length,
     closed: tickets.filter((t) => t.status === "closed").length,
   };
 
@@ -287,7 +294,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
         </PrimaryButton>
       }
     >
-      <div className="w-full space-y-6 max-w-[1000px] mx-auto pb-10" dir={isAr ? "rtl" : "ltr"}>
+      <div className="w-full space-y-6 pb-10" dir={isAr ? "rtl" : "ltr"}>
 
       {/* ── Status Filter Tabs ── */}
       <div className="flex flex-wrap gap-2">
@@ -357,6 +364,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                       "text-[11px] font-bold px-3 py-1 rounded-full border shrink-0",
                       status === "pending" && "border-[#FFB64D] bg-[#FFF8EE] text-[#FFB64D]",
                       status === "open" && "border-[#39DA8A] bg-[#EAFBF3] text-[#39DA8A]",
+                      status === "answered" && "border-[#006EA8] bg-[#F0F9FF] text-[#006EA8]",
                       status === "closed" && "border-[#FF5B5C] bg-[#FFF5F5] text-[#FF5B5C]",
                       status === "rejected" && "border-[#FF5B5C] bg-[#FFF5F5] text-[#FF5B5C]"
                     )}
@@ -417,6 +425,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                       "text-[11px] font-bold px-3 py-1 rounded-full border",
                       (selectedTicket.status || "pending") === "pending" && "border-[#FFB64D] bg-[#FFF8EE] text-[#FFB64D]",
                       (selectedTicket.status || "pending") === "open" && "border-[#39DA8A] bg-[#EAFBF3] text-[#39DA8A]",
+                      (selectedTicket.status || "pending") === "answered" && "border-[#006EA8] bg-[#F0F9FF] text-[#006EA8]",
                       (selectedTicket.status || "pending") === "closed" && "border-[#FF5B5C] bg-[#FFF5F5] text-[#FF5B5C]"
                     )}>
                       {getStatusLabel(selectedTicket.status || "pending")}

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { CompanyJobApplicationsPage } from "@/features/company-jobs/components/company-job-applications-page"
 
 export default async function CompanyJobApplicationsRoutePage({
@@ -19,15 +20,18 @@ export default async function CompanyJobApplicationsRoutePage({
   if (!session.isLoggedIn || !session.accessToken) {
     redirect(`/${locale}/sign-in`)
   }
-  if (session.user?.role !== "company") {
+  if (normalizeRole(session.user) !== "company") {
     redirect(`/${locale}/dashboard`)
   }
+
+  const accessToken = session.accessToken as string | undefined
+  if (!accessToken) redirect(`/${locale}/sign-in`)
 
   return (
     <CompanyJobApplicationsPage
       jobId={jobId}
       locale={locale}
-      accessToken={session.accessToken}
+      accessToken={accessToken}
     />
   )
 }

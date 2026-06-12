@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { getTickets } from "@/lib/api/services/tickets.service"
-import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
 import TicketsClient from "./client"
 
 export default async function UserTicketsPage({
@@ -27,15 +26,5 @@ export default async function UserTicketsPage({
   )
   const tickets = ticketsResult.data || []
 
-  const isAr = locale === "ar"
-
-  return (
-    <DashboardPageShell
-      title={isAr ? "الدعم الفني والتذاكر" : "Tickets & Support"}
-      description={isAr ? "تابع تذاكر الدعم الفني الخاصة بك واستفساراتك" : "Track your support tickets and inquiries"}
-      isRTL={isAr}
-    >
-      <TicketsClient locale={locale} initialTickets={tickets} />
-    </DashboardPageShell>
-  )
+  return <TicketsClient locale={locale} initialTickets={tickets} />
 }

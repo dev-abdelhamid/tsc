@@ -57,26 +57,8 @@ export default function FavouritesClient({ locale, initialJobs }: Props) {
   );
 
   return (
-    <div className="w-full space-y-6 max-w-[1000px] mx-auto pb-10" dir={isAr ? "rtl" : "ltr"}>
-      {/* Header Cards (matching premium styling in screenshots) */}
-      <div className="flex flex-col gap-6">
-        <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm flex items-center justify-between">
-          <div>
-            <h2 className={gradientTitleClasses}>
-              {isAr ? "الوظائف المفضلة" : "My Favorite Jobs"}
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {isAr ? "إدارة الوظائف التي قمت بحفظها للتقديم عليها لاحقاً" : "Manage the jobs you saved to apply later"}
-            </p>
-          </div>
-          <div className="bg-[#EBF5FB] text-[#006EA8] px-4 py-2 rounded-xl text-center shrink-0">
-            <span className="block text-2xl font-bold">{jobs.length}</span>
-            <span className="text-[10px] uppercase tracking-wider font-semibold">
-              {isAr ? "إجمالي الوظائف" : "Total Saved"}
-            </span>
-          </div>
-        </div>
-      </div>
+    <div className="w-full space-y-6 pb-10" dir={isAr ? "rtl" : "ltr"}>
+      {/* Page content: list of favourite jobs (header provided by DashboardPageShell) */}
 
       <div className="w-full">
         {jobs.length > 0 ? (

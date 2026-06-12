@@ -1,66 +1,49 @@
-import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
-import { getProfile, updateProfile } from "@/lib/api/services/auth.service"
-import { ApiError } from "@/lib/api/client"
+import { NextRequest, NextResponse } from "next/server"
+import { getTokenFromRequest, callBackend } from "@/lib/auth-token"
 
-export async function GET() {
-  try {
-    const session = await getSession()
-    if (!session.accessToken) return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
-
-    const profile = await getProfile(session.accessToken, session.locale || "ar")
-    return NextResponse.json({ data: profile })
-  } catch (error: unknown) {
-    const status = error instanceof ApiError ? error.status : 500
-    const message = error instanceof Error ? error.message : "فشل جلب الملف الشخصي"
-    return NextResponse.json({ message }, { status })
+export async function GET(request: NextRequest) {
+  const token = getTokenFromRequest(request)
+  if (!token) {
+    return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
   }
+
+  const locale = request.headers.get("accept-language")?.split(",")[0] || "ar"
+  const { data, error, status } = await callBackend<any>('/auth/profile', {
+    method: 'GET',
+    headers: { 'Accept-Language': locale }
+  }, token)
+
+  if (error) {
+    return NextResponse.json({ message: error }, { status })
+  }
+
+  return NextResponse.json(data)
 }
 
-export async function POST(request: Request) {
-  try {
-    const session = await getSession()
-    if (!session.accessToken) return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
-
-    const contentType = request.headers.get("content-type") || ""
-    let body: Record<string, unknown> = {}
-
-    if (contentType.includes("multipart/form-data")) {
-      const formData = await request.formData()
-      formData.forEach((value, key) => {
-        if (value instanceof File) {
-          if (value.size > 0 && value.name) {
-            body[key] = value
-          }
-        } else {
-          body[key] = value
-        }
-      })
-    } else {
-      body = await request.json()
-    }
-
-    const updated = await updateProfile(body, session.accessToken, session.locale || "ar")
-
-    const currentUser = session.user ?? {
-      id: 0,
-      name: "",
-      email: "",
-      role: "user" as const,
-    }
-
-    session.user = {
-      ...currentUser,
-      name: updated.name,
-      email: updated.email,
-      avatar: updated.avatar,
-    }
-    await session.save()
-
-    return NextResponse.json({ data: updated })
-  } catch (error: unknown) {
-    const status = error instanceof ApiError ? error.status : 500
-    const message = error instanceof Error ? error.message : "فشل تحديث الملف الشخصي"
-    return NextResponse.json({ message }, { status })
+export async function POST(request: NextRequest) {
+  const token = getTokenFromRequest(request)
+  if (!token) {
+    return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
   }
+
+  const locale = request.headers.get("accept-language")?.split(",")[0] || "ar"
+  
+  let body: any
+  try {
+    body = await request.formData()
+  } catch (err) {
+    return NextResponse.json({ message: "Invalid form data" }, { status: 400 })
+  }
+
+  const { data, error, status } = await callBackend<any>('/auth/profile', {
+    method: 'POST',
+    headers: { 'Accept-Language': locale },
+    body
+  }, token)
+
+  if (error) {
+    return NextResponse.json({ message: error }, { status })
+  }
+
+  return NextResponse.json(data)
 }

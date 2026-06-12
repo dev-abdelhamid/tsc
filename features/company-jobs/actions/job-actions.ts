@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import {
   createJob,
   deleteJob,
@@ -74,3 +74,4 @@ export async function stopCompanyJobAction(
     }
   }
 }
+

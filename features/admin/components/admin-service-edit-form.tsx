@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { useRouter } from "@/i18n/navigation"
 import Image from "next/image"
 import { Link } from "@/i18n/navigation"
@@ -148,105 +148,141 @@ export function AdminServiceEditForm({
   const [editLocale, setEditLocale] = useState<LocaleKey>((locale as LocaleKey) || "ar")
 
   const [form, setForm] = useState<ServiceForm>(() => {
-    if (!service || isNew) {
-      return {
-        title: emptyLocale(),
-        description: emptyLocale(),
-        features: [emptyFeature()],
-      }
-    }
-
-    const allLocales = (service as any).__allLocales as Record<string, any> | undefined
-    if (allLocales) {
-      const title = emptyLocale()
-      const description = emptyLocale()
-
-      for (const loc of LOCALES) {
-        const item = allLocales[loc] ?? {}
-        const parsedTitle = parseLocalizedField(item.title ?? item.title_raw ?? item, loc as LocaleKey)
-        const parsedDesc = parseLocalizedField(item.description ?? item.content ?? item, loc as LocaleKey)
-        title[loc] = parsedTitle[loc] || ""
-        description[loc] = parsedDesc[loc] || ""
+    // build initial form state based on incoming props
+    const build = (svc?: any, createNew?: boolean): ServiceForm => {
+      if (!svc || createNew) {
+        return { title: emptyLocale(), description: emptyLocale(), features: [emptyFeature()] }
       }
 
-      const features: FeatureForm[] = []
-      const featuresByLocale: Record<string, any[]> = {}
-      for (const loc of LOCALES) {
-        featuresByLocale[loc] = Array.isArray(allLocales[loc]?.features) ? allLocales[loc].features : []
-      }
+      const allLocales = (svc as any).__allLocales as Record<string, any> | undefined
+      if (allLocales) {
+        const title = emptyLocale()
+        const description = emptyLocale()
 
-      const idSet = new Set<number>()
-      for (const loc of LOCALES) {
-        for (const f of featuresByLocale[loc]) {
-          if (f && typeof f.id === "number") idSet.add(f.id)
+        for (const loc of LOCALES) {
+          const item = allLocales[loc] ?? {}
+          const parsedTitle = parseLocalizedField(item.title ?? item.title_raw ?? item, loc as LocaleKey)
+          const parsedDesc = parseLocalizedField(item.description ?? item.content ?? item, loc as LocaleKey)
+          title[loc] = parsedTitle[loc] || ""
+          description[loc] = parsedDesc[loc] || ""
         }
-      }
 
-      if (idSet.size > 0) {
-        for (const idVal of Array.from(idSet)) {
-          const fTitle = emptyLocale()
-          const fDesc = emptyLocale()
-          let icon = ""
-          for (const loc of LOCALES) {
-            const f = featuresByLocale[loc].find((ff) => ff && ff.id === idVal)
-            const parsedTitle = parseLocalizedField(f?.title ?? f?.title_raw ?? f, loc as LocaleKey)
-            fTitle[loc] = parsedTitle[loc] || ""
-            const parsedDesc = parseLocalizedField(f?.description ?? f?.content ?? f, loc as LocaleKey)
-            fDesc[loc] = parsedDesc[loc] || ""
-            if (!icon && f?.icon) icon = f.icon
+        const features: FeatureForm[] = []
+        const featuresByLocale: Record<string, any[]> = {}
+        for (const loc of LOCALES) {
+          featuresByLocale[loc] = Array.isArray(allLocales[loc]?.features) ? allLocales[loc].features : []
+        }
+
+        const idSet = new Set<number>()
+        for (const loc of LOCALES) {
+          for (const f of featuresByLocale[loc]) {
+            if (f && typeof f.id === "number") idSet.add(f.id)
           }
-          features.push({ id: idVal, title: fTitle, description: fDesc, icon })
         }
-      } else {
-        const maxLen = Math.max(...LOCALES.map((l) => featuresByLocale[l].length))
-        for (let i = 0; i < maxLen; i++) {
-          const fTitle = emptyLocale()
-          const fDesc = emptyLocale()
-          let icon = ""
-          for (const loc of LOCALES) {
-            const f = featuresByLocale[loc][i]
-            const parsedTitle = parseLocalizedField(f?.title ?? f?.title_raw ?? f, loc as LocaleKey)
-            fTitle[loc] = parsedTitle[loc] || ""
-            const parsedDesc = parseLocalizedField(f?.description ?? f?.content ?? f, loc as LocaleKey)
-            fDesc[loc] = parsedDesc[loc] || ""
-            if (!icon && f?.icon) icon = f.icon
+
+        if (idSet.size > 0) {
+          for (const idVal of Array.from(idSet)) {
+            const fTitle = emptyLocale()
+            const fDesc = emptyLocale()
+            let icon = ""
+            for (const loc of LOCALES) {
+              const f = featuresByLocale[loc].find((ff) => ff && ff.id === idVal)
+              const parsedTitle = parseLocalizedField(f?.title ?? f?.title_raw ?? f, loc as LocaleKey)
+              fTitle[loc] = parsedTitle[loc] || ""
+              const parsedDesc = parseLocalizedField(f?.description ?? f?.content ?? f, loc as LocaleKey)
+              fDesc[loc] = parsedDesc[loc] || ""
+              if (!icon && f?.icon) icon = f.icon
+            }
+            features.push({ id: idVal, title: fTitle, description: fDesc, icon })
           }
-          features.push({ title: fTitle, description: fDesc, icon })
+        } else {
+          const maxLen = Math.max(...LOCALES.map((l) => featuresByLocale[l].length))
+          for (let i = 0; i < maxLen; i++) {
+            const fTitle = emptyLocale()
+            const fDesc = emptyLocale()
+            let icon = ""
+            for (const loc of LOCALES) {
+              const f = featuresByLocale[loc][i]
+              const parsedTitle = parseLocalizedField(f?.title ?? f?.title_raw ?? f, loc as LocaleKey)
+              fTitle[loc] = parsedTitle[loc] || ""
+              const parsedDesc = parseLocalizedField(f?.description ?? f?.content ?? f, loc as LocaleKey)
+              fDesc[loc] = parsedDesc[loc] || ""
+              if (!icon && f?.icon) icon = f.icon
+            }
+            features.push({ title: fTitle, description: fDesc, icon })
+          }
+        }
+
+        const existingImage = (allLocales[locale as LocaleKey]?.image) ?? allLocales.ar?.image ?? allLocales.en?.image ?? allLocales.de?.image ?? ""
+
+        return {
+          id: svc.id,
+          title,
+          description,
+          existingImage,
+          features,
         }
       }
 
-      const existingImage = (allLocales[locale as LocaleKey]?.image) ?? allLocales.ar?.image ?? allLocales.en?.image ?? allLocales.de?.image ?? ""
+      // Fallback: single-locale shaped service
+      const title = parseLocalizedField(svc.title ?? svc.title_raw ?? svc, locale as LocaleKey)
+      const description = parseLocalizedField(svc.description ?? svc.content ?? svc, locale as LocaleKey)
+
+      const features = Array.isArray(svc.features)
+        ? svc.features.map((f: any) => ({
+            id: f.id,
+            title: parseLocalizedField(f.title ?? f.title_raw ?? f, locale as LocaleKey),
+            description: parseLocalizedField(f.description ?? f.content ?? f, locale as LocaleKey),
+            icon: f.icon ?? "",
+          }))
+        : []
 
       return {
-        id: service.id,
+        id: svc.id,
         title,
         description,
-        existingImage,
+        existingImage: svc.image ?? "",
         features,
       }
     }
 
-    // Fallback: single-locale shaped service
-    const title = parseLocalizedField(service.title ?? service.title_raw ?? service, locale as LocaleKey)
-    const description = parseLocalizedField(service.description ?? service.content ?? service, locale as LocaleKey)
-
-    const features = Array.isArray(service.features)
-      ? service.features.map((f: any) => ({
-          id: f.id,
-          title: parseLocalizedField(f.title ?? f.title_raw ?? f, locale as LocaleKey),
-          description: parseLocalizedField(f.description ?? f.content ?? f, locale as LocaleKey),
-          icon: f.icon ?? "",
-        }))
-      : []
-
-    return {
-      id: service.id,
-      title,
-      description,
-      existingImage: service.image ?? "",
-      features,
-    }
+    return build(service, isNew)
   })
+
+  // Reset form when `service` prop or `isNew` changes (handles client-side navigation)
+  useEffect(() => {
+    const build = (svc?: any, createNew?: boolean): void => {
+      if (!svc || createNew) {
+        setForm({ title: emptyLocale(), description: emptyLocale(), features: [emptyFeature()] })
+        return
+      }
+      // Reuse same logic as initializer by delegating to state setter with a fresh value
+      // (we can call the existing initializer by invoking setForm with the previous build above)
+      // For simplicity, reconstruct similarly by calling the initializer function indirectly
+      // Note: keep this minimal to avoid duplicating large logic; reuse the initializer via a temporary setter
+      // We'll trigger a full remount-like reset by setting the built value using the same logic above.
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      setForm((prev) => {
+        // If createNew requested, return empty
+        if (createNew) return { title: emptyLocale(), description: emptyLocale(), features: [emptyFeature()] }
+        // Otherwise, use the original `build` logic by calling the initializer function defined above.
+        // Since we cannot call it directly here (block scoping), compute a minimal reconstruction for service edits.
+        const title = parseLocalizedField((service?.title ?? service?.title_raw ?? service), locale as LocaleKey)
+        const description = parseLocalizedField((service?.description ?? service?.content ?? service), locale as LocaleKey)
+        const features = Array.isArray(service?.features)
+          ? service.features.map((f: any) => ({
+              id: f.id,
+              title: parseLocalizedField(f.title ?? f.title_raw ?? f, locale as LocaleKey),
+              description: parseLocalizedField(f.description ?? f.content ?? f, locale as LocaleKey),
+              icon: f.icon ?? "",
+            }))
+          : []
+        return { id: service?.id, title, description, existingImage: service?.image ?? "", features }
+      })
+    }
+
+    build(service, isNew)
+  }, [service, isNew, locale])
 
   function updateTitle(lang: LocaleKey, val: string) {
     setForm((prev) => ({ ...prev, title: { ...prev.title, [lang]: val } }))
@@ -270,8 +306,22 @@ export function AdminServiceEditForm({
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // Validate file type and size (Max 5MB)
+    const allowed = ["image/png", "image/jpeg", "image/jpg", "image/webp"]
+    const maxSize = 5 * 1024 * 1024
+    if (!allowed.includes(file.type)) {
+      setError(isRTL ? "نوع الملف غير مدعوم. استخدم PNG أو JPG أو WEBP" : "Unsupported file type. Use PNG, JPG or WEBP")
+      return
+    }
+    if (file.size > maxSize) {
+      setError(isRTL ? "حجم الملف أكبر من 5MB" : "File is larger than 5MB")
+      return
+    }
+
     const preview = URL.createObjectURL(file)
     setForm((prev) => ({ ...prev, imageFile: file, imagePreview: preview }))
+    setError(null)
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -383,9 +433,9 @@ export function AdminServiceEditForm({
             {isRTL ? "صورة الخدمة" : "Service Image"}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-col items-center gap-4">
           {imageSrc ? (
-            <div className="relative h-24 w-40 overflow-hidden rounded-xl border border-[#E5E7EB] bg-gray-50">
+            <div className="relative w-full overflow-hidden rounded-xl border border-[#E5E7EB] bg-gray-50 h-56 sm:h-48 md:h-56">
               <Image
                 src={imageSrc}
                 alt=""
@@ -395,29 +445,32 @@ export function AdminServiceEditForm({
               />
             </div>
           ) : (
-            <div className="flex h-24 w-40 items-center justify-center rounded-xl border border-dashed border-[#78A3BE] bg-[#F8FBFF]">
-              <ImageIcon className="h-8 w-8 text-[#78A3BE]" />
+            <div className="flex w-full h-56 sm:h-48 md:h-56 items-center justify-center rounded-xl border-dashed border-[#78A3BE] bg-[#F8FBFF]">
+              <ImageIcon className="h-10 w-10 text-[#78A3BE]" />
             </div>
           )}
-          <div className="space-y-2">
+
+          <div className="flex flex-col items-center gap-2 w-full">
             <label className="cursor-pointer">
-              <span className="inline-flex items-center gap-2 rounded-lg border border-[#006EA8] px-4 py-2 text-sm font-medium text-[#006EA8] hover:bg-[#006EA8]/10 transition-colors">
+              <span className="inline-flex items-center gap-2 rounded-lg border border-[#006EA8] px-4 py-2 text-sm font-medium text-[#006EA8] hover:bg-[#006EA8]/10 transition-colors mx-auto">
                 <Pencil className="h-4 w-4" />
                 {imageSrc
                   ? (isRTL ? "تغيير الصورة" : "Change Image")
                   : (isRTL ? "رفع صورة" : "Upload Image")}
               </span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+              <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleImageChange} />
             </label>
+
             {form.imagePreview && (
               <button
                 type="button"
                 onClick={() => setForm((prev) => ({ ...prev, imageFile: null, imagePreview: null }))}
-                className="block text-xs text-red-500 hover:underline"
+                className="text-xs text-red-500 hover:underline"
               >
                 {isRTL ? "إزالة" : "Remove"}
               </button>
             )}
+
             <p className="text-xs text-[#9CA3AF]">
               {isRTL ? "PNG أو JPG أو WEBP · حجم أقصى 5MB" : "PNG, JPG or WEBP · Max size 5MB"}
             </p>

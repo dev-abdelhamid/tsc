@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { getCategoriesForForm } from "@/lib/api/services/categories.service"
 import { CreateJobWizard } from "@/features/company-jobs/components/create-job-wizard"
 
@@ -17,7 +18,7 @@ export default async function CreateJobPage({
     redirect(`/${locale}/sign-in`)
   }
 
-  if (session.user.role !== "company") {
+  if (normalizeRole(session.user) !== "company") {
     redirect(`/${locale}/dashboard`)
   }
 

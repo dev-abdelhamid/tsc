@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { markAsRead } from "@/lib/api/services/notifications.service"
 import { ApiError } from "@/lib/api/client"
 

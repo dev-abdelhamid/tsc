@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { getFavoriteJobs } from "@/lib/api/services/jobs.service"
 import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
 import FavouritesClient from "./client"

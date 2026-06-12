@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { updateApplicationStatus } from "@/lib/api/services/company.service"
 
 export type ApplicationActionResult = { ok: true } | { ok: false; message: string }
@@ -20,7 +20,10 @@ export async function updateApplicationStatusAction(
   try {
     await updateApplicationStatus(applicationId, status, session.accessToken, locale)
     revalidatePath(`/${locale}/dashboard/company/jobs/${jobId}/applications`)
+    revalidatePath(`/${locale}/dashboard/company/jobs/${jobId}/applications/${applicationId}`)
     revalidatePath(`/${locale}/dashboard/company/jobs`)
+    revalidatePath(`/${locale}/dashboard/company`)
+    revalidatePath(`/${locale}/dashboard/company/applicants`)
     return { ok: true }
   } catch (err) {
     return {
@@ -29,3 +32,4 @@ export async function updateApplicationStatusAction(
     }
   }
 }
+

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { AdminJobApplicationsPage } from "@/features/admin/components/admin-job-applications-page"
 
 export default async function AdminJobApplicationsRoutePage({
@@ -18,7 +19,7 @@ export default async function AdminJobApplicationsRoutePage({
 
   const session = await getSession()
 
-  if (!session.user || session.user.role !== "admin" || !session.accessToken) {
+  if (!session.user || normalizeRole(session.user) !== "admin" || !session.accessToken) {
     redirect(`/${locale}/dashboard`)
   }
 

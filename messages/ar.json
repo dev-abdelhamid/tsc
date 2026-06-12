@@ -536,6 +536,42 @@
       }
     }
   },
+  "Ui": {
+    "common": {
+      "loading": "جارٍ التحميل...",
+      "pleaseWait": "الرجاء الانتظار...",
+      "newTicket": "تذكرة جديدة"
+    },
+    "dialog": {
+      "close": "إغلاق",
+      "description": "محتوى مربع الحوار"
+    },
+    "sheet": {
+      "title": "درج القائمة الجانبية",
+      "close": "إغلاق"
+    },
+    "sidebar": {
+      "title": "الشريط الجانبي",
+      "mobileDescription": "يعرض الشريط الجانبي على الجوال.",
+      "toggle": "تبديل الشريط الجانبي"
+    },
+    "breadcrumb": {
+      "label": "مسار التنقل",
+      "more": "المزيد"
+    },
+    "carousel": {
+      "previousSlide": "الشريحة السابقة",
+      "nextSlide": "الشريحة التالية"
+    },
+    "pagination": {
+      "navigation": "ترقيم الصفحات",
+      "previous": "السابق",
+      "next": "التالي",
+      "goToPrevious": "الانتقال إلى الصفحة السابقة",
+      "goToNext": "الانتقال إلى الصفحة التالية",
+      "morePages": "صفحات أكثر"
+    }
+  },
   "CompanyJobs": {
     "title": "إنشاء وظيفة",
     "listTitle": "وظائفي",
@@ -774,11 +810,14 @@
         "backToJobs": "العودة إلى وظائف الإدارة",
         "summary": "عدد المتقدمين",
         "candidate": "المتقدم",
+        "actions": "الإجراءات",
+        "actionsLabel": "الإجراءات",
         "statusLabel": "الحالة",
         "appliedAt": "تاريخ التقديم",
         "email": "البريد الإلكتروني",
         "empty": "لا توجد طلبات على هذه الوظيفة بعد.",
         "unknownCandidate": "متقدم غير مسمى",
+        "viewCv": "عرض السيرة الذاتية",
         "status": {
           "pending": "قيد الانتظار",
           "accepted": "مقبول",
@@ -1002,7 +1041,7 @@
       "newsColActions": "الإجراءات",
       "newsEmpty": "لا توجد أخبار",
       "notificationsEmpty": "لا توجد إشعارات",
-      "markAllRead": "تعليم الكل كمقروء",
+      "markAllRead": "تعليم الكل كمقروءة",
       "markRead": "مقروء",
       "unread": "جديد",
       "delete": "حذف",
@@ -1012,13 +1051,15 @@
   },
   "Ui": {
     "common": {
-      "loading": "جار التحميل"
+      "loading": "جاري التحميل",
+      "pleaseWait": "يرجى الانتظار..."
     },
     "dialog": {
-      "close": "إغلاق"
+      "close": "إغلاق",
+      "description": "محتوى الحوار"
     },
     "sheet": {
-      "title": "درج القائمة الجانبية",
+      "title": "الشريط الجانبي",
       "close": "إغلاق"
     },
     "sidebar": {
@@ -1040,7 +1081,7 @@
       "next": "التالي",
       "goToPrevious": "الانتقال إلى الصفحة السابقة",
       "goToNext": "الانتقال إلى الصفحة التالية",
-      "morePages": "صفحات أكثر"
+      "morePages": "المزيد من الصفحات"
     }
   }
 }

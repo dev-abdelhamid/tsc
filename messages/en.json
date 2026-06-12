@@ -97,6 +97,17 @@
       }
     }
   },
+  "Ui": {
+    "common": {
+      "loading": "Loading...",
+      "pleaseWait": "Please wait...",
+      "newTicket": "New Ticket"
+    },
+    "dialog": {
+      "close": "Close",
+      "description": "Dialog content"
+    }
+  },
   "Landing": {
     "hero": {
       "brand": "Talent Seeker",
@@ -774,11 +785,14 @@
         "backToJobs": "Back to admin jobs",
         "summary": "Applicants",
         "candidate": "Candidate",
+        "actions": "Actions",
+        "actionsLabel": "Actions",
         "statusLabel": "Status",
         "appliedAt": "Applied at",
         "email": "Email",
         "empty": "No applications for this job yet.",
         "unknownCandidate": "Unnamed candidate",
+        "viewCv": "View CV",
         "status": {
           "pending": "Pending",
           "accepted": "Accepted",
@@ -1015,7 +1029,8 @@
       "loading": "Loading"
     },
     "dialog": {
-      "close": "Close"
+      "close": "Close",
+      "description": "Dialog content"
     },
     "sheet": {
       "title": "Sidebar drawer",

@@ -37,7 +37,11 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       }
     }
   } catch (error) {
-    console.log("[Home] Could not load hero_stats from settings:", error)
+    if (process.env.NODE_ENV === "development") {
+      // Helpful only during local development
+      // eslint-disable-next-line no-console
+      console.log("[Home] Could not load hero_stats from settings:", error)
+    }
     // Continue with default values
   }
 

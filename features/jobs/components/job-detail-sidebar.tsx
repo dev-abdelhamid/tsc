@@ -12,6 +12,7 @@ import {
 import { RelatedJobCard } from "@/features/jobs/components/related-job-card"
 import ApplyButton from "@/features/jobs/components/apply-button"
 import { FavoriteButton } from "@/features/jobs/components/favorite-button"
+import { JobActionButton } from "./job-action-button"
 
 type JobDetailSidebarProps = {
   job: Job
@@ -56,7 +57,7 @@ export function JobDetailSidebar({
   initialIsFavorite = false,
   isCompanyView = false,
 }: JobDetailSidebarProps) {
-  const industry = job.company?.company_type?.name || getLocalizedName(job.category?.name, locale)
+  const industry = getLocalizedName(job.company?.company_type?.name || job.category?.name, locale)
   const employment = formatDetailEmployment(job, locale)
   const salaryRange = formatJobSalaryRange(job)
   const ageRange = formatAgeRange(job, locale)
@@ -81,11 +82,11 @@ export function JobDetailSidebar({
 
   return (
     <aside className="space-y-8 lg:sticky lg:top-24 lg:self-start">
-      <div className="rounded-[16px] bg-white p-8 shadow-[0_8px_32px_rgba(0,43,70,0.06)]">
+      <div className="rounded-[16px] border border-[#78A3BE]/40 bg-white p-8 shadow-[0_8px_32px_rgba(0,43,70,0.06)]">
         {showSalary ? (
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[32px] font-black leading-[1.16] text-[#262626] sm:text-[40px]">
+              <p className="text-[32px] font-black leading-[1.16] text-[#262626] sm:text-[40px]" dir="ltr">
                 {salaryRange}
               </p>
               <p className="mt-1 text-[14px] font-medium leading-[1.16] text-[#525252]">
@@ -130,7 +131,12 @@ export function JobDetailSidebar({
             </Link>
           </PrimaryButton>
         ) : (
-          <ApplyButton jobId={job.id} locale={locale} label={labels.applyForJob} />
+          <JobActionButton
+            jobId={job.id}
+            companyId={job.company?.id}
+            locale={locale}
+            applyLabel={labels.applyForJob}
+          />
         )}
 
       </div>

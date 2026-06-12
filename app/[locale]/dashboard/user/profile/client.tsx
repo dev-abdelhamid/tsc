@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import Image from "next/image"
-import { Input } from "@/components/ui/input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { updateProfile, uploadAvatar, getProfile } from "@/lib/api/services/auth.service"
-import { COUNTRIES, getCountryById } from "@/lib/countries"
+import { COUNTRIES } from "@/lib/countries"
+import { invalidateSessionCache, updateSessionUser } from "@/hooks/use-auth"
+import { PrimaryButton } from "@/components/ui/primary-button"
+import { resolveImageUrl } from "@/lib/utils"
+import { User as UserIcon } from "lucide-react"
 
 type Props = {
   locale: string
@@ -16,21 +18,66 @@ type Props = {
 type Category = { id: number; name: string; sub_categories?: { id: number; name: string }[] }
 type Country = { id: number; name: string; code?: string; flag?: string; dialCode?: string }
 
+const fieldBase =
+  "w-full border-b border-[#D4D4D4] py-2.5 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] placeholder:text-[#A3A3A3]"
+
+const selectBase =
+  "w-full border-b border-[#D4D4D4] py-2.5 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] appearance-none cursor-pointer"
+
+const formatDateForInput = (dobString: any) => {
+  if (!dobString || typeof dobString !== "string") return ""
+  const match = dobString.match(/^(\d{4}-\d{2}-\d{2})/)
+  return match ? match[1] : ""
+}
+
 export default function UserProfileClient({ locale, initialProfile }: Props) {
   const { loading } = useAuth()
+  const isAr = locale === "ar"
 
-  const [profile, setProfile] = useState<Record<string, any>>(initialProfile ?? {
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-    gender: "",
-    dob: "",
-    country: "",
-    category: "",
-    sub_category: "",
-    avatar: "",
-    locale: "",
+  // Process initial phone number code and raw digits
+  const getInitialPhoneDetails = (fullPhone: string) => {
+    let parsedPhone = fullPhone || ""
+    let parsedDial = "+20"
+    const sortedCountries = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length)
+    for (const c of sortedCountries) {
+      if (parsedPhone.startsWith(c.dialCode)) {
+        parsedDial = c.dialCode
+        parsedPhone = parsedPhone.slice(c.dialCode.length)
+        break
+      }
+    }
+    return { phone_raw: parsedPhone, phone_code: parsedDial }
+  }
+
+  const initialPhone = getInitialPhoneDetails(initialProfile?.phone || "")
+
+  const [profile, setProfile] = useState<Record<string, any>>(() => {
+    if (initialProfile) {
+      return {
+        ...initialProfile,
+        phone_raw: initialPhone.phone_raw,
+        phone_code: initialPhone.phone_code,
+        dob: formatDateForInput(initialProfile.dob),
+      }
+    }
+    return {
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone_raw: "",
+      phone_code: "+20",
+      gender: "",
+      dob: "",
+      country_id: "",
+      category_id: "",
+      sub_category_id: "",
+      avatar: "",
+      facebook: "",
+      linkedin: "",
+      twitter: "",
+      pinterest: "",
+      locale: "",
+    }
   })
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
@@ -58,7 +105,6 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
         const p: any = data.data || {}
         const userProfile = p.Userprofile || {}
 
-        // Extract name - use firstName/lastName from Userprofile if available, else split full name
         let firstName = userProfile.firstName || ""
         let lastName = userProfile.lastName || ""
         if (!firstName && !lastName && p.name) {
@@ -67,30 +113,26 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
           lastName = parts.join(" ") || ""
         }
 
-        // Extract category/subcategory from nested Userprofile (camelCase: categoryId, subcategoryId)
         const categoryId = userProfile.categoryId || p.category?.id || undefined
         const subcategoryId = userProfile.subcategoryId || p.sub_category?.id || undefined
+        const phoneDetails = getInitialPhoneDetails(p.phone || "")
 
         setProfile({
           first_name: firstName,
           last_name: lastName,
           email: p.email || "",
-          phone: p.phone || "",
+          phone_raw: phoneDetails.phone_raw,
+          phone_code: phoneDetails.phone_code,
           gender: userProfile.gender || p.gender || "",
-          dob: userProfile.dateOfBirth || p.dob || "",
-          country: p.country?.name || "",
+          dob: formatDateForInput(userProfile.dateOfBirth || p.dob || ""),
           country_id: p.country?.id ?? p.country_id,
-          country_code: p.country?.code || "", // dial code like "+20"
-          category: p.category?.name || "",
           category_id: categoryId,
-          sub_category: p.sub_category?.name || "",
           sub_category_id: subcategoryId,
           avatar: p.avatar || "",
           facebook: userProfile.facebook || p.facebook || "",
           linkedin: userProfile.linkedin || p.linkedin || "",
-          twitter: userProfile.twitterX || p.twitterX || "",
+          twitter: userProfile.twitterX || p.twitter || "",
           pinterest: userProfile.pinterest || p.pinterest || "",
-          phone_code: p.country?.code || "+20", // use country dial code
           locale: p.locale || p.preferences?.locale || "",
         })
         setAvatarPreview(p.avatar || null)
@@ -118,13 +160,6 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
         if (!mounted) return
         setCategories(Array.isArray(cRes?.data) ? cRes.data : [])
         setCountries(Array.isArray(cntRes?.data) ? cntRes.data : [])
-
-        // if initialProfile has category_id prefilled, populate subcategories
-        const cid = profile.category_id || profile.category_id === 0 ? profile.category_id : undefined
-        if (cid) {
-          const cat = (Array.isArray(cRes?.data) ? cRes.data : []).find((x: any) => Number(x.id) === Number(cid))
-          if (cat && Array.isArray(cat.sub_categories)) setSubCategories(cat.sub_categories)
-        }
       } catch (err) {
         // ignore
       }
@@ -133,39 +168,49 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
     return () => {
       mounted = false
     }
-  }, [locale, profile.category_id])
+  }, [locale])
+
+  // Reactively populate subcategories when category changes or loads
+  useEffect(() => {
+    if (profile.category_id && categories.length > 0) {
+      const selectedCat = categories.find((c) => Number(c.id) === Number(profile.category_id))
+      if (selectedCat && Array.isArray(selectedCat.sub_categories)) {
+        setSubCategories(selectedCat.sub_categories)
+      } else {
+        setSubCategories([])
+      }
+    } else {
+      setSubCategories([])
+    }
+  }, [profile.category_id, categories])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    // handle selects that should store ids
+
     if (name === "category") {
       const id = Number(value) || undefined
-      const selected = categories.find((c) => c.id === id)
-      setSubCategories(selected?.sub_categories || [])
-      setProfile((s) => ({ ...s, category_id: id, category: selected?.name || "", sub_category_id: undefined, sub_category: "" }))
+      setProfile((s) => ({
+        ...s,
+        category_id: id,
+        sub_category_id: undefined,
+      }))
       return
     }
 
     if (name === "sub_category") {
       const id = Number(value) || undefined
-      const selected = subCategories.find((s) => s.id === id)
-      setProfile((s) => ({ ...s, sub_category_id: id, sub_category: selected?.name || "" }))
+      setProfile((s) => ({ ...s, sub_category_id: id }))
       return
     }
 
     if (name === "country") {
       const id = Number(value) || undefined
       const selected = countries.find((c) => Number(c.id) === Number(id))
-      // When country changes, auto-sync the phone code with the country's dial code
-      const dialCode = (selected as any)?.dialCode || selected?.code || "+20"
-      const rawPhone = (profile.phone || "").replace(/^\+\d+/, "").trim()
-      const newPhone = rawPhone ? `${dialCode}${rawPhone}` : dialCode
+      const dialCode = selected?.code || selected?.dialCode || "+20"
       setProfile((s) => ({
         ...s,
         country_id: id,
-        country: selected?.name || "",
         phone_code: dialCode,
-        phone: newPhone
       }))
       return
     }
@@ -186,7 +231,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
     setSaving(true)
     setMessage("")
     try {
-      // 1. If password field is filled, update password first
+      // 1. Update password if present
       if (newPassword) {
         if (!currentPassword) {
           throw new Error(isAr ? "الرجاء إدخال كلمة المرور الحالية لتحديث كلمة المرور" : "Please enter the current password to update the password")
@@ -210,26 +255,46 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
         }
       }
 
-      // 2. Update general profile info
+      // 2. Upload avatar first if present
+      let uploadedAvatarUrl = ""
+      if (avatarFile) {
+        const avatarFd = new FormData()
+        avatarFd.append("avatar", avatarFile)
+        const avatarRes = await fetch("/api/auth/profile/avatar", {
+          method: "POST",
+          body: avatarFd,
+          headers: { "x-locale": locale },
+        })
+        const avatarData = await avatarRes.json()
+        if (!avatarRes.ok) {
+          throw new Error(avatarData.message || (isAr ? "فشل حفظ الصورة الشخصية" : "Failed to save avatar image"))
+        }
+        const updatedObj = avatarData.data || avatarData
+        uploadedAvatarUrl = updatedObj.avatar || updatedObj.avatar_url || ""
+      }
+
+      // 3. Update general profile info
       const form = new FormData()
-      form.append("name", `${profile.first_name} ${profile.last_name}`)
+      form.append("first_name", profile.first_name || "")
+      form.append("last_name", profile.last_name || "")
       form.append("email", profile.email || "")
-      form.append("phone", profile.phone || "")
 
-      // Build Userprofile nested object
-      if (profile.gender) form.append("Userprofile[gender]", profile.gender)
-      if (profile.dob) form.append("Userprofile[dateOfBirth]", profile.dob)
-      if (profile.facebook) form.append("Userprofile[facebook]", profile.facebook)
-      if (profile.linkedin) form.append("Userprofile[linkedin]", profile.linkedin)
-      if (profile.twitter) form.append("Userprofile[twitterX]", profile.twitter)
-      if (profile.pinterest) form.append("Userprofile[pinterest]", profile.pinterest)
-      if (profile.category_id) form.append("Userprofile[categoryId]", String(profile.category_id))
-      if (profile.sub_category_id) form.append("Userprofile[subcategoryId]", String(profile.sub_category_id))
+      const fullPhone = `${profile.phone_code || "+20"}${profile.phone_raw || ""}`
+      form.append("phone", fullPhone)
+      form.append("gender", profile.gender || "")
+      form.append("date_of_birth", profile.dob || "")
 
-      // Country and locale
+      if (profile.category_id) form.append("category_id", String(profile.category_id))
+      if (profile.sub_category_id) form.append("subcategory_id", String(profile.sub_category_id))
+
+      // Social Links (using correct flat keys from API collection)
+      form.append("user_facebook", profile.facebook || "")
+      form.append("user_linkedin", profile.linkedin || "")
+      form.append("user_twitter_x", profile.twitter || "")
+      form.append("user_pinterest", profile.pinterest || "")
+
       if (profile.country_id) form.append("country_id", String(profile.country_id))
       if (profile.locale) form.append("locale", profile.locale)
-      if (avatarFile) form.append("avatar", avatarFile)
 
       const res = await fetch("/api/auth/profile", {
         method: "POST",
@@ -238,10 +303,23 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || "فشل حفظ البيانات")
-      
+
+      const updatedUser: Record<string, unknown> = {}
+      const userProfileObj = data.data?.Userprofile || data.data?.user_profile || data.data?.profile || {}
+      const latestAvatar = uploadedAvatarUrl || data.data?.avatar || data.data?.avatar_url || userProfileObj.avatar || userProfileObj.avatar_url || userProfileObj.image
+      const newName = data.data?.name || (data.data?.first_name ? `${data.data.first_name} ${data.data.last_name || ""}`.trim() : "") || data.data?.username
+
+      if (latestAvatar) updatedUser.avatar = latestAvatar
+      if (newName) updatedUser.name = newName
+      if (Object.keys(updatedUser).length > 0) {
+        updateSessionUser(updatedUser)
+      }
+      // Also invalidate to fetch latest from server in the background
+      invalidateSessionCache()
+
       setMessage(locale === "ar" ? "تم حفظ البيانات بنجاح" : "Saved successfully")
-      if (data.data?.avatar) setAvatarPreview(data.data.avatar)
-      
+      if (latestAvatar) setAvatarPreview(latestAvatar)
+
       // Clear password inputs on success
       setCurrentPassword("")
       setNewPassword("")
@@ -253,304 +331,459 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
     }
   }
 
-  const isAr = locale === "ar"
+  const selectedDialCode = profile.phone_code || "+20"
+  const activeDialObj = COUNTRIES.find((c) => c.dialCode === selectedDialCode) || COUNTRIES[0]
 
   return (
-    <div className="w-full">
-      <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#111827] mb-6">{isAr ? "المعلومات الأساسية" : "Basic Info"}</h1>
+    <div className="w-full flex flex-col gap-8" dir={isAr ? "rtl" : "ltr"}>
+      {/* Hide native date picker calendar indicator for chrome */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-date-input::-webkit-calendar-picker-indicator {
+          background: transparent;
+          bottom: 0;
+          color: transparent;
+          cursor: pointer;
+          height: auto;
+          left: 0;
+          position: absolute;
+          right: 0;
+          top: 0;
+          width: auto;
+        }
+      `}} />
 
-        {message && (
-          <div className="mb-4 p-4 bg-blue-50 text-blue-800 rounded-lg text-sm sm:text-base">
-            {message}
-          </div>
-        )}
+      {message && (
+        <div className={`p-4 rounded-lg text-sm font-medium border text-center ${
+          message.includes("فشل") || message.includes("Failed") || message.includes("الرجاء") || message.includes("Please")
+            ? "bg-red-50 text-red-700 border-red-200"
+            : "bg-green-50 text-green-700 border-green-200"
+        }`}>
+          {message}
+        </div>
+      )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
-          {/* Avatar Section - Left Sidebar */}
-          <div className="lg:col-span-1 flex flex-col items-center gap-6">
-            {/* Avatar */}
-            <div className="relative w-full flex flex-col items-center">
-              <Avatar size="lg" className="h-32 w-32 sm:h-40 sm:w-40">
-                {avatarPreview ? (
-                  <AvatarImage src={avatarPreview} alt="avatar" />
-                ) : (
-                  <AvatarFallback className="text-4xl">
-                    {(profile.first_name || profile.email || "").charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <label className="mt-3">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* ==================== CARD 1: BASIC INFO ==================== */}
+        <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
+          <div className="px-8 pt-8 pb-8">
+            {/* Avatar upload inside Card 1 */}
+            <div className="flex flex-col items-center mb-8 gap-4 border-b border-[#F3F4F6] pb-6">
+              <div className="relative">
+                <div className="h-44 w-44 rounded-full border-4 border-white shadow-lg overflow-hidden bg-[#E0F2FE] flex items-center justify-center relative">
+                  <UserIcon className="h-24 w-24 text-[#006EA8]" />
+                  {avatarPreview && avatarPreview.trim() !== "" && (
+                    <img 
+                      src={resolveImageUrl(avatarPreview)} 
+                      alt="avatar" 
+                      className="h-full w-full object-cover absolute inset-0" 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.opacity = '0';
+                      }}
+                    />
+                  )}
+                </div>
+                <label className="absolute bottom-2 right-2 h-11 w-11 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-transform hover:scale-105 bg-gradient-to-b from-[#006EA8] to-[#005685] z-10">
+                  <Image src="/update.svg" alt="update" width={20} height={20} className="text-white" />
+                  <input
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    type="file"
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              <span className="text-xs text-gray-500">{isAr ? "اضغط على الأيقونة لتحديث صورتك" : "Click icon to update profile picture"}</span>
+            </div>
+
+            {/* Inputs Grid */}
+            <div className="grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-2">
+              {/* First Name */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
+                  {isAr ? "الاسم الأول" : "First Name"} <span className="text-red-500">*</span>
+                </label>
                 <input
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  type="file"
-                  className="hidden"
-                />
-                <span className="inline-flex items-center justify-center px-4 py-2 bg-white text-xs sm:text-sm rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50 transition">
-                  {isAr ? "رفع الصورة" : "Upload Photo"}
-                </span>
-              </label>
-            </div>
-
-            {/* Linked Accounts */}
-            <div className="w-full">
-              <h4 className="text-sm font-semibold text-[#111827] mb-3">
-                {isAr ? "الحسابات المرتبطة" : "Linked accounts"}
-              </h4>
-              <div className="flex flex-col gap-2 w-full">
-                <button className="w-full py-2 rounded text-xs sm:text-sm bg-[#1877F2] text-white hover:bg-[#1563D3] transition font-medium">
-                  Facebook
-                </button>
-                <button className="w-full py-2 rounded text-xs sm:text-sm border border-gray-300 hover:bg-gray-50 transition text-gray-700 font-medium">
-                  LinkedIn
-                </button>
-                <button className="w-full py-2 rounded text-xs sm:text-sm border border-gray-300 hover:bg-gray-50 transition text-gray-700 font-medium">
-                  X
-                </button>
-                <button className="w-full py-2 rounded text-xs sm:text-sm border border-gray-300 hover:bg-gray-50 transition text-gray-700 font-medium">
-                  Pinterest
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Form Section - Main Content */}
-          <form onSubmit={handleSubmit} className="lg:col-span-3 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  {isAr ? "الاسم الأول" : "First Name"}
-                </label>
-                <Input
+                  type="text"
+                  required
                   name="first_name"
-                  value={profile.first_name}
+                  value={profile.first_name || ""}
                   onChange={handleChange}
-                  placeholder={isAr ? "الاسم الأول" : "Taha"}
-                  className="text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  {isAr ? "اسم العائلة" : "Last Name"}
-                </label>
-                <Input
-                  name="last_name"
-                  value={profile.last_name}
-                  onChange={handleChange}
-                  placeholder={isAr ? "اسم العائلة" : "Mohamed"}
-                  className="text-sm"
+                  className={fieldBase}
+                  placeholder={isAr ? "الاسم الأول" : "First Name"}
                 />
               </div>
 
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  {isAr ? "البريد الإلكتروني" : "Email"}
+              {/* Last Name */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
+                  {isAr ? "اسم العائلة" : "Last Name"} <span className="text-red-500">*</span>
                 </label>
-                <Input
-                  name="email"
-                  value={profile.email}
+                <input
+                  type="text"
+                  required
+                  name="last_name"
+                  value={profile.last_name || ""}
                   onChange={handleChange}
-                  placeholder="taha@gmail.com"
-                  className="text-sm"
+                  className={fieldBase}
+                  placeholder={isAr ? "اسم العائلة" : "Last Name"}
                 />
               </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+
+              {/* Email (disabled) */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
+                  {isAr ? "البريد الإلكتروني" : "Email"} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  disabled
+                  name="email"
+                  value={profile.email || ""}
+                  className="w-full border-b border-[#D4D4D4] py-2.5 text-sm text-[#A3A3A3] bg-transparent outline-none cursor-not-allowed"
+                />
+              </div>
+
+              {/* Gender */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
                   {isAr ? "الجنس" : "Gender"}
                 </label>
-                <select
-                  aria-label="gender"
-                  name="gender"
-                  value={profile.gender}
-                  onChange={handleChange}
-                  className="w-full h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-sm focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 bg-white text-[#032C44] transition-all"
-                >
-                  <option value="">{isAr ? "اختر" : "Select"}</option>
-                  <option value="male">{isAr ? "ذكر" : "Male"}</option>
-                  <option value="female">{isAr ? "أنثى" : "Female"}</option>
-                  <option value="other">{isAr ? "أخرى" : "Other"}</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  {isAr ? "تاريخ الميلاد" : "Date of Birth"}
-                </label>
-                <Input
-                  type="date"
-                  name="dob"
-                  value={profile.dob}
-                  onChange={handleChange}
-                  className="text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  {isAr ? "الهاتف" : "Phone"}
-                </label>
-                <div className="flex gap-2">
+                <div className="relative w-full">
                   <select
-                    aria-label="phone-code"
-                    name="phone_code"
-                    value={String(profile.phone_code || profile.phone?.match(/^\+\d+/)?.[0] || "+20")}
-                    onChange={(e) => {
-                      const code = e.target.value
-                      const raw = (profile.phone || "").replace(/^\+\d+/, "").trim()
-                      setProfile((s) => ({ ...s, phone: `${code}${raw}`, phone_code: code }))
-                    }}
-                    className="h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-xs bg-white focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 w-auto text-[#032C44] transition-all"
+                    name="gender"
+                    value={profile.gender || ""}
+                    onChange={handleChange}
+                    className={selectBase}
                   >
-                    <option value="">{isAr ? "رمز" : "Code"}</option>
-                    {COUNTRIES.map((c) => (
-                      <option key={c.id} value={c.dialCode}>
-                        {c.flag} {c.dialCode}
-                      </option>
-                    ))}
+                    <option value="">{isAr ? "اختر" : "Select"}</option>
+                    <option value="male">{isAr ? "ذكر" : "Male"}</option>
+                    <option value="female">{isAr ? "أنثى" : "Female"}</option>
+                    <option value="other">{isAr ? "أخرى" : "Other"}</option>
                   </select>
-                  <Input
-                    name="phone"
-                    value={(profile.phone || "").replace(/^\+\d+/, "")}
-                    onChange={(e) => {
-                      const raw = e.target.value
-                      const code = profile.phone_code || profile.phone?.match(/^\+\d+/)?.[0] || "+20"
-                      setProfile((s) => ({ ...s, phone: `${code}${raw}` }))
-                    }}
-                    placeholder={isAr ? "رقم الهاتف" : "1003630088"}
-                    className="text-sm flex-1"
+                  <Image
+                    src="/portfolio/arrow-down.svg"
+                    alt="arrow"
+                    width={20}
+                    height={20}
+                    className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+              {/* Date of Birth */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
+                  {isAr ? "تاريخ الميلاد" : "Date of Birth"}
+                </label>
+                <div className="relative w-full">
+                  <input
+                    type="date"
+                    name="dob"
+                    value={profile.dob || ""}
+                    onChange={handleChange}
+                    className={`${fieldBase} custom-date-input pe-10`}
+                  />
+                  <div className="absolute end-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Image src="/portfolio/calender.svg" alt="calendar" width={20} height={20} className="h-5 w-5" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Phone Field */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
+                  {isAr ? "رقم الهاتف" : "Phone"} <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center border-b border-[#D4D4D4] py-2.5 focus-within:border-[#40A0CA] transition-colors">
+                  <div className="relative flex items-center shrink-0 pe-2 me-2 border-e border-[#D4D4D4] h-6">
+                    <select
+                      aria-label="phone-code"
+                      value={selectedDialCode}
+                      onChange={(e) => {
+                        const code = e.target.value
+                        setProfile((s) => ({ ...s, phone_code: code }))
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                    >
+                      {COUNTRIES.map((c) => (
+                        <option key={`country-${c.id}`} value={c.dialCode}>
+                          {c.flag} {c.dialCode} ({c.name})
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-base me-1">{activeDialObj.flag}</span>
+                    <span className="text-sm text-[#525252] font-medium">{activeDialObj.dialCode}</span>
+                    <Image
+                      src="/portfolio/arrow-down.svg"
+                      alt="arrow"
+                      width={16}
+                      height={16}
+                      className="h-4 w-4 text-[#A3A3A3] ms-1 pointer-events-none"
+                    />
+                  </div>
+                  <input
+                    type="tel"
+                    required
+                    dir={isAr ? "rtl" : "ltr"}
+                    value={profile.phone_raw || ""}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setProfile((s) => ({ ...s, phone_raw: val }))
+                    }}
+                    placeholder="1003630088"
+                    className={`w-full min-w-0 bg-transparent text-sm text-[#525252] outline-none ${isAr ? "text-right" : "text-left"}`}
+                  />
+                </div>
+              </div>
+
+              {/* Country */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
                   {isAr ? "البلد" : "Country"}
                 </label>
-                <select
-                  aria-label={isAr ? "البلد" : "Country"}
-                  name="country"
-                  value={profile.country_id || ""}
-                  onChange={handleChange}
-                  className="w-full h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-sm focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 bg-white text-[#032C44] transition-all"
-                >
-                  <option value="">{isAr ? "اختر البلد" : "Select Country"}</option>
-                  {countries.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {(c as any).flag || "🌍"} {c.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative w-full">
+                  <select
+                    name="country"
+                    value={profile.country_id || ""}
+                    onChange={handleChange}
+                    className={selectBase}
+                  >
+                    <option value="">{isAr ? "اختر البلد" : "Select Country"}</option>
+                    {countries.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Image
+                    src="/portfolio/arrow-down.svg"
+                    alt="arrow"
+                    width={20}
+                    height={20}
+                    className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+              {/* Category */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
                   {isAr ? "التخصص" : "Category"}
                 </label>
-                <select
-                  aria-label={isAr ? "التخصص" : "Category"}
-                  name="category"
-                  value={profile.category_id || ""}
-                  onChange={handleChange}
-                  className="w-full h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-sm focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 bg-white text-[#032C44] transition-all"
-                >
-                  <option value="">{isAr ? "اختر التخصص" : "Select Category"}</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative w-full">
+                  <select
+                    name="category"
+                    value={profile.category_id || ""}
+                    onChange={handleChange}
+                    className={selectBase}
+                  >
+                    <option value="">{isAr ? "اختر التخصص" : "Select Category"}</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Image
+                    src="/portfolio/arrow-down.svg"
+                    alt="arrow"
+                    width={20}
+                    height={20}
+                    className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
+              {/* Sub-Category */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
                   {isAr ? "التخصص الفرعي" : "Sub Category"}
                 </label>
-                <select
-                  aria-label={isAr ? "التخصص الفرعي" : "Sub Category"}
-                  name="sub_category"
-                  value={profile.sub_category_id || ""}
-                  onChange={handleChange}
-                  className="w-full h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-sm focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 bg-white text-[#032C44] transition-all"
-                >
-                  <option value="">{isAr ? "اختر" : "Select Sub Category"}</option>
-                  {subCategories.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative w-full">
+                  <select
+                    name="sub_category"
+                    value={profile.sub_category_id || ""}
+                    onChange={handleChange}
+                    className={selectBase}
+                    disabled={subCategories.length === 0}
+                  >
+                    <option value="">{isAr ? "اختر" : "Select Sub Category"}</option>
+                    {subCategories.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Image
+                    src="/portfolio/arrow-down.svg"
+                    alt="arrow"
+                    width={20}
+                    height={20}
+                    className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2"
+                  />
+                </div>
+              </div>
+
+              {/* Preferred Language */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
+                  {isAr ? "اللغة المفضلة" : "Preferred Language"}
+                </label>
+                <div className="relative w-full">
+                  <select
+                    name="locale"
+                    value={profile.locale || locale}
+                    onChange={handleChange}
+                    className={selectBase}
+                  >
+                    <option value="ar">العربية (Arabic)</option>
+                    <option value="en">English</option>
+                    <option value="de">Deutsch (German)</option>
+                  </select>
+                  <Image
+                    src="/portfolio/arrow-down.svg"
+                    alt="arrow"
+                    width={20}
+                    height={20}
+                    className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2"
+                  />
+                </div>
               </div>
             </div>
-
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                {isAr ? "اللغة المفضلة" : "Preferred Language"}
-              </label>
-              <select
-                aria-label={isAr ? "اللغة المفضلة" : "Preferred Language"}
-                name="locale"
-                value={profile.locale || locale}
-                onChange={handleChange}
-                className="w-full h-10 px-3 py-2 border border-[#E5E7EB] rounded-[8px] text-sm focus:outline-none focus:border-[#40A0CA] focus:ring-1 focus:ring-[#40A0CA]/30 bg-white text-[#032C44] transition-all"
-              >
-                <option value="ar">العربية (Arabic)</option>
-                <option value="en">English</option>
-                <option value="de">Deutsch (German)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                {isAr ? "كلمة المرور الحالية" : "Current password"}
-              </label>
-              <Input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder={isAr ? "••••••••••" : "••••••••••"}
-                className="text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                {isAr ? "كلمة المرور الجديدة" : "New password"}
-              </label>
-              <Input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder={isAr ? "••••••••••" : "••••••••••"}
-                className="text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                {isAr ? "تأكيد كلمة المرور" : "Confirm password"}
-              </label>
-              <Input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder={isAr ? "••••••••••" : "••••••••••"}
-                className="text-sm"
-              />
-            </div>
-
-            <div className="flex justify-center pt-4">
-              <button
-                type="submit"
-                disabled={saving || loading}
-                className="px-12 py-3 rounded-full bg-gradient-to-r from-[#006EA8] to-[#005685] text-white text-base font-semibold shadow-[0_24px_48px_rgba(0,86,133,0.16)] hover:shadow-[0_24px_48px_rgba(0,86,133,0.24)] transition disabled:opacity-60"
-              >
-                {saving ? (isAr ? "جاري التحديث..." : "Updating...") : (isAr ? "تحديث" : "Update")}
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
-      </div>
+
+        {/* ==================== CARD 2: SOCIAL LINKS ==================== */}
+        <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
+          <div className="px-8 pt-8 pb-4">
+            <h2 className="text-[22px] font-bold italic text-start bg-gradient-to-r from-[#032C44] via-[#0e5f83] to-[#41A0CA] bg-clip-text text-transparent">
+              {isAr ? "روابط التواصل الاجتماعي" : "Social Links"}
+            </h2>
+          </div>
+
+          <div className="px-8 pb-8">
+            <div className="grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-2">
+              {/* Facebook */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">Facebook</label>
+                <input
+                  type="url"
+                  name="facebook"
+                  value={profile.facebook || ""}
+                  onChange={handleChange}
+                  placeholder="https://facebook.com/username"
+                  className={fieldBase}
+                />
+              </div>
+
+              {/* LinkedIn */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">LinkedIn</label>
+                <input
+                  type="url"
+                  name="linkedin"
+                  value={profile.linkedin || ""}
+                  onChange={handleChange}
+                  placeholder="https://linkedin.com/in/username"
+                  className={fieldBase}
+                />
+              </div>
+
+              {/* Twitter / X */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">X (Twitter)</label>
+                <input
+                  type="url"
+                  name="twitter"
+                  value={profile.twitter || ""}
+                  onChange={handleChange}
+                  placeholder="https://x.com/username"
+                  className={fieldBase}
+                />
+              </div>
+
+              {/* Pinterest */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">Pinterest</label>
+                <input
+                  type="url"
+                  name="pinterest"
+                  value={profile.pinterest || ""}
+                  onChange={handleChange}
+                  placeholder="https://pinterest.com/username"
+                  className={fieldBase}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ==================== CARD 3: CHANGE PASSWORD ==================== */}
+        <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
+          <div className="px-8 pt-8 pb-4">
+            <h2 className="text-[22px] font-bold italic text-start bg-gradient-to-r from-[#032C44] via-[#0e5f83] to-[#41A0CA] bg-clip-text text-transparent">
+              {isAr ? "تغيير كلمة المرور" : "Security & Password"}
+            </h2>
+          </div>
+
+          <div className="px-8 pb-8">
+            <div className="grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-3">
+              {/* Current Password */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
+                  {isAr ? "كلمة المرور الحالية" : "Current password"}
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className={fieldBase}
+                />
+              </div>
+
+              {/* New Password */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
+                  {isAr ? "كلمة المرور الجديدة" : "New password"}
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className={fieldBase}
+                />
+              </div>
+
+              {/* Confirm Password */}
+              <div className="flex flex-col gap-1.5 text-start">
+                <label className="text-sm font-medium text-[#262626]">
+                  {isAr ? "تأكيد كلمة المرور" : "Confirm password"}
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className={fieldBase}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <div className="flex justify-center pt-4">
+          <PrimaryButton
+            type="submit"
+            disabled={saving || loading || fetching}
+            className="max-w-[220px] h-[48px] text-base font-semibold shadow-[0_24px_48px_rgba(0,86,133,0.16)] hover:shadow-[0_24px_48px_rgba(0,86,133,0.24)]"
+          >
+            {saving ? (isAr ? "جاري التحديث..." : "Updating...") : (isAr ? "تحديث" : "Update")}
+          </PrimaryButton>
+        </div>
+      </form>
     </div>
   )
 }

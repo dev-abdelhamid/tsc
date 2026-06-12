@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getTranslations, setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { getAdminSettings } from "@/lib/api/services/settings.service"
 import { AdminSettingsPanel } from "@/features/admin/components/admin-settings-panel"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
@@ -15,7 +16,7 @@ export default async function AdminSettingsPage({
   const session = await getSession()
   const t = await getTranslations("Admin.settings")
 
-  if (!session.user || session.user.role !== "admin" || !session.accessToken) {
+  if (!session.user || normalizeRole(session.user) !== "admin" || !session.accessToken) {
     redirect(`/${locale}/dashboard`)
   }
 

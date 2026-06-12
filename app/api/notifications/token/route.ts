@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { registerDeviceToken } from "@/lib/api/services/notifications.service"
 import { ApiError } from "@/lib/api/client"
 
@@ -32,3 +32,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ message }, { status: 500 })
   }
 }
+

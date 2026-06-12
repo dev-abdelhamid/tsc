@@ -64,6 +64,32 @@ export async function getTicket(
   return response.data
 }
 
+/** Fetch all tickets as admin — backend has no /admin/tickets, uses /tickets with admin token */
+export async function getAdminTickets(
+  token: string,
+  page = 1,
+  locale = "ar"
+): Promise<{ data: Ticket[]; meta: PaginationMeta }> {
+  const response = await api.get<ApiResponse<Ticket[]>>(
+    `/tickets?page=${page}`,
+    { token, locale }
+  )
+  return { data: response.data, meta: response.meta! }
+}
+
+/** Fetch a single ticket detail as admin — backend uses /tickets/:id with admin token */
+export async function getAdminTicket(
+  id: number,
+  token: string,
+  locale = "ar"
+): Promise<Ticket> {
+  const response = await api.get<ApiResponse<Ticket>>(
+    `/tickets/${id}`,
+    { token, locale }
+  )
+  return response.data
+}
+
 export async function replyToTicket(
   ticketId: number,
   message: string,
@@ -73,10 +99,47 @@ export async function replyToTicket(
   const formData = new FormData()
   formData.append("message", message)
 
-  const response = await api.post<ApiResponse<Ticket>>(
-    `/tickets/${ticketId}/reply`,
-    formData,
-    { token, locale }
-  )
+  // Try admin reply endpoint first, fall back to user reply endpoint
+  let response: ApiResponse<Ticket>
+  try {
+    response = await api.post<ApiResponse<Ticket>>(
+      `/admin/tickets/${ticketId}/reply`,
+      formData,
+      { token, locale }
+    )
+  } catch {
+    response = await api.post<ApiResponse<Ticket>>(
+      `/tickets/${ticketId}/reply`,
+      formData,
+      { token, locale }
+    )
+  }
+  return response.data
+}
+
+export async function updateTicketStatus(
+  ticketId: number,
+  status: string,
+  token: string,
+  locale = "ar"
+): Promise<Ticket> {
+  const formData = new FormData()
+  formData.append("status", status)
+
+  // Try admin status endpoint first, fall back to user status endpoint
+  let response: ApiResponse<Ticket>
+  try {
+    response = await api.post<ApiResponse<Ticket>>(
+      `/admin/tickets/${ticketId}/status`,
+      formData,
+      { token, locale }
+    )
+  } catch {
+    response = await api.post<ApiResponse<Ticket>>(
+      `/tickets/${ticketId}/status`,
+      formData,
+      { token, locale }
+    )
+  }
   return response.data
 }

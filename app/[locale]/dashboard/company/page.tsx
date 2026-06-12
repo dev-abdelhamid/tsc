@@ -1,8 +1,13 @@
 import { Link } from "@/i18n/navigation"
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession, withTokenRefresh } from "@/lib/session"
-import { getCompanyJobs, getCompanyStats } from "@/lib/api/services/company.service"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
+import {
+  enrichJobsWithApplicationCounts,
+  getCompanyJobs,
+  getCompanyStats,
+} from "@/lib/api/services/company.service"
 import { getTickets } from "@/lib/api/services/tickets.service"
 import { DashboardStatCard } from "@/features/dashboard/components/dashboard-stat-card"
 import { DashboardJobsTable } from "@/features/dashboard/components/dashboard-jobs-table"
@@ -21,10 +26,26 @@ export default async function CompanyDashboardPage({
   const session = await getSession()
 
   if (!session.isLoggedIn || !session.user) {
-    redirect(`/${locale}/sign-in`)
+    // Allow development impersonation via cookie `impersonate=company`
+    if (process.env.NODE_ENV !== "production") {
+      try {
+        const { cookies } = await import("next/headers")
+        const cookieStore = await cookies()
+        const imp = cookieStore.get("impersonate")?.value
+        if (imp && String(imp).toLowerCase() === "company") {
+          // proceed with mocked data below
+        } else {
+          redirect(`/${locale}/sign-in`)
+        }
+      } catch {
+        redirect(`/${locale}/sign-in`)
+      }
+    } else {
+      redirect(`/${locale}/sign-in`)
+    }
   }
 
-  if (session.user.role !== "company") {
+  if (normalizeRole(session.user) !== "company") {
     redirect(`/${locale}/dashboard`)
   }
 
@@ -35,20 +56,45 @@ export default async function CompanyDashboardPage({
   let totalTickets = 0
 
   try {
-    const [statsData, jobsData, ticketsData] = await withTokenRefresh(
-      session,
-      locale,
-      async (token) => Promise.all([
-        getCompanyStats(token, locale as "ar" | "en" | "de"),
-        getCompanyJobs(token, 1, locale as "ar" | "en" | "de"),
-        getTickets(token, 1, locale as "ar" | "en" | "de").catch(() => ({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0 } })),
+    // If impersonating in dev, return mocked data without calling upstream
+    const { cookies } = await import("next/headers")
+    const cookieStore = await cookies()
+    const imp = process.env.NODE_ENV !== "production" ? cookieStore.get("impersonate")?.value : undefined
+    if (imp && String(imp).toLowerCase() === "company") {
+      jobs = [
+        { id: 20, title: { ar: "تطوير الويب" }, status: "approved", applications_count: 12, created_at: new Date().toISOString() },
+        { id: 21, title: { ar: "تصميم واجهات" }, status: "approved", applications_count: 3, created_at: new Date().toISOString() },
+      ] as Job[]
+      stats = { total_jobs: 2, total_applications: 15, pending_applications: 0 }
+      totalTickets = 1
+    } else {
+      const token = session.accessToken as string | undefined
+      if (!token) redirect(`/${locale}/sign-in`)
+
+      const [jobsResult, ticketsResult] = await Promise.allSettled([
+        getCompanyJobs(token as string, 1, locale as "ar" | "en" | "de"),
+        getTickets(token as string, 1, locale as "ar" | "en" | "de"),
       ])
-    )
-    stats = statsData
-    jobs = jobsData.data ?? []
-    totalTickets = (ticketsData.meta as any)?.total ?? ticketsData.data?.length ?? 0
+
+      if (jobsResult.status === "fulfilled") {
+        const rawJobs = jobsResult.value.data ?? []
+        const displayJobs = rawJobs.slice(0, 7)
+        jobs = await enrichJobsWithApplicationCounts(
+          displayJobs,
+          token,
+          locale as "ar" | "en" | "de"
+        )
+        stats = await getCompanyStats(token, locale as "ar" | "en" | "de", jobs)
+      }
+
+      if (ticketsResult.status === "fulfilled") {
+        totalTickets =
+          ticketsResult.value.meta?.total ??
+          ticketsResult.value.data?.length ??
+          0
+      }
+    }
   } catch (err) {
-    console.error("[Dashboard] Load error:", err)
     if (err instanceof ApiError && err.status === 401) {
       redirect(`/${locale}/sign-in`)
     }
@@ -62,11 +108,21 @@ export default async function CompanyDashboardPage({
           ? ("rejected" as const)
           : ("pending" as const)
     const deadline = job.application_deadline
+    const deadlineLabel = (() => {
+      if (!deadline) return "—"
+      try {
+        const d = new Date(deadline)
+        if (Number.isNaN(d.getTime())) return "—"
+        return d.toLocaleDateString(isAr ? "ar-EG" : "en-GB")
+      } catch {
+        return "—"
+      }
+    })()
     return {
       id: job.id,
       title: getJobTitle(job, locale),
-      column2: job.applications_count ?? 0,
-      deadline: deadline ? new Date(deadline).toLocaleDateString(isAr ? "ar-EG" : "en-GB") : "—",
+      column2: Number(job.applications_count) || 0,
+      deadline: deadlineLabel,
       status,
       detailsHref: `/dashboard/company/jobs/${job.id}`,
     }
@@ -79,7 +135,6 @@ export default async function CompanyDashboardPage({
       isRTL={isAr}
     >
       <div className="flex w-full flex-col gap-6">
-        {/* ── Stats Section ── */}
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-6 md:flex-row">
             <DashboardStatCard
@@ -115,7 +170,6 @@ export default async function CompanyDashboardPage({
           </div>
         </div>
 
-        {/* ── Recent Jobs Table ── */}
         <DashboardJobsTable
           title={isAr ? "آخر الوظائف" : "Recent Jobs"}
           rows={tableRows}

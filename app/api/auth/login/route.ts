@@ -1,63 +1,118 @@
-// app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
-import { login } from "@/lib/api/services/auth.service"
-import { ApiError } from "@/lib/api/client"
+import { setAuthCookies } from "@/lib/auth-token"
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://cv.subcodeco.com/api/v1"
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, type = "user" } = await request.json()
+    let body: Record<string, any> = {}
+    try {
+      body = await request.json()
+    } catch {
+      try {
+        const form = await request.formData()
+        form.forEach((v, k) => { body[k] = v })
+      } catch {}
+    }
+
+    const email = body.email
+    const password = body.password
+    const type = body.type || 'user'
     const locale = request.headers.get("accept-language")?.split(",")[0] || "ar"
 
-    const { user, tokens } = await login(email, password, type, locale)
-
-    const mapRole = (u: unknown): "user" | "company" | "admin" => {
-      const obj = u as Record<string, unknown> | undefined
-      const rolesVal = obj?.roles
-      if (Array.isArray(rolesVal)) {
-        const rolesArr = rolesVal.map((r) => String(r).toLowerCase())
-        if (rolesArr.includes("company")) return "company"
-        if (rolesArr.includes("admin")) return "admin"
-        if (rolesArr.includes("user")) return "user"
-      }
-      const roleStr = String(obj?.role ?? "").toLowerCase()
-      if (roleStr.includes("company")) return "company"
-      if (roleStr.includes("admin")) return "admin"
-      if (roleStr.includes("user")) return "user"
-      return "user"
+    if (!email || !password) {
+      return NextResponse.json({ message: "بيانات الاعتماد غير كاملة" }, { status: 400 })
     }
 
-    const session = await getSession()
-    session.user = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: mapRole(user),
-      avatar: user.avatar,
-    }
-    session.accessToken = tokens.access_token
-    session.refreshToken = tokens.refresh_token
-    session.locale = locale
-    session.isLoggedIn = true
-    await session.save()
+    // Call Laravel login endpoint
+    const formData = new FormData()
+    formData.append("email", email)
+    formData.append("password", password)
+    formData.append("type", type)
 
-    return NextResponse.json({ user, tokens }, { status: 200 })
-  } catch (error: unknown) {
-    let status = 500
-    if (error instanceof ApiError) {
-      status = error.status || 500
+    const backendRes = await fetch(`${BACKEND_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Accept-Language': locale,
+        'Accept': 'application/json',
+      },
+      body: formData
+    })
+
+    const data = await backendRes.json().catch(() => null)
+
+    if (!backendRes.ok) {
+      return NextResponse.json(
+        { message: data?.message || "فشل تسجيل الدخول" }, 
+        { status: backendRes.status }
+      )
     }
-    // Ensure status is within valid range
-    if (typeof status !== 'number' || status < 200 || status > 599) {
-      status = 500
+
+    // Extraction
+    const token = 
+      data?.data?.accessToken ||
+      data?.data?.access_token ||
+      data?.data?.token || 
+      data?.token || 
+      data?.accessToken ||
+      data?.tokens?.access_token || 
+      data?.data?.tokens?.access_token
+    const user = data?.data?.user || data?.user
+    
+    if (!token || !user) {
+      return NextResponse.json({ message: "بيانات الاستجابة من السيرفر غير كاملة" }, { status: 500 })
+    }
+
+    // Extract role
+    let role = type
+    if (user.roles && user.roles.length > 0) {
+      const firstRole = user.roles[0]
+      role = typeof firstRole === 'object' ? (firstRole.name || firstRole.role) : firstRole
+    } else if (user.role) {
+      role = user.role
     }
     
-    const message = error instanceof ApiError ? error.message : "حدث خطأ في الخادم"
-    const errors = error instanceof ApiError ? error.errors : undefined
+    role = String(role).toLowerCase()
+    if (role.includes('admin')) role = 'admin'
+    else if (role.includes('company') || role.includes('employer')) role = 'company'
+    else role = 'user'
 
+    // Fetch full profile to ensure we have all relationships (companyProfile, userprofile, etc.)
+    let fullUser = user
+    try {
+      const profileRes = await fetch(`${BACKEND_URL}/auth/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept-Language': locale,
+          'Accept': 'application/json',
+        },
+        cache: 'no-store'
+      })
+      if (profileRes.ok) {
+        const profileData = await profileRes.json().catch(() => null)
+        if (profileData?.data || profileData) {
+          fullUser = profileData.data || profileData
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch full profile in login route:", err)
+    }
+
+    // Create response and set HttpOnly cookies
+    const response = NextResponse.json({ 
+      success: true, 
+      role, 
+      user: fullUser, 
+      tokens: { access_token: token } 
+    })
+    setAuthCookies(response, token, role)
+
+    return response
+  } catch (err) {
     return NextResponse.json(
-      { message, errors },
-      { status }
+      { message: err instanceof Error ? err.message : "حدث خطأ غير متوقع" }, 
+      { status: 500 }
     )
   }
 }

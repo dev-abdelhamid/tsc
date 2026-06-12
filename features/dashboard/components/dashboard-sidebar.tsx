@@ -37,8 +37,9 @@ function SidebarItem({ iconSrc, label, href, locale, active, flipIcon, isRTL }: 
       locale={locale}
       href={href}
       className={cn(
-        "relative isolate flex h-14 w-full flex-none items-center gap-2 self-stretch px-4 py-4 transition-colors",
-        active ? "text-transparent" : "text-[#6B7280] hover:bg-white/60 hover:text-[#374151]"
+        "relative isolate flex w-full flex-none items-center gap-2.5 self-stretch px-4 transition-colors rounded-[8px]",
+        "h-12 lg:h-10 py-2.5 lg:py-1.5",
+        active ? "text-transparent bg-[#E4ECF5]" : "text-[#6B7280] hover:bg-[#E4ECF5] hover:text-[#374151]"
       )}
     >
       {active && (
@@ -71,7 +72,7 @@ function SidebarItem({ iconSrc, label, href, locale, active, flipIcon, isRTL }: 
 
       <span
         className={cn(
-          "relative z-[1] flex-none text-base leading-[150%]",
+          "relative z-[1] flex-none text-base lg:text-[14px] leading-[150%]",
           active
             ? cn("bg-clip-text font-semibold text-transparent", ACTIVE_GRADIENT_CLASS)
             : "font-medium text-[#6B7280]"
@@ -84,14 +85,14 @@ function SidebarItem({ iconSrc, label, href, locale, active, flipIcon, isRTL }: 
 }
 
 function SidebarLogout({ label, flipIcon }: { label: string; flipIcon?: boolean }) {
-  const { signOut, loading } = useAuth()
+  const { logout, isLoading } = useAuth()
 
   return (
     <button
       type="button"
-      onClick={() => signOut()}
-      disabled={loading}
-      className="relative flex h-14 w-full items-center gap-2 px-4 py-4 text-[#6B7280] transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
+      onClick={() => logout()}
+      disabled={isLoading}
+      className="relative flex h-12 lg:h-10 w-full items-center gap-2 px-4 py-3 lg:py-2 text-[#6B7280] transition-colors rounded-[8px] hover:bg-red-50 hover:text-red-600 disabled:opacity-60 text-base lg:text-[14px]"
     >
       <Image
         src="/dashboard/logout.svg"
@@ -101,7 +102,7 @@ function SidebarLogout({ label, flipIcon }: { label: string; flipIcon?: boolean 
         className={cn(flipIcon && "scale-x-[-1]")}
         aria-hidden
       />
-      <span className="text-base font-medium">{loading ? "..." : label}</span>
+      <span className="text-base font-medium">{isLoading ? "..." : label}</span>
     </button>
   )
 }
@@ -213,9 +214,19 @@ function getAdminGroups(locale: string): SidebarGroup[] {
           href: "/dashboard/admin/contact",
         },
         {
+          icon: "/dashboard/tickets.svg",
+          label: getLabel(locale, "التذاكر", "Tickets", "Tickets"),
+          href: "/dashboard/admin/tickets",
+        },
+        {
           icon: "/dashboard/favourites.svg",
           label: getLabel(locale, "الإعدادات", "Settings", "Einstellungen"),
           href: "/dashboard/admin/settings",
+        },
+        {
+          icon: "/dashboard/profile.svg",
+          label: getLabel(locale, "الملف الشخصي", "My Profile", "Mein Profil"),
+          href: "/dashboard/admin/profile",
         },
       ],
     },
@@ -268,68 +279,66 @@ function SidebarNav({
   const activeHref = resolveActivePath(pathname, hrefs)
 
   const viewSiteLabel = locale === "ar" ? "عرض الموقع" : locale === "de" ? "Seite ansehen" : "View Site"
-  const dashboardLabel = locale === "ar" ? "لوحة التحكم" : "Dashboard"
 
   return (
-    <div className="flex-1 flex flex-col justify-between h-full">
-      <nav className="flex flex-col gap-0 py-2" onClick={onNavigate}>
-        {userRole === "admin"
-          ? (<>
-              {groups.map((group) => (
-                <div key={group.title} className="px-2 pb-2 pt-1">
-                  <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6B7280]">
-                    {group.title}
-                  </p>
-                  <div className="space-y-0">
-                    {group.items.map((item) => (
-                      <SidebarItem
-                        key={item.href}
-                        iconSrc={item.icon}
-                        label={item.label}
-                        href={item.href}
-                        locale={locale}
-                        active={activeHref === item.href.replace(/\/$/, "")}
-                        flipIcon={flipIcon}
-                        isRTL={isRTL}
-                      />
-                    ))}
+    <div className="flex flex-col h-full min-h-0 overflow-hidden lg:h-auto lg:min-h-0 lg:overflow-visible">
+      <nav 
+        className={cn(
+          "flex-1 min-h-0 overflow-y-auto flex flex-col gap-0 pt-4 pb-3 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent lg:overflow-y-visible lg:flex-none lg:min-h-0 lg:p-4",
+          isRTL ? "pl-2 pr-3" : "pl-3 pr-2"
+        )} 
+        onClick={onNavigate}
+      >
+        <div className="space-y-0.5">
+          {userRole === "admin"
+            ? (<>
+                {groups.map((group, index) => (
+                  <div key={group.title} className={cn("px-1 pb-1 pt-2 lg:px-0", index === 0 ? "lg:pt-0" : "lg:pt-4")}>
+                    <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9CA3AF] lg:px-4 lg:pb-1.5">
+                      {group.title}
+                    </p>
+                    <div className="space-y-0.5 px-1 lg:px-0">
+                      {group.items.map((item) => (
+                        <SidebarItem
+                          key={item.href}
+                          iconSrc={item.icon}
+                          label={item.label}
+                          href={item.href}
+                          locale={locale}
+                          active={activeHref === item.href.replace(/\/$/, "")}
+                          flipIcon={flipIcon}
+                          isRTL={isRTL}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ))}
+              </>)
+            : menuItems.map((item) => (
+                <SidebarItem
+                  key={item.href}
+                  iconSrc={item.icon}
+                  label={item.label}
+                  href={item.href}
+                  locale={locale}
+                  active={activeHref === item.href.replace(/\/$/, "")}
+                  flipIcon={flipIcon}
+                  isRTL={isRTL}
+                />
               ))}
-
-                   {/* ✅ View Site — آخر عنصر للجميع (Admin, User, Company) */}
-        <div className="px-2 pb-2 pt-4 mt-auto">
-          <div className="mx-2 my-1">
-            <Link locale={locale} href="/"
-              className={cn(
-                "flex h-11 w-full items-center gap-2.5 rounded-lg border border-[#006EA8]/20 bg-gradient-to-r from-[#EBF5FB] to-[#F0F9FF] px-4 text-[#006EA8] transition-all",
-                "hover:border-[#006EA8]/40 hover:from-[#D6EFFA] hover:to-[#E4F4FC] hover:shadow-sm"
-              )}
-            >
-              <ExternalLink className="h-[18px] w-[18px] flex-none opacity-70" />
-              <span className="text-[14px] font-semibold">{viewSiteLabel}</span>
-            </Link>
-          </div>
         </div>
-            </>)
-          : menuItems.map((item) => (
-              <SidebarItem
-                key={item.href}
-                iconSrc={item.icon}
-                label={item.label}
-                href={item.href}
-                locale={locale}
-                active={activeHref === item.href.replace(/\/$/, "")}
-                flipIcon={flipIcon}
-                isRTL={isRTL}
-              />
-            ))}
       </nav>
-      <div className="mt-auto border-t border-[#E5E7EB] px-4 py-4 space-y-2">
-      
-        <div className={cn(userRole !== "admin" && "pt-2 border-t border-[#E5E7EB]")}>
-          <SidebarLogout label={isRTL ? "تسجيل الخروج" : "Logout"} flipIcon={flipIcon} />
-        </div>
+      <div className="border-t border-[#E2E8F0] px-3 py-3 space-y-2 bg-[#F0F4F8] shrink-0 lg:px-4 lg:py-4">
+        <Link locale={locale} href="/"
+          className={cn(
+            "flex h-10 w-full items-center gap-2.5 rounded-[8px] border border-[#006EA8]/20 bg-gradient-to-r from-[#EBF5FB] to-[#F0F9FF] px-4 text-[#006EA8] transition-all lg:hidden",
+            "hover:border-[#006EA8]/40 hover:from-[#D6EFFA] hover:to-[#E4F4FC] hover:shadow-sm"
+          )}
+        >
+          <ExternalLink className="h-[16px] w-[16px] flex-none opacity-70" />
+          <span className="text-[13px] font-semibold">{viewSiteLabel}</span>
+        </Link>
+        <SidebarLogout label={isRTL ? "تسجيل الخروج" : "Logout"} flipIcon={flipIcon} />
       </div>
     </div>
   )
@@ -365,7 +374,7 @@ export function DashboardSidebar({
   )
 
   const sidebarPanel = (
-    <aside className="flex h-fit w-full flex-col rounded-[8px] border border-[#E5E7EB] bg-[#F0F4F8] p-0 lg:w-[310px]">
+    <aside className="flex h-full w-full min-h-0 flex-col rounded-[8px] border border-[#E5E7EB] bg-[#F0F4F8] p-0 lg:w-[280px] overflow-hidden lg:overflow-visible lg:h-auto lg:min-h-0">
       <SidebarNav locale={locale} userRole={userRole} />
     </aside>
   )
@@ -373,15 +382,29 @@ export function DashboardSidebar({
   return (
     <>
       <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-        <SheetContent side={isRTL ? "right" : "left"} className="w-[min(100vw,310px)] p-0 lg:hidden overflow-y-auto">
+        <SheetContent side={isRTL ? "right" : "left"} className="w-[min(100vw,310px)] p-0 lg:hidden">
           <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Menu"}</SheetTitle>
-          <div className="bg-[#F0F4F8] pt-8 min-h-dvh flex flex-col">
+          <div className="bg-[#F0F4F8] h-dvh flex flex-col overflow-hidden">
+            <div className="flex h-[88px] sm:h-[110px] items-center border-b border-[#E2E8F0] bg-[#F0F4F8] px-4 justify-between flex-row">
+              <Link locale={locale} href="/" className="flex shrink-0 items-center">
+                <Image src="/logo-dark.png" alt="" width={180} height={60} className="h-[56px] sm:h-[68px] w-auto" priority />
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => handleOpenChange(false)}
+                className="flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors"
+                aria-label={isRTL ? "إغلاق القائمة" : "Close menu"}
+              >
+                <Image src="/jobs/icon-close-circle.svg" alt="" width={28} height={28} className="h-7 w-7" aria-hidden />
+              </button>
+            </div>
             <SidebarNav locale={locale} userRole={userRole} onNavigate={() => handleOpenChange(false)} />
           </div>
         </SheetContent>
       </Sheet>
 
-      <div className="hidden lg:block">{sidebarPanel}</div>
+      <div className="hidden lg:flex lg:flex-col">{sidebarPanel}</div>
     </>
   )
 }

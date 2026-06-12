@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
-import { Link } from "@/i18n/navigation";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Clock, AlertCircle } from "lucide-react";
+import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell";
 
 type Props = {
   locale: string;
@@ -19,8 +17,17 @@ type Props = {
 export default function TicketsClient({ locale, initialTickets }: Props) {
   const [tickets, setTickets] = useState<any[]>(initialTickets);
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Detail / reply states
+  const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [replying, setReplying] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Form states
   const [subject, setSubject] = useState("");
@@ -93,7 +100,7 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
 
       toast.success(isAr ? "تم إنشاء التذكرة بنجاح" : "Ticket created successfully");
       setShowNewTicketModal(false);
-      
+
       // Reset form
       setSubject("");
       setMessage("");
@@ -110,6 +117,73 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
     }
   };
 
+  // ── Open ticket detail ──
+  const openTicketDetail = async (ticket: any) => {
+    setSelectedTicket(ticket);
+    setReplyText("");
+    setShowDetailModal(true);
+
+    // Try to fetch latest version with replies
+    try {
+      setLoadingDetail(true);
+      const res = await fetch(`/api/user/tickets/${ticket.id}?locale=${locale}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedTicket(data.data || data);
+      }
+    } catch {
+      // keep showing what we have
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  // ── Reply to ticket ──
+  const handleReply = async () => {
+    if (!replyText.trim()) {
+      toast.error(isAr ? "الرجاء إدخال نص الرد" : "Please enter a reply message");
+      return;
+    }
+    if (!selectedTicket) return;
+
+    try {
+      setReplying(true);
+      const res = await fetch(`/api/user/tickets/${selectedTicket.id}/reply`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept-Language": locale,
+        },
+        body: JSON.stringify({ message: replyText }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to reply");
+      }
+
+      toast.success(isAr ? "تم إرسال الرد بنجاح" : "Reply sent successfully");
+      setReplyText("");
+
+      // Refresh the detail
+      try {
+        const detailRes = await fetch(`/api/user/tickets/${selectedTicket.id}?locale=${locale}`);
+        if (detailRes.ok) {
+          const data = await detailRes.json();
+          setSelectedTicket(data.data || data);
+        }
+      } catch { /* ignore */ }
+
+      // Refresh list
+      await fetchTickets();
+    } catch (err: any) {
+      console.error("[Reply error]", err);
+      toast.error(err.message || (isAr ? "فشل إرسال الرد" : "Failed to send reply"));
+    } finally {
+      setReplying(false);
+    }
+  };
+
   const getPriorityLabel = (pri: string) => {
     const map: Record<string, string> = {
       high: isAr ? "عالي" : "High",
@@ -119,10 +193,17 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
     return map[pri] || pri;
   };
 
+  const getPriorityColor = (pri: string) => {
+    if (pri === "high") return "bg-red-600";
+    if (pri === "medium") return "bg-amber-500";
+    return "bg-green-500";
+  };
+
   const getStatusLabel = (status: string) => {
     const map: Record<string, string> = {
       pending: isAr ? "معلق" : "Pending",
       open: isAr ? "مفتوح" : "Open",
+      answered: isAr ? "تم الرد" : "Answered",
       closed: isAr ? "مغلق" : "Closed",
       rejected: isAr ? "مرفوض" : "Rejected",
     };
@@ -157,6 +238,41 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
     }
   };
 
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "";
+    try {
+      return new Date(dateStr).toLocaleDateString(isAr ? "ar-SA" : "en-GB", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Status counts
+  const statusCounts = {
+    all: tickets.length,
+    pending: tickets.filter((t) => (t.status || "pending") === "pending").length,
+    open: tickets.filter((t) => t.status === "open" || t.status === "answered").length,
+    closed: tickets.filter((t) => t.status === "closed").length,
+  };
+
+  // Filtered list
+  const filteredTickets =
+    statusFilter === "all"
+      ? tickets
+      : tickets.filter((t) => {
+          const status = t.status || "pending";
+          if (statusFilter === "open") {
+            return status === "open" || status === "answered";
+          }
+          return status === statusFilter;
+        });
+
   const gradientTitleClasses = cn(
     "bg-clip-text text-transparent font-bold",
     isAr ? "bg-gradient-to-r" : "bg-gradient-to-l",
@@ -164,226 +280,391 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
   );
 
   return (
-    <div className="w-full space-y-6 max-w-[1000px] mx-auto pb-10" dir={isAr ? "rtl" : "ltr"}>
-      {/* Header with "+ New Ticket" button */}
-      <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className={cn("text-[20px]", gradientTitleClasses)}>
-            {isAr ? "الدعم الفني والتذاكر" : "Tickets & Support"}
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {isAr
-              ? "يمكنك إرسال استفساراتك ومتابعة الردود من هنا"
-              : "Send your inquiries and track replies in one place"}
-          </p>
-        </div>
-        <button
+    <DashboardPageShell
+      title={isAr ? "الدعم الفني والتذاكر" : "Tickets & Support"}
+      description={isAr ? "تابع تذاكر الدعم الفني الخاصة بك واستفساراتك" : "Track your support tickets and inquiries"}
+      isRTL={isAr}
+      action={
+        <PrimaryButton
           onClick={() => setShowNewTicketModal(true)}
-          className="flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-b from-[#006EA8] to-[#005685] text-white hover:brightness-105 rounded-[8px] text-[14px] font-semibold transition shadow-[0px_4px_12px_rgba(0,110,168,0.25)] cursor-pointer"
+          className="h-9 rounded-lg px-4 w-auto text-sm"
         >
-          <span className="text-[16px] font-bold">+</span>
+          <span className="text-[16px] font-bold me-1">+</span>
           <span>{isAr ? "تذكرة جديدة" : "New Ticket"}</span>
-        </button>
-      </div>
+        </PrimaryButton>
+      }
+    >
+      <div className="w-full space-y-6 pb-10" dir={isAr ? "rtl" : "ltr"}>
 
-      {/* Tickets List */}
-      <div className="space-y-4">
-        {tickets.length > 0 ? (
-          tickets.map((ticket) => {
-            const lastUpdated = ticket.updated_at || ticket.created_at;
-            const status = ticket.status || "pending";
-            const attachment = ticket.file || ticket.attachment;
-
+        {/* ── Status Filter Tabs ── */}
+        <div className="flex flex-wrap gap-2">
+          {(["all", "pending", "open", "closed"] as const).map((status) => {
+            const labels: Record<string, string> = {
+              all: isAr ? "الكل" : "All",
+              pending: isAr ? "معلق" : "Pending",
+              open: isAr ? "مفتوح" : "Open",
+              closed: isAr ? "مغلق" : "Closed",
+            };
+            const count = statusCounts[status];
+            const isActive = statusFilter === status;
             return (
-              <div
-                key={ticket.id}
-                className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm hover:shadow-md transition space-y-4"
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-[13px] font-semibold border transition-all cursor-pointer",
+                  isActive
+                    ? "bg-gradient-to-b from-[#006EA8] to-[#005685] text-white border-transparent shadow-md"
+                    : "bg-white text-[#525252] border-[#E5E7EB] hover:border-[#40A0CA] hover:text-[#006EA8]"
+                )}
               >
-                {/* Header row */}
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-[17px] font-bold text-[#032C44]">
-                        {ticket.subject}
-                      </h3>
-                      {/* Priority badge */}
-                      <span className="bg-[#005685] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize">
-                        {getPriorityLabel(ticket.priority || "high")}
+                {labels[status]} ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Tickets List */}
+        <div className="space-y-4">
+          {filteredTickets.length > 0 ? (
+            filteredTickets.map((ticket) => {
+              const lastUpdated = ticket.updated_at || ticket.created_at;
+              const status = ticket.status || "pending";
+              const attachment = ticket.file || ticket.attachment;
+
+              return (
+                <div
+                  key={ticket.id}
+                  onClick={() => openTicketDetail(ticket)}
+                  className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm hover:shadow-md hover:border-[#40A0CA]/40 transition-all space-y-4 cursor-pointer group text-start"
+                >
+                  {/* Header row */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-[17px] font-bold text-[#032C44] group-hover:text-[#006EA8] transition-colors truncate">
+                          {ticket.subject}
+                        </h3>
+                        {/* Priority badge */}
+                        <span className={cn(
+                          "text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize",
+                          getPriorityColor(ticket.priority || "high")
+                        )}>
+                          {getPriorityLabel(ticket.priority || "high")}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 font-medium">
+                        {isAr ? "آخر تحديث:" : "Last Update:"} {formatLastReply(lastUpdated)}
+                      </p>
+                    </div>
+
+                    {/* Status badge */}
+                    <span
+                      className={cn(
+                        "text-[11px] font-bold px-3 py-1 rounded-full border shrink-0",
+                        status === "pending" && "border-[#FFB64D] bg-[#FFF8EE] text-[#FFB64D]",
+                        status === "open" && "border-[#39DA8A] bg-[#EAFBF3] text-[#39DA8A]",
+                        status === "answered" && "border-[#006EA8] bg-[#F0F9FF] text-[#006EA8]",
+                        status === "closed" && "border-[#FF5B5C] bg-[#FFF5F5] text-[#FF5B5C]",
+                        status === "rejected" && "border-[#FF5B5C] bg-[#FFF5F5] text-[#FF5B5C]"
+                      )}
+                    >
+                      {getStatusLabel(status)}
+                    </span>
+                  </div>
+
+                  {/* Message body */}
+                  <p className="text-[14px] text-gray-600 leading-relaxed line-clamp-2">
+                    {ticket.message}
+                  </p>
+
+                  {/* Footer: Attachment + View Detail hint */}
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    {attachment ? (
+                      <div className="flex items-center gap-2 text-xs text-[#006EA8] truncate">
+                        <img src="/portfolio/pdf.svg" alt="File Icon" className="w-5 h-5 flex-shrink-0" />
+                        <span className="truncate font-semibold">{getFilenameFromUrl(attachment)}</span>
+                      </div>
+                    ) : (
+                      <span />
+                    )}
+                    <span className="text-xs text-[#40A0CA] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                      {isAr ? "عرض التفاصيل →" : "View Details →"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-12 text-center shadow-sm">
+              <img src="/portfolio/drop.svg" alt="Empty" className="w-16 h-16 mx-auto opacity-40 mb-4" />
+              <p className="text-gray-500 font-medium">
+                {statusFilter === "all"
+                  ? (isAr ? "لا توجد تذاكر دعم فني مفتوحة حالياً" : "No support tickets open at the moment")
+                  : (isAr ? "لا توجد تذاكر بهذه الحالة" : "No tickets with this status")}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* ── TICKET DETAIL / REPLY MODAL ── */}
+        <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+          <DialogContent className="max-w-[600px] p-0 rounded-[20px] bg-white border-0 shadow-lg max-h-[90vh] overflow-hidden flex flex-col text-start">
+            {selectedTicket && (
+              <>
+                {/* Header */}
+                <div className="p-6 pb-4 border-b border-gray-100 flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <DialogTitle className={cn("text-[18px] leading-snug", gradientTitleClasses)}>
+                      {selectedTicket.subject}
+                    </DialogTitle>
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <span className={cn(
+                        "text-[11px] font-bold px-3 py-1 rounded-full border",
+                        (selectedTicket.status || "pending") === "pending" && "border-[#FFB64D] bg-[#FFF8EE] text-[#FFB64D]",
+                        (selectedTicket.status || "pending") === "open" && "border-[#39DA8A] bg-[#EAFBF3] text-[#39DA8A]",
+                        (selectedTicket.status || "pending") === "answered" && "border-[#006EA8] bg-[#F0F9FF] text-[#006EA8]",
+                        (selectedTicket.status || "pending") === "closed" && "border-[#FF5B5C] bg-[#FFF5F5] text-[#FF5B5C]"
+                      )}>
+                        {getStatusLabel(selectedTicket.status || "pending")}
+                      </span>
+                      <span className={cn(
+                        "text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize",
+                        getPriorityColor(selectedTicket.priority || "high")
+                      )}>
+                        {getPriorityLabel(selectedTicket.priority || "high")}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {formatDate(selectedTicket.created_at)}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {isAr ? "آخر رد:" : "Last Reply:"} {formatLastReply(lastUpdated)}
+                  </div>
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="p-1 hover:bg-gray-100 rounded-full transition cursor-pointer shrink-0"
+                  >
+                    <img src="/portfolio/close-circle.svg" alt="Close" className="w-7 h-7" />
+                  </button>
+                </div>
+
+                {/* Scrollable body */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                  {/* Original message */}
+                  <div className="rounded-[12px] bg-[#F4FAFF] border border-[#E0F0FF] p-4">
+                    <p className="text-xs font-semibold text-[#006EA8] mb-2">
+                      {isAr ? "الرسالة الأصلية" : "Original Message"}
+                    </p>
+                    <p className="text-[14px] text-[#032C44] leading-relaxed whitespace-pre-wrap">
+                      {selectedTicket.message}
                     </p>
                   </div>
 
-                  {/* Status badge */}
-                  <span
-                    className={cn(
-                      "text-[11px] font-bold px-3 py-1 rounded-full border shrink-0",
-                      status === "pending" && "border-[#FFB64D] bg-[#FFF8EE] text-[#FFB64D]",
-                      status === "open" && "border-[#39DA8A] bg-[#EAFBF3] text-[#39DA8A]",
-                      status === "closed" && "border-[#FF5B5C] bg-[#FFF5F5] text-[#FF5B5C]",
-                      status === "rejected" && "border-[#FF5B5C] bg-[#FFF5F5] text-[#FF5B5C]"
-                    )}
-                  >
-                    {getStatusLabel(status)}
-                  </span>
+                  {/* Attachment */}
+                  {(selectedTicket.file || selectedTicket.attachment) && (
+                    <div className="flex items-center gap-2 text-xs text-[#006EA8]">
+                      <img src="/portfolio/pdf.svg" alt="File" className="w-5 h-5 flex-shrink-0" />
+                      <a
+                        href={selectedTicket.file || selectedTicket.attachment}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate font-semibold hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {getFilenameFromUrl(selectedTicket.file || selectedTicket.attachment)}
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Replies */}
+                  {selectedTicket.replies && selectedTicket.replies.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        {isAr ? "الردود" : "Replies"} ({selectedTicket.replies.length})
+                      </p>
+                      {selectedTicket.replies.map((reply: any, idx: number) => (
+                        <div
+                          key={reply.id || idx}
+                          className={cn(
+                            "rounded-[12px] p-4 border",
+                            reply.user?.role === "admin" || reply.is_admin
+                              ? "bg-[#FFF9F0] border-[#FFE5C2]"
+                              : "bg-white border-[#E5E7EB]"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-[13px] font-bold text-[#032C44]">
+                              {reply.user?.name || (reply.is_admin || reply.user?.role === "admin"
+                                ? (isAr ? "فريق الدعم" : "Support Team")
+                                : (isAr ? "أنت" : "You"))}
+                            </span>
+                            <span className="text-[11px] text-gray-400">
+                              {formatDate(reply.created_at)}
+                            </span>
+                          </div>
+                          <p className="text-[14px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                            {reply.message || reply.body || reply.content}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {loadingDetail && (
+                    <div className="flex justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#006EA8]"></div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Message body */}
-                <p className="text-[14px] text-gray-600 leading-relaxed line-clamp-2">
-                  {ticket.message}
-                </p>
-
-                {/* Attachment Link if exists */}
-                {attachment && (
-                  <div className="pt-2 border-t border-gray-100 flex items-center gap-2 text-xs text-[#006EA8] truncate">
-                    <img src="/portfolio/pdf.svg" alt="File Icon" className="w-5 h-5 flex-shrink-0" />
-                    <a
-                      href={attachment}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="truncate font-semibold hover:underline"
-                    >
-                      {getFilenameFromUrl(attachment)}
-                    </a>
+                {/* Reply input - only show if ticket is not closed */}
+                {(selectedTicket.status || "pending") !== "closed" && (
+                  <div className="p-6 pt-4 border-t border-gray-100 space-y-3">
+                    <Textarea
+                      rows={3}
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder={isAr ? "اكتب ردك هنا..." : "Type your reply here..."}
+                      className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none resize-none"
+                    />
+                    <div className="flex justify-end">
+                      <PrimaryButton
+                        onClick={handleReply}
+                        disabled={replying || !replyText.trim()}
+                        className="px-6 w-auto cursor-pointer"
+                      >
+                        {replying
+                          ? (isAr ? "جاري الإرسال..." : "Sending...")
+                          : (isAr ? "إرسال الرد" : "Send Reply")}
+                      </PrimaryButton>
+                    </div>
                   </div>
                 )}
-              </div>
-            );
-          })
-        ) : (
-          <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-12 text-center shadow-sm">
-            <img src="/portfolio/drop.svg" alt="Empty" className="w-16 h-16 mx-auto opacity-40 mb-4" />
-            <p className="text-gray-500 font-medium">
-              {isAr ? "لا توجد تذاكر دعم فني مفتوحة حالياً" : "No support tickets open at the moment"}
-            </p>
-          </div>
-        )}
-      </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
 
-      {/* ------------------------------------------------------------- */}
-      {/* NEW TICKET MODAL */}
-      {/* ------------------------------------------------------------- */}
-      <Dialog open={showNewTicketModal} onOpenChange={setShowNewTicketModal}>
-        <DialogContent className="max-w-[550px] p-6 rounded-[20px] bg-white border-0 shadow-lg max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between mb-5">
-            <DialogTitle className={gradientTitleClasses}>
-              {isAr ? "تذكرة جديدة" : "New Ticket"}
-            </DialogTitle>
-            <button
-              onClick={() => setShowNewTicketModal(false)}
-              className="p-1 hover:bg-gray-100 rounded-full transition cursor-pointer"
-            >
-              <img src="/portfolio/close-circle.svg" alt="Close" className="w-7 h-7" />
-            </button>
-          </div>
+        {/* NEW TICKET MODAL */}
+        <Dialog open={showNewTicketModal} onOpenChange={setShowNewTicketModal}>
+          <DialogContent className="max-w-[550px] p-6 rounded-[20px] bg-white border-0 shadow-lg max-h-[90vh] overflow-y-auto text-start">
+            <div className="flex items-center justify-between mb-5">
+              <DialogTitle className={gradientTitleClasses}>
+                {isAr ? "تذكرة جديدة" : "New Ticket"}
+              </DialogTitle>
+              <button
+                onClick={() => setShowNewTicketModal(false)}
+                className="p-1 hover:bg-gray-100 rounded-full transition cursor-pointer"
+              >
+                <img src="/portfolio/close-circle.svg" alt="Close" className="w-7 h-7" />
+              </button>
+            </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Subject and Priority Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[14px] font-bold text-[#032C44]">
-                  {isAr ? "الموضوع *" : "Subject *"}
-                </label>
-                <Input
-                  type="text"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder={isAr ? "موضوع التذكرة" : "Ticket Subject"}
-                  className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
-                />
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Subject and Priority Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[14px] font-bold text-[#032C44]">
+                    {isAr ? "الموضوع *" : "Subject *"}
+                  </label>
+                  <Input
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder={isAr ? "موضوع التذكرة" : "Ticket Subject"}
+                    className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
+                  />
+                </div>
 
-              <div className="space-y-1">
-                <label className="text-[14px] font-bold text-[#032C44]">
-                  {isAr ? "الأولوية *" : "Priority *"}
-                </label>
-                <div className="relative">
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as any)}
-                    className="appearance-none border border-[#E5E7EB] focus:border-[#40A0CA] bg-white rounded-[8px] px-3 py-2 pr-8 text-sm w-full outline-none"
-                  >
-                    <option value="high">{isAr ? "عالي" : "High"}</option>
-                    <option value="medium">{isAr ? "متوسط" : "Medium"}</option>
-                    <option value="low">{isAr ? "منخفض" : "Low"}</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                    <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5" />
+                <div className="space-y-1">
+                  <label className="text-[14px] font-bold text-[#032C44]">
+                    {isAr ? "الأولوية *" : "Priority *"}
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={priority}
+                      onChange={(e) => setPriority(e.target.value as any)}
+                      className="appearance-none border border-[#E5E7EB] focus:border-[#40A0CA] bg-white rounded-[8px] px-3 py-2 pr-8 text-sm w-full outline-none text-[#032C44]"
+                    >
+                      <option value="high">{isAr ? "عالي" : "High"}</option>
+                      <option value="medium">{isAr ? "متوسط" : "Medium"}</option>
+                      <option value="low">{isAr ? "منخفض" : "Low"}</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                      <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5" />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Message Body */}
-            <div className="space-y-1">
-              <label className="text-[14px] font-bold text-[#032C44]">
-                {isAr ? "نص الرسالة *" : "Message *"}
-              </label>
-              <Textarea
-                rows={5}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={isAr ? "اكتب تفاصيل المشكلة أو الاستفسار هنا..." : "Write details about your issue here..."}
-                className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none resize-none"
-              />
-            </div>
-
-            {/* File Drag and Drop Zone */}
-            <div className="space-y-1">
-              <label className="text-[14px] font-bold text-[#032C44]">
-                {isAr ? "المرفقات" : "Attachments"}
-              </label>
-              <div
-                onClick={triggerFileSelect}
-                className="border-2 border-dashed border-[#40A0CA] bg-[#F4FAFF] hover:bg-[#EBF7FF] transition rounded-[12px] py-8 px-4 flex flex-col items-center justify-center cursor-pointer text-center"
-              >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  className="hidden"
+              {/* Message Body */}
+              <div className="space-y-1">
+                <label className="text-[14px] font-bold text-[#032C44]">
+                  {isAr ? "نص الرسالة *" : "Message *"}
+                </label>
+                <Textarea
+                  rows={5}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={isAr ? "اكتب تفاصيل المشكلة أو الاستفسار هنا..." : "Write details about your issue here..."}
+                  className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none resize-none"
                 />
-                <img src="/portfolio/drop.svg" alt="Upload" className="w-[42px] h-[42px] mb-2" />
-                <p className="text-[#032C44] text-[13px] font-medium">
-                  {attachmentFile ? (
-                    <span className="text-[#006EA8]">{attachmentFile.name}</span>
-                  ) : isAr ? (
-                    <>قم بسحب الملف هنا، أو <span className="text-[#006EA8] underline">تصفح</span></>
-                  ) : (
-                    <>Drop a file, or <span className="text-[#006EA8] underline">browse</span></>
-                  )}
-                </p>
-                <p className="text-[#6B7280] text-[10px] mt-1.5">
-                  {isAr
-                    ? "حجم الملف أقل من 10MB وصيغ الملفات المقبولة pdf, png, jpg, jpeg"
-                    : "File size should be less than 10MB and file type should be jpg, jpeg, png, pdf"}
-                </p>
               </div>
-            </div>
 
-            {/* Footer Buttons */}
-            <div className="flex items-center justify-center gap-4 mt-8">
-              <button
-                type="button"
-                onClick={() => setShowNewTicketModal(false)}
-                className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition cursor-pointer"
-              >
-                {isAr ? "إلغاء" : "Cancel"}
-              </button>
-              <PrimaryButton
-                type="submit"
-                disabled={submitting}
-                className="px-10 w-auto cursor-pointer"
-              >
-                {isAr ? "إرسال التذكرة" : "Submit"}
-              </PrimaryButton>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+              {/* File Upload Zone */}
+              <div className="space-y-1">
+                <label className="text-[14px] font-bold text-[#032C44]">
+                  {isAr ? "المرفقات" : "Attachments"}
+                </label>
+                <div
+                  onClick={triggerFileSelect}
+                  className="border-2 border-dashed border-[#40A0CA] bg-[#F4FAFF] hover:bg-[#EBF7FF] transition rounded-[12px] py-8 px-4 flex flex-col items-center justify-center cursor-pointer text-center"
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="hidden"
+                  />
+                  <img src="/portfolio/drop.svg" alt="Upload" className="w-[42px] h-[42px] mb-2" />
+                  <p className="text-[#032C44] text-[13px] font-medium">
+                    {attachmentFile ? (
+                      <span className="text-[#006EA8]">{attachmentFile.name}</span>
+                    ) : isAr ? (
+                      <>قم بسحب الملف هنا، أو <span className="text-[#006EA8] underline">تصفح</span></>
+                    ) : (
+                      <>Drop a file, or <span className="text-[#006EA8] underline">browse</span></>
+                    )}
+                  </p>
+                  <p className="text-[#6B7280] text-[10px] mt-1.5">
+                    {isAr
+                      ? "حجم الملف أقل من 10MB وصيغ الملفات المقبولة pdf, png, jpg, jpeg"
+                      : "File size should be less than 10MB and file type should be jpg, jpeg, png, pdf"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <button
+                  type="button"
+                  onClick={() => setShowNewTicketModal(false)}
+                  className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition cursor-pointer"
+                >
+                  {isAr ? "إلغاء" : "Cancel"}
+                </button>
+                <PrimaryButton
+                  type="submit"
+                  disabled={submitting}
+                  className="px-10 w-auto cursor-pointer"
+                >
+                  {isAr ? "إرسال التذكرة" : "Submit"}
+                </PrimaryButton>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </DashboardPageShell>
   );
 }

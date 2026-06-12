@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { getCategories, getCategoriesRaw } from "@/lib/api/services/categories.service"
 import { AdminCategoriesPanel } from "@/features/admin/components/admin-categories-panel"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
@@ -18,7 +19,7 @@ export default async function AdminCategoriesPage({
     redirect(`/${locale}/sign-in`)
   }
 
-  if (session.user.role !== "admin") {
+  if (normalizeRole(session.user) !== "admin") {
     redirect(`/${locale}/dashboard`)
   }
 

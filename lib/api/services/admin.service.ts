@@ -2,6 +2,7 @@
 import { api, ApiError } from "../client"
 import type { ApiResponse, Job, JobApplication, User, PaginationMeta } from "../types"
 import { normalizeJob } from "./jobs.service"
+import { normalizeCompanyApplication } from "@/features/company-jobs/lib/application-utils"
 
 const ADMIN_JOB_STATUSES = ["pending", "approved", "active", "rejected"] as const
 
@@ -12,15 +13,68 @@ export async function getAdminJobs(
   locale = "ar"
 ): Promise<{ data: Job[]; meta: PaginationMeta }> {
   const query = status ? `?status=${status}&page=${page}` : `?page=${page}`
-  const response = await api.get<ApiResponse<unknown>>(
-    `/admin/jobs${query}`,
-    { token, locale }
-  )
-  const rawList = response.data || []
+  // Add short server-side caching to reduce repeated identical admin API calls
+  const response = await api.get<unknown>(`/admin/jobs${query}`, { token, locale, next: { revalidate: 15 } })
+
+  // Handle multiple possible response shapes:
+  // - { data: [...] , meta: { ... } }
+  // - [...] (array)
+  const typed = response as
+    | { data?: unknown[]; meta?: PaginationMeta }
+    | unknown[]
+    | undefined
+
+  const rawList = Array.isArray(typed)
+    ? typed
+    : Array.isArray(typed?.data)
+      ? (typed!.data as unknown[])
+      : []
+
   const data = (Array.isArray(rawList) ? rawList : [])
     .map((item) => normalizeJob(item, locale))
     .filter((item): item is Job => item !== null)
-  return { data, meta: response.meta! }
+
+  const meta: PaginationMeta = Array.isArray(typed)
+    ? { current_page: page, last_page: 1, per_page: data.length, total: data.length }
+    : typed?.meta || { current_page: page, last_page: 1, per_page: data.length, total: data.length }
+
+  return { data, meta }
+}
+
+export async function getAdminJobApplicationById(
+  jobId: number,
+  applicationId: number,
+  token: string,
+  locale = "ar"
+): Promise<JobApplication | null> {
+  try {
+    const response = await api.get<any>(`/admin/job-applications/${applicationId}`, { token, locale })
+    const raw = response.data ?? response
+    if (raw) {
+      return normalizeCompanyApplication(raw) as unknown as JobApplication
+    }
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 403 || err.status === 401)) {
+      return null
+    }
+    // eslint-disable-next-line no-console
+    console.warn(`[getAdminJobApplicationById] Direct fetch failed, trying fallback search loop:`, err)
+  }
+
+  try {
+    let page = 1
+    while (true) {
+      const { data, meta } = await getAdminJobApplications(jobId, token, page, locale)
+      const found = data.find((a) => Number(a.id) === Number(applicationId))
+      if (found) return found
+      const last = Number(meta?.last_page ?? 1)
+      if (page >= last) break
+      page += 1
+    }
+    return null
+  } catch (err) {
+    return null
+  }
 }
 
 export async function getAdminJobById(
@@ -28,6 +82,20 @@ export async function getAdminJobById(
   token: string,
   locale = "ar"
 ): Promise<Job | null> {
+  try {
+    const response = await api.get<ApiResponse<Job>>(`/jobs/${jobId}`, { token, locale })
+    const rawJob = response.data ?? response
+    if (rawJob) {
+      return normalizeJob(rawJob, locale)
+    }
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 403 || err.status === 401)) {
+      return null
+    }
+    // eslint-disable-next-line no-console
+    console.warn(`[getAdminJobById] Direct fetch failed, trying fallback search loop:`, err)
+  }
+
   try {
     for (const status of ADMIN_JOB_STATUSES) {
       let page = 1
@@ -69,11 +137,13 @@ export async function getAdminJobApplications(
       | JobApplication[]
       | undefined
 
-    const data = Array.isArray(typedResponse)
+    const rawList = Array.isArray(typedResponse)
       ? typedResponse
       : Array.isArray(typedResponse?.data)
         ? typedResponse.data
         : []
+
+    const data = rawList.map((item) => normalizeCompanyApplication(item) as unknown as JobApplication)
 
     const meta = Array.isArray(typedResponse)
       ? {
@@ -188,101 +258,32 @@ export async function getAdminUsers(
   token: string,
   role?: string,
   page = 1,
-  locale = "ar"
+  locale = "ar",
+  perPage = 10
 ): Promise<{ data: User[]; meta: PaginationMeta }> {
-  const pageSize = 10 // Display page size
-
-  function matchesRole(u: User, wanted?: string) {
-    if (!wanted) return true
-    const wantedLower = wanted.toLowerCase()
-    
-    // Check single role property
-    if (typeof (u as any).role === "string") {
-      return (u as any).role.toLowerCase() === wantedLower
-    }
-    
-    // Check roles array
-    if (Array.isArray((u as any).roles)) {
-      return (u as any).roles.some((r: any) => {
-        if (typeof r === "string") return r.toLowerCase() === wantedLower
-        if (r && typeof r === "object") {
-          const rr = r as Record<string, unknown>
-          const name = rr.name as string | undefined
-          const slug = rr.slug as string | undefined
-          return name?.toLowerCase() === wantedLower || slug?.toLowerCase() === wantedLower
-        }
-        return false
-      })
-    }
-    return false
+  let query = `page=${page}&per_page=${perPage}`
+  if (role) {
+    // Map role to capitalized first letter (e.g. user -> User, company -> Company, admin -> Admin)
+    const backendRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()
+    query += `&filter[roles.name]=${backendRole}`
   }
 
-  async function fetchAllUsers(endpoint: string): Promise<User[]> {
-    let allData: User[] = []
-    let currentPage = 1
-    let hasMore = true
+  // We know /admin/users 404s, so call /users directly.
+  const response = await api.get<any>(`/users?${query}`, { token, locale })
+  
+  const rawList = Array.isArray(response)
+    ? response
+    : Array.isArray(response?.data)
+      ? response.data
+      : []
 
-    while (hasMore) {
-      try {
-        const response = await api.get<ApiResponse<User[]>>(
-          `${endpoint}?page=${currentPage}&per_page=100`,
-          { token, locale }
-        )
-        const data = response.data ?? []
-        
-        if (data.length === 0) {
-          hasMore = false
-          break
-        }
-        
-        allData = [...allData, ...data]
-        
-        if (response.meta?.last_page && currentPage >= response.meta.last_page) {
-          hasMore = false
-        } else {
-          currentPage += 1
-        }
-      } catch (err) {
-        hasMore = false
-        break
-      }
-    }
+  const data = rawList as User[]
+  
+  const meta: PaginationMeta = Array.isArray(response)
+    ? { current_page: page, last_page: 1, per_page: perPage, total: data.length }
+    : response?.meta || { current_page: page, last_page: 1, per_page: perPage, total: data.length }
 
-    return allData
-  }
-
-  try {
-    // Try admin endpoint first
-    let allData = await fetchAllUsers("/admin/users")
-
-    // If admin endpoint fails, try public endpoint
-    if (allData.length === 0) {
-      allData = await fetchAllUsers("/users")
-    }
-
-    // Filter by role client-side if specified
-    let filteredData = allData
-    if (role) {
-      filteredData = allData.filter((u) => matchesRole(u, role))
-    }
-
-    // Calculate pagination
-    const totalCount = filteredData.length
-    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
-    const startIdx = (page - 1) * pageSize
-    const paginatedData = filteredData.slice(startIdx, startIdx + pageSize)
-
-    const meta: PaginationMeta = {
-      current_page: page,
-      last_page: totalPages,
-      per_page: pageSize,
-      total: totalCount,
-    }
-
-    return { data: paginatedData, meta }
-  } catch (err) {
-    throw err
-  }
+  return { data, meta }
 }
 
 export async function getAdminStats(
@@ -293,33 +294,67 @@ export async function getAdminStats(
   total_companies: number
   total_jobs: number
   pending_jobs: number
+  published_jobs?: number
 }> {
   try {
     // Get user and company stats separately with client-side role filtering
     const [usersResult, companiesResult] = await Promise.all([
-      getAdminUsers(token, "user", 1, locale),
-      getAdminUsers(token, "company", 1, locale),
+      getAdminUsers(token, "user", 1, locale, 1),
+      getAdminUsers(token, "company", 1, locale, 1),
     ])
 
     const totalUsers = usersResult.meta?.total ?? 0
     const totalCompanies = companiesResult.meta?.total ?? 0
 
-    // Get jobs by all statuses
-    const jobStatuses = ["pending", "approved", "active", "rejected"] as const
-    const jobResults = await Promise.all(
-      jobStatuses.map((status) =>
-        getAdminJobs(token, status, 1, locale)
-      )
-    )
+    // Prefer fetching a single /admin/jobs?page=1 to get the authoritative total
+    // (some backends expose total in the meta for the unfiltered endpoint).
+    let totalJobs = 0
+    let pendingJobs = 0
 
-    const totalJobs = jobResults.reduce((sum, result) => sum + (result.meta?.total ?? 0), 0)
-    const pendingJobs = jobResults[0]?.meta?.total ?? 0
+    try {
+      const allJobs = await getAdminJobs(token, undefined, 1, locale).catch(() => ({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0 } }))
+      totalJobs = allJobs.meta?.total ?? 0
+    } catch (e) {
+      totalJobs = 0
+    }
+
+    try {
+      const pendingRes = await getAdminJobs(token, "pending", 1, locale).catch(() => ({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0 } }))
+      pendingJobs = pendingRes.meta?.total ?? 0
+    } catch (e) {
+      pendingJobs = 0
+    }
+
+    // For published jobs, prefer summing approved + active counts
+    let publishedJobs = 0
+    try {
+      const [approvedRes, activeRes] = await Promise.all([
+        getAdminJobs(token, "approved", 1, locale).catch(() => ({ data: [], meta: { total: 0 } })),
+        getAdminJobs(token, "active", 1, locale).catch(() => ({ data: [], meta: { total: 0 } })),
+      ])
+      publishedJobs = (approvedRes.meta?.total ?? 0) + (activeRes.meta?.total ?? 0)
+    } catch (e) {
+      // fallback: estimate published as total - pending
+      publishedJobs = Math.max(0, (totalJobs || 0) - (pendingJobs || 0))
+    }
+
+    // If for some reason totalJobs is still zero and we have per-status totals, sum them as fallback
+    if (!totalJobs) {
+      try {
+        const jobStatuses = ["pending", "approved", "active", "rejected"] as const
+        const jobResults = await Promise.all(jobStatuses.map((status) => getAdminJobs(token, status, 1, locale).catch(() => ({ data: [], meta: { total: 0 } }))))
+        totalJobs = jobResults.reduce((sum, result) => sum + (result.meta?.total ?? 0), 0)
+      } catch {
+        // ignore
+      }
+    }
 
     return {
       total_users: Number(totalUsers || 0),
       total_companies: Number(totalCompanies || 0),
       total_jobs: Number(totalJobs || 0),
       pending_jobs: Number(pendingJobs || 0),
+      published_jobs: Number(publishedJobs || 0),
     }
   } catch (err) {
     return { total_users: 0, total_companies: 0, total_jobs: 0, pending_jobs: 0 }

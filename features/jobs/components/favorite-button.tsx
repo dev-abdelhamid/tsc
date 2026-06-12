@@ -4,6 +4,7 @@ import * as React from "react"
 import { Bookmark } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "@/i18n/navigation"
+import { useSession } from "@/hooks/use-auth"
 
 type FavoriteButtonProps = {
   jobId: number
@@ -17,6 +18,7 @@ export function FavoriteButton({
   initialIsFavorite = false 
 }: FavoriteButtonProps) {
   const router = useRouter()
+  const session = useSession()
   const [isFavorite, setIsFavorite] = React.useState(initialIsFavorite)
   const [loading, setLoading] = React.useState(false)
 
@@ -24,29 +26,11 @@ export function FavoriteButton({
     e.preventDefault()
     e.stopPropagation()
 
-    // Get access token from localStorage
-    let accessToken: string | null = null
-    if (typeof window !== "undefined") {
-      try {
-        const tokens = localStorage.getItem("auth_tokens")
-        if (tokens) {
-          const parsed = JSON.parse(tokens)
-          accessToken = parsed.access_token
-        }
-      } catch {
-        // Silently handle parse errors
-      }
-    }
-
-    // Check if user is logged in
-    if (!accessToken) {
-      const message = locale === "ar" 
-        ? "يجب تسجيل الدخول أولاً"
-        : "Please log in first"
+    // Use server session as the authoritative login state
+    if (!session.isLoggedIn) {
+      const message = locale === "ar" ? "يجب تسجيل الدخول أولاً" : "Please log in first"
       toast.error(message)
-      setTimeout(() => {
-        router.push(`/sign-in`)
-      }, 1000)
+      setTimeout(() => router.push(`/sign-in`), 1000)
       return
     }
 
@@ -88,6 +72,17 @@ export function FavoriteButton({
     }
   }
 
+  const userRole = session.user ? ((session.user as any).role || (session.user as any).roles?.[0]?.name || (session.user as any).roles?.[0]) : null
+  const isExcludedRole = userRole && (
+    String(userRole).toLowerCase().includes("company") || 
+    String(userRole).toLowerCase().includes("admin") ||
+    String(userRole).toLowerCase().includes("employer")
+  )
+
+  if (session.checked && isExcludedRole) {
+    return null
+  }
+
   return (
     <button
       type="button"
@@ -107,3 +102,4 @@ export function FavoriteButton({
     </button>
   )
 }
+

@@ -1,6 +1,6 @@
 // app/[locale]/dashboard/page.tsx
 import { redirect } from "next/navigation"
-import { getSession } from "@/lib/session"
+import { getSession, getCanonicalRole, normalizeRole } from "@/lib/auth-token"
 
 export default async function DashboardPage({
   params,
@@ -21,14 +21,19 @@ export default async function DashboardPage({
     company: "/dashboard/company",
     admin: "/dashboard/admin",
   }
-
-  const role = session.user.role
-  const targetPath = role ? dashboardMap[role] : null
+  // Prefer the canonical role which may fetch a fresh profile / refresh tokens
+  // if the in-session user shape doesn't include authoritative role data.
+  let finalRole: string = normalizeRole(session.user)
+  try {
+    const canonical = await getCanonicalRole(session)
+    finalRole = canonical
+  } catch {
+    // if canonicalization fails, fall back to session role
+  }
+  const targetPath = dashboardMap[finalRole as keyof typeof dashboardMap] ?? null
 
   // 3. إعادة التوجيه أو خطأ
   if (!targetPath) {
-    // لو الدور غير معروف، نعمل logout ونرجع لـ sign-in
-    await fetch(`/${locale}/api/auth/logout`, { method: "POST" })
     redirect(`/${locale}/sign-in?error=invalid_role`)
   }
 

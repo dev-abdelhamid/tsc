@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { getTickets, createTicket } from "@/lib/api/services/tickets.service"
 
 export async function GET(request: Request) {
@@ -8,6 +8,17 @@ export async function GET(request: Request) {
     const token = session.accessToken
 
     if (!token) {
+      // Development-only impersonation: return a mocked tickets list when ?as=user
+      try {
+        const url = new URL(request.url)
+        if (process.env.NODE_ENV !== "production") {
+          const asRole = url.searchParams.get("as") || url.searchParams.get("impersonate")
+          if (asRole && String(asRole).toLowerCase() === "user") {
+            return NextResponse.json({ data: [{ id: 1, subject: "Mock user ticket #1", status: "open", created_at: new Date().toISOString() }] })
+          }
+        }
+      } catch {}
+
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
     }
 
@@ -60,3 +71,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ message }, { status: 500 })
   }
 }
+

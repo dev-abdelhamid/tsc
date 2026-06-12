@@ -170,23 +170,24 @@
   }
   html {
     @apply font-sans;
-    scrollbar-width: thin;
-    scrollbar-color: var(--primary, #40a0ca) transparent;
+    /* Use only webkit scrollbar styling for cross-browser safety */
   }
 
   /* Webkit browsers (Chrome, Safari, Edge) */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--primary, #40a0ca);
+    background: color-mix(in srgb, var(--primary, #40a0ca) 80%, transparent 20%);
     border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #006ea8;
+    background: var(--primary, #40a0ca);
   }
 }

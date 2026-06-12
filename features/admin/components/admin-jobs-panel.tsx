@@ -24,10 +24,12 @@ function mapStatus(status: string): "pending" | "approved" | "rejected" {
 export function AdminJobsPanel({
   jobs,
   initialTab = "pending",
+  serverCounts,
 }: {
   jobs: Job[]
   locale: string
   initialTab?: Tab
+  serverCounts?: { total: number; pending: number; approved: number; rejected: number }
 }) {
   const t = useTranslations("Admin.jobs")
   const tDashboard = useTranslations("Admin.dashboard")
@@ -44,13 +46,17 @@ export function AdminJobsPanel({
   }, [jobs, tab])
 
   const statusCounts = useMemo(() => {
+    if (serverCounts) {
+      return serverCounts
+    }
+
     return {
       total: jobs.length,
       pending: jobs.filter((job) => mapStatus(job.status) === "pending").length,
       approved: jobs.filter((job) => mapStatus(job.status) === "approved").length,
       rejected: jobs.filter((job) => mapStatus(job.status) === "rejected").length,
     }
-  }, [jobs])
+  }, [jobs, serverCounts])
 
   // الترتيب الأساسي الثابت (نفس الترتيب في كل اللغات)
   const tabs: { id: Tab; label: string }[] = [

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "@/i18n/navigation"
+import { useSession } from "@/hooks/use-auth"
 import { PrimaryButton } from "@/components/ui/primary-button"
 
 type ApplyButtonProps = {
@@ -14,20 +15,14 @@ export default function ApplyButton({ jobId, locale = "ar", label = "Apply" }: A
   const router = useRouter()
   const [loading, setLoading] = React.useState(false)
   const [shouldHide, setShouldHide] = React.useState(false)
+  const session = useSession()
 
   React.useEffect(() => {
-    const userStr = localStorage.getItem("auth_user")
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr)
-        if (user && (user.role === "company" || user.role === "admin")) {
-          setShouldHide(true)
-        }
-      } catch (e) {
-        // ignore
-      }
+    if (session.checked && session.user) {
+      const u = session.user as any
+      if (u && (u.role === "company" || u.role === "admin")) setShouldHide(true)
     }
-  }, [])
+  }, [session.checked, session.user])
 
   const handleApply = () => {
     if (loading) return
@@ -48,4 +43,5 @@ export default function ApplyButton({ jobId, locale = "ar", label = "Apply" }: A
     </PrimaryButton>
   )
 }
+
 

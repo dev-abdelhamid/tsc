@@ -2,8 +2,9 @@ import { redirect } from "next/navigation"
 import Image from "next/image"
 import { getTranslations, setRequestLocale } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
-import { getSession, withTokenRefresh } from "@/lib/session"
-import { getCompanyJobs } from "@/lib/api/services/company.service"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
+import { enrichJobsWithApplicationCounts, getCompanyJobs } from "@/lib/api/services/company.service"
 import { CompanyJobActionsMenu } from "@/features/company-jobs/components/company-job-actions-menu"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
 import { DashboardStatusBadge } from "@/features/dashboard/components/dashboard-status-badge"
@@ -33,7 +34,7 @@ export default async function CompanyJobsPage({
     redirect(`/${locale}/sign-in`)
   }
 
-  if (session.user?.role !== "company") {
+  if (normalizeRole(session.user) !== "company") {
     redirect(`/${locale}/dashboard`)
   }
 
@@ -46,12 +47,11 @@ export default async function CompanyJobsPage({
 
   let jobs: Awaited<ReturnType<typeof getCompanyJobs>>["data"] | null = null
   try {
-    const res = await withTokenRefresh(session, locale, (token) =>
-      getCompanyJobs(token, 1, locale)
-    )
-    jobs = res.data
+    const token = session.accessToken as string | undefined
+    if (!token) redirect(`/${locale}/sign-in`)
+    const res = await getCompanyJobs(token, 1, locale)
+    jobs = await enrichJobsWithApplicationCounts(res.data, token, locale)
   } catch (err) {
-    console.error(err)
     if (err instanceof ApiError && err.status === 401) {
       redirect(`/${locale}/sign-in`)
     }

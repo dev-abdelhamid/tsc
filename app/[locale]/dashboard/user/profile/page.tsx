@@ -1,9 +1,12 @@
 // server wrapper to provide locale + session to the client component
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import UserProfileClient from "./client"
 import { getProfile } from "@/lib/api/services/auth.service"
+import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
+
+export const dynamic = "force-dynamic"
 
 export default async function UserProfilePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -59,9 +62,19 @@ export default async function UserProfilePage({ params }: { params: Promise<{ lo
         locale: user.locale || "",
       }
     }
-  } catch (err) {
+  } catch {
     // ignore - client will fetch
   }
 
-  return <UserProfileClient locale={locale} initialProfile={initialProfile} />
+  const isAr = locale === "ar"
+
+  return (
+    <DashboardPageShell
+      title={isAr ? "الملف الشخصي" : "My Profile"}
+      description={isAr ? "تعديل بياناتك الشخصية" : "Edit your personal information"}
+      isRTL={isAr}
+    >
+      <UserProfileClient locale={locale} initialProfile={initialProfile} />
+    </DashboardPageShell>
+  )
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
 import { replyToTicket } from "@/lib/api/services/tickets.service"
 
 export async function POST(

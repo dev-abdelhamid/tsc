@@ -5,6 +5,7 @@ import { useRouter } from "@/i18n/navigation"
 import { toast } from "sonner"
 import { Check, X } from "lucide-react"
 import { updateApplicationStatusAction } from "@/features/company-jobs/actions/application-actions"
+import { mapApplicationStatus } from "@/features/company-jobs/lib/application-utils"
 import { cn } from "@/lib/utils"
 
 type CompanyApplicationActionsProps = {
@@ -49,21 +50,20 @@ export function CompanyApplicationActions({
         } else {
           toast.error(result.message || (isAr ? "فشل تحديث الحالة" : "Failed to update status"))
         }
-      } catch (error) {
+      } catch {
         toast.dismiss(toastId)
         toast.error(isAr ? "حدث خطأ غير متوقع" : "An unexpected error occurred")
-        console.error("Application status update error:", error)
       }
     })
   }
 
-  const normalizedStatus = status === "approved" ? "accepted" : status
+  const normalizedStatus = mapApplicationStatus(status)
 
   return (
     <div className="flex flex-wrap items-center gap-3">
       <button
         type="button"
-        disabled={pending || normalizedStatus === "accepted"}
+        disabled={pending || normalizedStatus === "approved"}
         onClick={() => runStatus("accepted")}
         className={cn(
           "inline-flex h-[42px] items-center gap-2 rounded-[10px] border border-[#B66FED] bg-[#E7D7FA] hover:bg-[#DBC3F7] px-6 text-sm font-bold text-[#9333CD] transition cursor-pointer disabled:opacity-50"

@@ -4,9 +4,13 @@ import { ApiError } from "@/lib/api/client"
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, code } = await request.json()
+    const body = await request.json().catch(() => ({} as Record<string, unknown>))
     const locale = request.headers.get("accept-language")?.split(",")[0] || "ar"
-    await verifyEmail(email, code, locale as "ar" | "en" | "de")
+    const email = String((body.email as string) || "")
+    const code = String((body.code as string) || "")
+    if (!email || !code) return NextResponse.json({ message: "missing fields" }, { status: 400 })
+
+    await verifyEmail(email, code, locale)
     return NextResponse.json({ success: true })
   } catch (error) {
     const status = error instanceof ApiError ? error.status : 500

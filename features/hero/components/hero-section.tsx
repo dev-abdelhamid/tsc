@@ -54,17 +54,25 @@ export async function HeroSection({ title: titleOverride, description: descripti
     >
       {/* Background Bars */}
       <div
-        className="absolute inset-0 z-0 opacity-40"
+        className="absolute inset-x-0 bottom-0 top-1/4 z-0 opacity-80"
         style={{
           background:
-            "repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(64, 160, 202, 0.15) 50px, rgba(64, 160, 202, 0.15) 100px)",
-          maskImage: "linear-gradient(to top, black 0%, transparent 80%)",
-          WebkitMaskImage: "linear-gradient(to top, black 0%, transparent 80%)",
+            "repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(64, 160, 202, 0.15) 60px, rgba(64, 160, 202, 0.15) 120px)",
+          maskImage: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0) 100%)",
+          WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0) 100%)",
         }}
       />
 
       <Image src="/home/hero/hero-bg-image.png" alt="" fill className="z-1 object-cover opacity-[0.15] mix-blend-overlay" aria-hidden />
       <Image src="/home/hero/hero-blur.svg" alt="" fill className="z-2 object-cover opacity-50" aria-hidden />
+
+      {/* Bottom Glow / Spotlight Arc */}
+      <div 
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[160%] h-[300px] sm:h-[450px] rounded-[100%] bg-gradient-to-t from-[#40a0ca]/70 via-[#006ea8]/30 to-transparent blur-[50px] sm:blur-[75px] pointer-events-none z-[1]"
+        style={{
+          transform: "translateX(-50%) translateY(50%)",
+        }}
+      />
       
       <Image
         src="/home/hero/hero-glow-left.svg"

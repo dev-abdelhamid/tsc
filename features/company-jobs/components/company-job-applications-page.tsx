@@ -5,19 +5,13 @@ import { getCompanyJob, getJobApplications } from "@/lib/api/services/company.se
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
 import { ApplicationRowActions } from "@/features/company-jobs/components/application-row-actions"
 import { DashboardStatusBadge } from "@/features/dashboard/components/dashboard-status-badge"
-import { PrimaryButton } from "@/components/ui/primary-button"
+import { mapApplicationStatus } from "@/features/company-jobs/lib/application-utils"
 import { cn } from "@/lib/utils"
 
 type CompanyJobApplicationsPageProps = {
   jobId: number
   locale: string
   accessToken: string
-}
-
-function mapApplicationStatus(status: string): "pending" | "accepted" | "rejected" {
-  if (status === "accepted") return "accepted"
-  if (status === "rejected") return "rejected"
-  return "pending"
 }
 
 export async function CompanyJobApplicationsPage({
@@ -36,6 +30,7 @@ export async function CompanyJobApplicationsPage({
 
   const statusLabels: Record<string, string> = {
     pending: t("applicationsPage.status.pending"),
+    approved: t("applicationsPage.status.accepted"),
     accepted: t("applicationsPage.status.accepted"),
     rejected: t("applicationsPage.status.rejected"),
   }
@@ -100,7 +95,7 @@ export async function CompanyJobApplicationsPage({
                     )}
                   >
                     <div className="w-[35%] shrink-0 px-4 py-4 text-base font-medium text-[#262626]">
-                      {application.user?.name ?? t("applicationsPage.unknownCandidate")}
+                      {application.user?.name || t("applicationsPage.unknownCandidate")}
                     </div>
                     <div className="flex w-[20%] justify-center px-2 py-4">
                       <DashboardStatusBadge
@@ -114,7 +109,6 @@ export async function CompanyJobApplicationsPage({
                         jobId={jobId}
                         locale={locale}
                         status={application.status}
-                        cvUrl={application.cv_url}
                       />
                     </div>
                   </div>

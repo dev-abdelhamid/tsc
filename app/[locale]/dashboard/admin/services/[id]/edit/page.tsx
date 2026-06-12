@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { getServicesRaw } from "@/lib/api/services/services.service"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
 import { AdminServiceEditForm } from "@/features/admin/components/admin-service-edit-form"
@@ -19,7 +20,7 @@ export default async function AdminServiceEditPage({ params }: PageProps) {
   if (!session.isLoggedIn || !session.user || !session.accessToken) {
     redirect(`/${locale}/sign-in`)
   }
-  if (session.user.role !== "admin") {
+  if (normalizeRole(session.user) !== "admin") {
     redirect(`/${locale}/dashboard`)
   }
 

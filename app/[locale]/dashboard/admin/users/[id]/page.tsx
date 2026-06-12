@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { getAdminUserById } from "@/lib/api/services/admin.service"
 import { AdminUserDetailView } from "@/features/admin/components/admin-user-detail-view"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
@@ -14,7 +15,7 @@ export default async function AdminUserDetailPage({
   setRequestLocale(locale)
   const session = await getSession()
 
-  if (!session.user || session.user.role !== "admin") {
+  if (!session.user || normalizeRole(session.user) !== "admin") {
     redirect(`/${locale}/dashboard`)
   }
 
@@ -25,7 +26,7 @@ export default async function AdminUserDetailPage({
     console.error(err)
   }
 
-  if (!user || user.role !== "user") {
+  if (!user || normalizeRole(user) !== "user") {
     redirect(`/${locale}/dashboard/admin/users`)
   }
 

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth-token"
+import { normalizeRole } from "@/lib/auth-token"
 import { getMyApplications } from "@/lib/api/services/user.service"
 import { getFavoriteJobs } from "@/lib/api/services/jobs.service"
 import { getTickets } from "@/lib/api/services/tickets.service"
@@ -21,7 +22,7 @@ export default async function UserDashboardPage({
     redirect(`/${locale}/sign-in`)
   }
 
-  if (session.user.role !== "user") {
+  if (normalizeRole(session.user) !== "user") {
     redirect(`/${locale}/dashboard`)
   }
 
@@ -51,14 +52,33 @@ export default async function UserDashboardPage({
     id: app.id,
     title: app.job ? getJobTitle(app.job, locale) : "—",
     column2: app.job?.company?.name ?? "—",
-    deadline: app.job?.application_deadline
-      ? new Date(app.job.application_deadline).toLocaleDateString("en-GB")
-      : "—",
+    deadline: (() => {
+      const j = app.job || {}
+      const candidates = [
+        j.application_deadline,
+        j.applicationDeadline,
+        app.application_deadline,
+        app.applicationDeadline,
+        j.deadline,
+        j.deadline_at,
+        j.deadlineDate,
+        j.expires_at,
+      ]
+      const found = candidates.find((c) => !!c)
+      if (!found) return "—"
+      try {
+        return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : locale, { day: "2-digit", month: "short", year: "numeric" }).format(new Date(found))
+      } catch {
+        return "—"
+      }
+    })(),
     status: (app.status === "accepted"
-      ? "approved"
-      : app.status === "rejected"
-        ? "rejected"
-        : "pending") as "approved" | "rejected" | "pending",
+      ? "accepted"
+      : app.status === "approved"
+        ? "approved"
+        : app.status === "rejected"
+          ? "rejected"
+          : "pending") as "approved" | "rejected" | "pending" | "accepted",
     detailsHref: `/dashboard/user/applications/${app.id}`,
   }))
 
@@ -97,6 +117,7 @@ export default async function UserDashboardPage({
       <DashboardJobsTable
         title={isAr ? "آخر طلبات التوظيف" : "Last Job Application"}
         rows={tableRows}
+        locale={locale}
         col2Label={isAr ? "اسم الشركة" : "Company Name"}
         jobTitleLabel={isAr ? "عنوان الوظيفة" : "Job Title"}
         deadlineLabel={isAr ? "الموعد النهائي" : "Deadline"}
