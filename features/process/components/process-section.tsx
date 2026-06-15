@@ -117,7 +117,7 @@ export async function ProcessSection({ steps: overrideSteps, title: titleOverrid
   const description = descriptionOverride ?? t("description")
 
   return (
-    <SectionShell stagger={false} className="relative overflow-visible bg-[#001222] py-[72px] lg:py-[88px]">
+    <SectionShell stagger={false} className="relative overflow-x-clip bg-[#001222] py-[72px] lg:py-[88px]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center_bottom,rgba(65,160,202,0.42)_0%,rgba(65,160,202,0.18)_28%,rgba(0,18,34,0)_72%)]" />
 
       <StaggerInView leadDelay={0.55}>

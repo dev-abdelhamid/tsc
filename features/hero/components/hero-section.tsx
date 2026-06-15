@@ -94,29 +94,29 @@ export async function HeroSection({ title: titleOverride, description: descripti
       />
 
       <StaggerInView
-        leadDelay={0.55}
+        immediate
         className="relative z-10 mt-6 flex flex-col items-center gap-8 px-4 pb-8 sm:mt-10 sm:gap-10 lg:mt-[48px] lg:gap-[48px] lg:px-0 lg:pb-[30px]"
       >
-        <StaggerItem>
+        <StaggerItem immediate>
           <div className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-[13px] font-semibold tracking-[0.06em] text-white/95">
             <Image src="/footer/icon-link.svg" alt="" width={16} height={16} aria-hidden />
             <span>{t("eyebrow")}</span>
           </div>
         </StaggerItem>
 
-        <StaggerItem>
+        <StaggerItem immediate>
           <h1 className="font-heading mx-auto mt-2 max-w-[866px] text-balance text-center text-[32px] font-bold leading-relaxed text-white sm:mt-4 sm:text-[44px] md:text-[56px] lg:text-[72px] lg:leading-[1.1]">
             {renderTitle()}
           </h1>
         </StaggerItem>
 
-        <StaggerItem>
+        <StaggerItem immediate>
           <p className="mx-auto mt-4 max-w-[680px] text-pretty text-center text-[15px] font-normal leading-relaxed text-white/80 sm:mt-6 sm:text-[16px] lg:mt-8 lg:text-[18px] lg:leading-[1.6]">
             {description}
           </p>
         </StaggerItem>
 
-        <StaggerItem>
+        <StaggerItem immediate>
           <Link locale={locale} href="/jobs">
             <PrimaryButton className="mt-4 h-[52px] w-[220px]">
               {t("cta")}

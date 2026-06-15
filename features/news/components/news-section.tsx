@@ -32,7 +32,7 @@ export async function NewsSection({ override }: NewsSectionProps) {
   if (!featured) return null
 
   return (
-    <SectionShell id="news" stagger={false} className="overflow-visible bg-[#E8F2FF] py-12 sm:py-16 lg:py-[82px]">
+    <SectionShell id="news" stagger={false} className="overflow-x-clip bg-[#E8F2FF] py-12 sm:py-16 lg:py-[82px]">
       <StaggerInView className="flex flex-col gap-6 text-start">
         <StaggerItem>
           <div className="inline-flex items-center gap-2 rounded-lg bg-[rgba(64,160,202,0.25)] px-4 py-2 text-[12px] leading-[1.16] font-normal text-[#002B46]">
@@ -52,8 +52,8 @@ export async function NewsSection({ override }: NewsSectionProps) {
         </StaggerItem>
       </StaggerInView>
 
-      <StaggerInView className="mt-10 grid gap-8 overflow-visible lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-10">
-        <StaggerItem className="overflow-visible">
+      <StaggerInView className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-10">
+        <StaggerItem>
           <article className="flex flex-col gap-6">
             <div className="overflow-hidden rounded-2xl">
               <Image
@@ -89,27 +89,18 @@ export async function NewsSection({ override }: NewsSectionProps) {
                 key={item.id}
                 locale={locale}
                 href={`/news/${item.slug}`}
-                className="group block overflow-visible rounded-2xl transition-opacity hover:opacity-95"
+                className="group block rounded-2xl transition-opacity hover:opacity-95"
               >
                 <article
                   className={cn(
                     "grid grid-cols-1 gap-4 items-start",
                     "lg:gap-8",
                     // On large screens use 40% image / remaining for content
-                    "lg:grid-cols-[40%_1fr]",
-                    isRtl && "lg:grid-cols-[1fr_40%]"
+                    "lg:grid-cols-[60%_1fr]",
+                    isRtl && "lg:grid-cols-[1fr_60%]"
                   )}
                 >
-                  <div className={cn("overflow-hidden rounded-2xl shadow-sm", isRtl ? "order-2 lg:order-1" : "order-1")}>
-                    <Image
-                      src={resolveNewsImageUrl(item.image, idx + 1)}
-                      alt={item.title}
-                      width={480}
-                      height={320}
-                      className="h-[140px] w-full shrink-0 rounded-[14px] object-cover lg:h-[220px] lg:w-full"
-                      unoptimized={resolveNewsImageUrl(item.image, idx + 1).startsWith("http")}
-                    />
-                  </div>
+
 
                   <div className={cn("flex flex-1 flex-col justify-between gap-4 p-2 lg:p-0", isRtl ? "text-right lg:text-right" : "text-left lg:text-left", isRtl ? "order-1 lg:order-2" : "order-2")}>
                     <div className="space-y-2">
@@ -129,6 +120,18 @@ export async function NewsSection({ override }: NewsSectionProps) {
                         {dateLabel}
                       </p>
                     </div>
+                  </div>
+
+
+                  <div className={cn("overflow-hidden rounded-2xl shadow-sm", isRtl ? "order-2 lg:order-1" : "order-1")}>
+                    <Image
+                      src={resolveNewsImageUrl(item.image, idx + 1)}
+                      alt={item.title}
+                      width={480}
+                      height={320}
+                      className="h-[140px] w-full shrink-0 rounded-[14px] object-cover lg:h-[220px] lg:w-full"
+                      unoptimized={resolveNewsImageUrl(item.image, idx + 1).startsWith("http")}
+                    />
                   </div>
                 </article>
               </Link>

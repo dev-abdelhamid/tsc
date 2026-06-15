@@ -20,3 +20,32 @@ export function resolveNewsImageUrl(image?: string | null, index = 0): string {
   if (!base) return FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]
   return `${base.replace(/\/$/, "")}/${src.replace(/^\//, "")}`
 }
+
+export function isImageOptimizable(src: string): boolean {
+  if (src.startsWith("/")) return true
+  try {
+    const url = new URL(src)
+    if (url.protocol !== "https:") return false
+
+    const allowedHosts = new Set<string>([
+      "cv.subcodeco.com",
+      "lh3.googleusercontent.com",
+      "avatars.githubusercontent.com"
+    ])
+    
+    const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    
+    if (storageUrl) {
+      try { allowedHosts.add(new URL(storageUrl).hostname) } catch {}
+    }
+    if (apiUrl) {
+      try { allowedHosts.add(new URL(apiUrl).hostname) } catch {}
+    }
+    
+    return allowedHosts.has(url.hostname)
+  } catch {
+    return false
+  }
+}
+

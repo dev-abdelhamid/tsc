@@ -20,7 +20,7 @@ export async function SupportSection({ override }: SupportSectionProps) {
   const description = override?.description ?? t("description")
 
   return (
-    <SectionShell stagger={false} className="overflow-visible bg-white py-12 sm:py-14 lg:py-[72px]">
+    <SectionShell stagger={false} className="overflow-x-clip bg-white py-12 sm:py-14 lg:py-[72px]">
       <div className="relative isolate overflow-hidden rounded-[32px] bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#398DB3_0%,#2D7494_100%)] bg-[length:200px_200px,auto] bg-blend-[plus-lighter,normal] px-6 py-12 text-white shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19),0_42px_107px_rgba(123,190,255,0.34)] sm:px-10 sm:py-16 lg:px-14 lg:py-[82px]">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.15] mix-blend-overlay [background-image:url('/contact/button-noise.png')] [background-size:420px_420px]"

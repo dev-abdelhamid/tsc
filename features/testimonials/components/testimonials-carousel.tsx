@@ -144,8 +144,8 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
   const tilt = -5
 
   return (
-    <SectionShell stagger={false} className="overflow-visible bg-[#f8fcff] py-12 sm:py-16 lg:py-[82px]">
-      <div className="flex w-full flex-col gap-10 overflow-visible sm:gap-14 lg:gap-16">
+    <SectionShell stagger={false} className="overflow-x-clip bg-[#f8fcff] py-12 sm:py-16 lg:py-[82px]">
+      <div className="flex w-full flex-col gap-10 sm:gap-14 lg:gap-16">
         <Carousel
           opts={{
             loop: true,
@@ -155,7 +155,7 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
             containScroll: "trimSnaps",
           }}
           plugins={[autoplay]}
-          className="w-full touch-pan-y overflow-visible"
+          className="w-full touch-pan-y  "
           dir={isRtl ? "rtl" : "ltr"}
         >
           <StaggerInView
@@ -196,7 +196,7 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
             </StaggerItem>
           </StaggerInView>
 
-          <div className="w-full overflow-visible px-1 py-3">
+          <div className="w-full overflow-hidden px-1 py-3">
             <CarouselContent
               noClip
               className={cn(
@@ -211,7 +211,7 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
                   <CarouselItem
                     key={story.id}
                     className={cn(
-                      "basis-auto shrink-0 overflow-visible pl-0",
+                      "basis-auto shrink-0 pl-0",
                       isRtl ? "pe-4 sm:pe-6" : "ps-4 sm:ps-6"
                     )}
                   >
