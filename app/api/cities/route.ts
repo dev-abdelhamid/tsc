@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const session = await getSession().catch(() => null)
 
   try {
-    const list = await getCities(countryId, locale, session?.accessToken)
+    const list = await getCities(countryId, locale ?? undefined, session?.accessToken ?? undefined)
     return NextResponse.json({ data: list })
   } catch {
     return NextResponse.json({ data: [], error: "Failed to fetch cities" }, { status: 500 })

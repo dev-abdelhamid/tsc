@@ -43,23 +43,28 @@ async function proxy(request: NextRequest, upstreamPath: string) {
   return nextRes
 }
 
-export async function GET(request: NextRequest, { params }: { params: { companyType: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ companyType: string }> }) {
+  const { companyType } = await params
   const query = request.nextUrl.search || ""
-  return proxy(request, `/company-types/${encodeURIComponent(params.companyType)}${query}`)
+  return proxy(request, `/company-types/${encodeURIComponent(companyType)}${query}`)
 }
 
-export async function POST(request: NextRequest, { params }: { params: { companyType: string } }) {
-  return proxy(request, `/company-types/${encodeURIComponent(params.companyType)}`)
+export async function POST(request: NextRequest, { params }: { params: Promise<{ companyType: string }> }) {
+  const { companyType } = await params
+  return proxy(request, `/company-types/${encodeURIComponent(companyType)}`)
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { companyType: string } }) {
-  return proxy(request, `/company-types/${encodeURIComponent(params.companyType)}`)
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ companyType: string }> }) {
+  const { companyType } = await params
+  return proxy(request, `/company-types/${encodeURIComponent(companyType)}`)
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { companyType: string } }) {
-  return proxy(request, `/company-types/${encodeURIComponent(params.companyType)}`)
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ companyType: string }> }) {
+  const { companyType } = await params
+  return proxy(request, `/company-types/${encodeURIComponent(companyType)}`)
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { companyType: string } }) {
-  return proxy(request, `/company-types/${encodeURIComponent(params.companyType)}`)
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ companyType: string }> }) {
+  const { companyType } = await params
+  return proxy(request, `/company-types/${encodeURIComponent(companyType)}`)
 }

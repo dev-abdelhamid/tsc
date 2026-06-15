@@ -52,6 +52,35 @@ type SkillItem = {
   skillName: string;
 };
 
+const SUGGESTED_SKILLS = [
+  "React",
+  "Next.js",
+  "TypeScript",
+  "JavaScript",
+  "HTML",
+  "CSS",
+  "Tailwind CSS",
+  "Node.js",
+  "Python",
+  "PHP",
+  "SQL",
+  "Git",
+  "Docker",
+  "GraphQL",
+  "REST API",
+  "Figma",
+  "WordPress",
+  "UI/UX Design",
+  "Laravel",
+  "Angular",
+  "Vue.js",
+];
+
+const labelClass = "text-[14px] font-bold text-[#032C44] text-start mb-1.5 block";
+const inputClass = "w-full border-b border-[#D4D4D4] py-2.5 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] placeholder:text-[#A3A3A3] shadow-none rounded-none border-t-0 border-l-0 border-r-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:ring-offset-0";
+const selectClass = "w-full border-b border-[#D4D4D4] py-2.5 pr-8 pl-0 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] appearance-none cursor-pointer rounded-none border-t-0 border-l-0 border-r-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:ring-offset-0";
+const textareaClass = "w-full border-b border-[#D4D4D4] py-2.5 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] placeholder:text-[#A3A3A3] shadow-none rounded-none border-t-0 border-l-0 border-r-0 px-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:ring-offset-0";
+
 export default function UserEducationClient({ locale, initialPortfolio }: Props) {
   // Page states
   const [cv, setCv] = useState<string | null>(null);
@@ -97,6 +126,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
   });
   const [modalSkills, setModalSkills] = useState<SkillItem[]>([]);
   const [newSkillInput, setNewSkillInput] = useState("");
+  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
 
   const isAr = locale === "ar";
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -623,14 +653,34 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
     return map[lvl] || lvl;
   };
 
+  const addSuggestedSkill = (name: string) => {
+    if (modalSkills.some((s) => s.skillName.toLowerCase() === name.toLowerCase())) {
+      toast.error(isAr ? "المهارة مضافة بالفعل" : "Skill already added");
+      return;
+    }
+    setModalSkills((prev) => [...prev, { tempId: `skill-${Date.now()}`, skillName: name }]);
+    setNewSkillInput("");
+    setShowSkillDropdown(false);
+  };
+
   const getGradeLabel = (grd: string) => {
-    const map: Record<string, string> = {
-      excellent: isAr ? "امتياز (A = 90-100%)" : "A = 90-100%",
-      very_good: isAr ? "جيد جداً (B = 80-89%)" : "B = 80-89%",
-      good: isAr ? "جيد (C = 70-79%)" : "C = 70-79%",
-      pass: isAr ? "مقبول (D = 50-69%)" : "D = 50-69%",
-    };
-    return map[grd] || grd;
+    if (isAr) {
+      const map: Record<string, React.ReactNode> = {
+        excellent: <span>امتياز <span dir="ltr">(A = 90-100%)</span></span>,
+        very_good: <span>جيد جداً <span dir="ltr">(B = 80-89%)</span></span>,
+        good: <span>جيد <span dir="ltr">(C = 70-79%)</span></span>,
+        pass: <span>مقبول <span dir="ltr">(D = 50-69%)</span></span>,
+      };
+      return map[grd] || grd;
+    } else {
+      const map: Record<string, string> = {
+        excellent: "A = 90-100%",
+        very_good: "B = 80-89%",
+        good: "C = 70-79%",
+        pass: "D = 50-69%",
+      };
+      return map[grd] || grd;
+    }
   };
 
   const getFilenameFromUrl = (url?: string | null) => {
@@ -789,7 +839,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                   </button>
                 </div>
 
-                <div className="pr-12 pl-2">
+                <div className="pe-12 ps-2">
                   <h3 className="text-[16px] font-bold text-[#032C44] line-clamp-1 mb-1 leading-snug">
                     {getEduLevelLabel(edu.levelOfEducation)}
                   </h3>
@@ -865,7 +915,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                   </button>
                 </div>
 
-                <div className="pr-12 pl-2">
+                <div className="pe-12 ps-2">
                   <h3 className="text-[16px] font-bold text-[#032C44] line-clamp-1 mb-1 leading-snug">
                     {exp.companyName}
                   </h3>
@@ -873,7 +923,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                     {exp.department}
                   </p>
                   <p className="text-[11px] text-[#6B7280] mt-1 font-semibold">
-                    {exp.startDate} - {exp.currentlyWorking ? (isAr ? "حالياً" : "Present") : exp.endDate || ""}
+                    <span dir="ltr">{exp.startDate}</span> - {exp.currentlyWorking ? (isAr ? "حالياً" : "Present") : <span dir="ltr">{exp.endDate || ""}</span>}
                   </p>
                 </div>
 
@@ -956,36 +1006,36 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               <div key={idx} className="flex items-end gap-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0">
                 {/* Language name input */}
                 <div className="flex-1 space-y-1">
-                  <label className="text-[14px] font-bold text-[#032C44]">
-                    {isAr ? "اللغة" : "Language"}
+                  <label className={labelClass}>
+                    {isAr ? "اللغة *" : "Language *"}
                   </label>
-                  <Input
+                  <input
                     type="text"
                     value={row.language}
                     onChange={(e) => updateLanguageRow(idx, "language", e.target.value)}
                     placeholder={isAr ? "مثال: الإنجليزية" : "e.g. English"}
-                    className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
+                    className={inputClass}
                   />
                 </div>
 
                 {/* Level select */}
                 <div className="w-[180px] space-y-1">
-                  <label className="text-[14px] font-bold text-[#032C44]">
+                  <label className={labelClass}>
                     {isAr ? "المستوى *" : "level *"}
                   </label>
-                  <div className="relative">
+                  <div className="relative w-full">
                     <select
                       value={row.level}
                       onChange={(e) => updateLanguageRow(idx, "level", e.target.value as any)}
-                      className="appearance-none border border-[#E5E7EB] focus:border-[#40A0CA] bg-white rounded-[8px] px-3 py-2 pr-8 text-sm w-full outline-none"
+                      className={selectClass}
                     >
                       <option value="beginner">{isAr ? "مبتدئ" : "Beginner"}</option>
                       <option value="intermediate">{isAr ? "متوسط" : "Intermediate"}</option>
                       <option value="fluent">{isAr ? "محادثة" : "Conversational"}</option>
                       <option value="native">{isAr ? "اللغة الأم" : "Native or Bilingual"}</option>
                     </select>
-                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                      <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5" />
+                    <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none pr-1">
+                      <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5 opacity-70" />
                     </div>
                   </div>
                 </div>
@@ -1021,17 +1071,17 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             <button
               type="button"
               onClick={() => setShowLanguageModal(false)}
-              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition"
+              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition shadow-sm cursor-pointer"
             >
               {isAr ? "إلغاء" : "Cancel"}
             </button>
-            <PrimaryButton
+            <button
               onClick={saveLanguagesModal}
               disabled={saving}
-              className="px-10 w-auto"
+              className="px-10 h-[44px] text-white font-bold rounded-[12px] text-[15px] transition bg-[#006EA8] hover:bg-[#005685] shadow-[0_4px_14px_rgba(0,110,168,0.3)] hover:shadow-[0_6px_20px_rgba(0,110,168,0.45)] cursor-pointer"
             >
               {isAr ? "تأكيد" : "Submit"}
-            </PrimaryButton>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1059,25 +1109,25 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
           <div className="space-y-4">
             {/* University input */}
             <div className="space-y-1">
-              <label className="text-[14px] font-bold text-[#032C44]">
+              <label className={labelClass}>
                 {isAr ? "الجامعة *" : "University *"}
               </label>
-              <Input
+              <input
                 type="text"
                 value={educationForm.university}
                 onChange={(e) => setEducationForm((prev) => ({ ...prev, university: e.target.value }))}
                 placeholder={isAr ? "أدخل اسم الجامعة" : "Enter university name"}
-                className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
+                className={inputClass}
               />
             </div>
 
             {/* Level & Year rows */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[14px] font-bold text-[#032C44]">
+                <label className={labelClass}>
                   {isAr ? "المستوى التعليمي *" : "Level Of Education *"}
                 </label>
-                <div className="relative">
+                <div className="relative w-full">
                   <select
                     value={educationForm.levelOfEducation}
                     onChange={(e) =>
@@ -1086,30 +1136,30 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                         levelOfEducation: e.target.value as any,
                       }))
                     }
-                    className="appearance-none border border-[#E5E7EB] focus:border-[#40A0CA] bg-white rounded-[8px] px-3 py-2 pr-8 text-sm w-full outline-none"
+                    className={selectClass}
                   >
                     <option value="high_school">{isAr ? "ثانوية عامة" : "High School"}</option>
                     <option value="bachelor">{isAr ? "بكالوريوس" : "Bachelor"}</option>
                     <option value="master">{isAr ? "ماجستير" : "Master"}</option>
                     <option value="phd">{isAr ? "دكتوراه" : "PhD"}</option>
                   </select>
-                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                    <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5" />
+                  <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none pr-1">
+                    <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5 opacity-70" />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[14px] font-bold text-[#032C44]">
+                <label className={labelClass}>
                   {isAr ? "سنة التخرج *" : "Graduation Year *"}
                 </label>
-                <div className="relative">
+                <div className="relative w-full">
                   <select
                     value={educationForm.graduationYear}
                     onChange={(e) =>
                       setEducationForm((prev) => ({ ...prev, graduationYear: e.target.value }))
                     }
-                    className="appearance-none border border-[#E5E7EB] focus:border-[#40A0CA] bg-white rounded-[8px] px-3 py-2 pr-8 text-sm w-full outline-none"
+                    className={selectClass}
                   >
                     {gradYears.map((yr) => (
                       <option key={yr} value={yr}>
@@ -1117,8 +1167,8 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                       </option>
                     ))}
                   </select>
-                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                    <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5" />
+                  <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none pr-1">
+                    <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5 opacity-70" />
                   </div>
                 </div>
               </div>
@@ -1127,25 +1177,25 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             {/* Specialization & Grade rows */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[14px] font-bold text-[#032C44]">
+                <label className={labelClass}>
                   {isAr ? "التخصص *" : "Specialization *"}
                 </label>
-                <Input
+                <input
                   type="text"
                   value={educationForm.specialization}
                   onChange={(e) =>
                     setEducationForm((prev) => ({ ...prev, specialization: e.target.value }))
                   }
                   placeholder={isAr ? "مثال: هندسة برمجيات" : "e.g. Software Engineering"}
-                  className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
+                  className={inputClass}
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[14px] font-bold text-[#032C44]">
+                <label className={labelClass}>
                   {isAr ? "التقدير النهائي *" : "Final Grade *"}
                 </label>
-                <div className="relative">
+                <div className="relative w-full">
                   <select
                     value={educationForm.finalGrade}
                     onChange={(e) =>
@@ -1154,15 +1204,15 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                         finalGrade: e.target.value as any,
                       }))
                     }
-                    className="appearance-none border border-[#E5E7EB] focus:border-[#40A0CA] bg-white rounded-[8px] px-3 py-2 pr-8 text-sm w-full outline-none"
+                    className={selectClass}
                   >
-                    <option value="excellent">{isAr ? "ممتاز (A = 90-100%)" : "A = 90-100%"}</option>
-                    <option value="very_good">{isAr ? "جيد جداً (B = 80-89%)" : "B = 80-89%"}</option>
-                    <option value="good">{isAr ? "جيد (C = 70-79%)" : "C = 70-79%"}</option>
-                    <option value="pass">{isAr ? "مقبول (D = 50-69%)" : "D = 50-69%"}</option>
+                    <option value="excellent">{isAr ? "ممتاز \u200E(A = 90-100%)" : "A = 90-100%"}</option>
+                    <option value="very_good">{isAr ? "جيد جداً \u200E(B = 80-89%)" : "B = 80-89%"}</option>
+                    <option value="good">{isAr ? "جيد \u200E(C = 70-79%)" : "C = 70-79%"}</option>
+                    <option value="pass">{isAr ? "مقبول \u200E(D = 50-69%)" : "D = 50-69%"}</option>
                   </select>
-                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                    <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5" />
+                  <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none pr-1">
+                    <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5 opacity-70" />
                   </div>
                 </div>
               </div>
@@ -1170,7 +1220,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
 
             {/* Certificate Dropzone */}
             <div className="space-y-1">
-              <label className="text-[14px] font-bold text-[#032C44]">
+              <label className={labelClass}>
                 {isAr ? "المرفقات" : "Attachments"}
               </label>
               <div
@@ -1201,7 +1251,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                     <>Drop a file, or <span className="text-[#006EA8] underline">browse</span></>
                   )}
                 </p>
-                <p className="text-[#6B7280] text-[10px] mt-1">
+                <p className="text-[#006EA8] text-[10px] mt-1 font-medium">
                   {isAr ? "حجم الملف أقل من 10MB والصيغة PDF فقط" : "File size should be less than 10MB and file type should be pdf"}
                 </p>
               </div>
@@ -1212,17 +1262,17 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             <button
               type="button"
               onClick={() => setShowEducationModal(false)}
-              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition"
+              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition shadow-sm cursor-pointer"
             >
               {isAr ? "إلغاء" : "Cancel"}
             </button>
-            <PrimaryButton
+            <button
               onClick={submitEducation}
               disabled={saving}
-              className="px-10 w-auto"
+              className="px-10 h-[44px] text-white font-bold rounded-[12px] text-[15px] transition bg-[#006EA8] hover:bg-[#005685] shadow-[0_4px_14px_rgba(0,110,168,0.3)] hover:shadow-[0_6px_20px_rgba(0,110,168,0.45)] cursor-pointer"
             >
               {isAr ? "تأكيد" : "Submit"}
-            </PrimaryButton>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1251,67 +1301,69 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             {/* Company & Department */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[14px] font-bold text-[#032C44]">
+                <label className={labelClass}>
                   {isAr ? "اسم الشركة *" : "Company Name *"}
                 </label>
-                <Input
+                <input
                   type="text"
                   value={experienceForm.companyName}
                   onChange={(e) =>
                     setExperienceForm((prev) => ({ ...prev, companyName: e.target.value }))
                   }
                   placeholder={isAr ? "أدخل اسم الشركة" : "Enter company name"}
-                  className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
+                  className={inputClass}
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[14px] font-bold text-[#032C44]">
+                <label className={labelClass}>
                   {isAr ? "القسم *" : "Department *"}
                 </label>
-                <Input
+                <input
                   type="text"
                   value={experienceForm.department}
                   onChange={(e) =>
                     setExperienceForm((prev) => ({ ...prev, department: e.target.value }))
                   }
                   placeholder={isAr ? "مثال: قسم البرمجة" : "e.g. IT Department"}
-                  className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
+                  className={inputClass}
                 />
               </div>
             </div>
 
             {/* Dates (Employment Period) */}
             <div className="space-y-1">
-              <label className="text-[14px] font-bold text-[#032C44]">
+              <label className={labelClass}>
                 {isAr ? "فترة العمل *" : "Employment Period *"}
               </label>
               <div className="grid grid-cols-2 gap-4">
                 {/* From Date */}
-                <div className="relative">
-                  <Input
+                <div className="relative w-full">
+                  <input
                     type="date"
                     value={experienceForm.startDate}
                     onChange={(e) =>
                       setExperienceForm((prev) => ({ ...prev, startDate: e.target.value }))
                     }
-                    className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] pl-3 pr-10 py-2 text-sm w-full outline-none"
+                    className="custom-date-input w-full border-b border-[#D4D4D4] py-2.5 pr-8 pl-0 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] rounded-none border-t-0 border-l-0 border-r-0 shadow-none"
+                    placeholder={isAr ? "من" : "from"}
                   />
-                  <img src="/portfolio/calender.svg" alt="Calendar" className="w-[18px] h-[18px] absolute right-3 top-[50%] translate-y-[-50%] pointer-events-none" />
+                  <img src="/portfolio/calender.svg" alt="Calendar" className="pointer-events-none absolute end-0 top-1/2 w-[18px] h-[18px] -translate-y-1/2 opacity-70" />
                 </div>
 
                 {/* To Date */}
-                <div className="relative">
-                  <Input
+                <div className="relative w-full">
+                  <input
                     type="date"
                     value={experienceForm.endDate || ""}
                     onChange={(e) =>
                       setExperienceForm((prev) => ({ ...prev, endDate: e.target.value }))
                     }
                     disabled={experienceForm.currentlyWorking}
-                    className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] pl-3 pr-10 py-2 text-sm w-full outline-none disabled:bg-gray-50"
+                    className="custom-date-input w-full border-b border-[#D4D4D4] py-2.5 pr-8 pl-0 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] rounded-none border-t-0 border-l-0 border-r-0 shadow-none disabled:opacity-50"
+                    placeholder={isAr ? "إلى" : "to"}
                   />
-                  <img src="/portfolio/calender.svg" alt="Calendar" className="w-[18px] h-[18px] absolute right-3 top-[50%] translate-y-[-50%] pointer-events-none opacity-60" />
+                  <img src="/portfolio/calender.svg" alt="Calendar" className="pointer-events-none absolute end-0 top-1/2 w-[18px] h-[18px] -translate-y-1/2 opacity-70" />
                 </div>
               </div>
 
@@ -1328,7 +1380,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                       endDate: e.target.checked ? "" : prev.endDate,
                     }))
                   }
-                  className="w-4 h-4 text-[#006EA8] border-gray-300 rounded focus:ring-[#006EA8]"
+                  className="w-4 h-4 text-[#006EA8] border-gray-300 rounded focus:ring-[#006EA8] cursor-pointer"
                 />
                 <label htmlFor="currWork" className="text-xs font-semibold text-gray-600 cursor-pointer">
                   {isAr ? "أعمل هنا حالياً" : "Currently Work Here"}
@@ -1338,23 +1390,23 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
 
             {/* Responsibilities */}
             <div className="space-y-1">
-              <label className="text-[14px] font-bold text-[#032C44]">
+              <label className={labelClass}>
                 {isAr ? "المسؤوليات *" : "Responsibilities *"}
               </label>
-              <Textarea
+              <textarea
                 rows={3}
                 value={experienceForm.responsibilities}
                 onChange={(e) =>
                   setExperienceForm((prev) => ({ ...prev, responsibilities: e.target.value }))
                 }
                 placeholder={isAr ? "اكتب تفاصيل مهامك ومسؤولياتك" : "Write details about your roles and tasks"}
-                className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none resize-none"
+                className={textareaClass}
               />
             </div>
 
             {/* Attachment */}
             <div className="space-y-1">
-              <label className="text-[14px] font-bold text-[#032C44]">
+              <label className={labelClass}>
                 {isAr ? "المرفقات" : "Attachments"}
               </label>
               <div
@@ -1385,7 +1437,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                     <>Drop a file, or <span className="text-[#006EA8] underline">browse</span></>
                   )}
                 </p>
-                <p className="text-[#6B7280] text-[10px] mt-1">
+                <p className="text-[#006EA8] text-[10px] mt-1 font-medium">
                   {isAr ? "صيغ الملفات المدعومة: pdf, jpg, jpeg, png وحجم أقل من 10MB" : "File size should be less than 10MB and file type should be jpg, jpeg, png, pdf"}
                 </p>
               </div>
@@ -1396,17 +1448,17 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             <button
               type="button"
               onClick={() => setShowExperienceModal(false)}
-              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition"
+              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition shadow-sm cursor-pointer"
             >
               {isAr ? "إلغاء" : "Cancel"}
             </button>
-            <PrimaryButton
+            <button
               onClick={submitExperience}
               disabled={saving}
-              className="px-10 w-auto"
+              className="px-10 h-[44px] text-white font-bold rounded-[12px] text-[15px] transition bg-[#006EA8] hover:bg-[#005685] shadow-[0_4px_14px_rgba(0,110,168,0.3)] hover:shadow-[0_6px_20px_rgba(0,110,168,0.45)] cursor-pointer"
             >
               {isAr ? "تأكيد" : "Submit"}
-            </PrimaryButton>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1424,6 +1476,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               {isAr ? "المهارات" : "Skills"}
             </DialogTitle>
             <button
+              type="button"
               onClick={() => setShowSkillModal(false)}
               className="p-1 hover:bg-gray-100 rounded-full transition"
             >
@@ -1432,51 +1485,89 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
           </div>
 
           <div className="space-y-4">
-            {/* Add Skill Input Row */}
-            <div className="flex items-center gap-2">
-              <Input
-                type="text"
-                value={newSkillInput}
-                onChange={(e) => setNewSkillInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addSkillToModal();
-                  }
-                }}
-                placeholder={isAr ? "أدخل اسم المهارة واضغط إضافة" : "Enter skill name and press add"}
-                className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm flex-1 outline-none"
-              />
-              <button
-                onClick={addSkillToModal}
-                className="px-5 py-2 bg-[#006EA8] hover:bg-[#005685] text-white font-bold text-sm rounded-[8px] transition"
-              >
-                {isAr ? "إضافة" : "Add"}
-              </button>
-            </div>
-
-            {/* List of current modal skills as badges */}
-            <div className="border border-[#E5E7EB] rounded-[12px] p-4 min-h-[120px] max-h-[220px] overflow-y-auto flex flex-wrap gap-2 bg-[#F9FAFB]">
-              {modalSkills.map((s, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-1.5 px-3 py-1 border border-[#006EA8] text-[#006EA8] bg-white rounded-full text-xs font-semibold"
-                >
-                  <span>{s.skillName}</span>
+            <div className="space-y-1">
+              <label className={labelClass}>
+                {isAr ? "المهارة *" : "Skill *"}
+              </label>
+              
+              <div className="relative w-full">
+                <div className="w-full border-b border-[#D4D4D4] focus-within:border-[#40A0CA] py-2 flex flex-wrap gap-2 items-center min-h-[42px] pe-8 relative">
+                  {modalSkills.map((s, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-1.5 px-3 py-1 border border-[#006EA8] text-[#006EA8] bg-white rounded-full text-xs font-semibold"
+                    >
+                      <span>{s.skillName}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeSkillFromModal(idx)}
+                        className="p-0.5 hover:bg-red-50 rounded-full transition flex items-center justify-center"
+                        title={isAr ? "حذف" : "Remove"}
+                      >
+                        <img src="/portfolio/remove.svg" alt="Remove" className="w-[10px] h-[10px]" />
+                      </button>
+                    </div>
+                  ))}
+                  <input
+                    type="text"
+                    value={newSkillInput}
+                    onChange={(e) => {
+                      setNewSkillInput(e.target.value);
+                      setShowSkillDropdown(true);
+                    }}
+                    onFocus={() => setShowSkillDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowSkillDropdown(false), 200)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addSkillToModal();
+                      }
+                    }}
+                    placeholder={modalSkills.length === 0 ? (isAr ? "أدخل اسم المهارة واضغط Enter" : "Type a skill and press Enter") : ""}
+                    className="flex-1 min-w-[120px] bg-transparent outline-none text-sm text-[#525252] border-0 p-0 focus:ring-0 focus:border-0 shadow-none rounded-none"
+                  />
                   <button
-                    onClick={() => removeSkillFromModal(idx)}
-                    className="p-0.5 hover:bg-red-50 rounded-full transition flex items-center justify-center"
-                    title={isAr ? "حذف" : "Remove"}
+                    type="button"
+                    onClick={() => setShowSkillDropdown(!showSkillDropdown)}
+                    className="absolute end-0 top-1/2 -translate-y-1/2 p-1 focus:outline-none"
                   >
-                    <img src="/portfolio/remove.svg" alt="Remove" className="w-[10px] h-[10px]" />
+                    <img src="/portfolio/arrow-down.svg" alt="Select" className="w-4 h-4 opacity-70" />
                   </button>
                 </div>
-              ))}
-              {modalSkills.length === 0 && (
-                <p className="text-sm text-gray-400 m-auto italic">
-                  {isAr ? "اكتب مهارة في المربع أعلاه لإضافتها" : "Write a skill in the box above to add it"}
-                </p>
-              )}
+
+                {/* Suggestions Dropdown */}
+                {showSkillDropdown && (
+                  <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-[#E5E7EB] rounded-[8px] shadow-lg max-h-[180px] overflow-y-auto">
+                    {SUGGESTED_SKILLS.filter(
+                      (s) =>
+                        s.toLowerCase().includes(newSkillInput.toLowerCase()) &&
+                        !modalSkills.some((ms) => ms.skillName.toLowerCase() === s.toLowerCase())
+                    ).map((item, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => addSuggestedSkill(item)}
+                        className="w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        {item}
+                      </button>
+                    ))}
+                    {SUGGESTED_SKILLS.filter(
+                      (s) =>
+                        s.toLowerCase().includes(newSkillInput.toLowerCase()) &&
+                        !modalSkills.some((ms) => ms.skillName.toLowerCase() === s.toLowerCase())
+                    ).length === 0 && newSkillInput.trim() !== "" && (
+                      <button
+                        type="button"
+                        onClick={addSkillToModal}
+                        className="w-full text-start px-4 py-2 text-sm text-[#006EA8] hover:bg-gray-50 transition font-bold"
+                      >
+                        {isAr ? `إضافة "${newSkillInput}"` : `Add "${newSkillInput}"`}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1484,20 +1575,46 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             <button
               type="button"
               onClick={() => setShowSkillModal(false)}
-              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition"
+              className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition shadow-sm cursor-pointer"
             >
               {isAr ? "إلغاء" : "Cancel"}
             </button>
-            <PrimaryButton
+            <button
+              type="button"
               onClick={saveSkillsModal}
               disabled={saving}
-              className="px-10 w-auto"
+              className="px-10 h-[44px] text-white font-bold rounded-[12px] text-[15px] transition bg-[#006EA8] hover:bg-[#005685] shadow-[0_4px_14px_rgba(0,110,168,0.3)] hover:shadow-[0_6px_20px_rgba(0,110,168,0.45)] cursor-pointer"
             >
               {isAr ? "تأكيد" : "Submit"}
-            </PrimaryButton>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
+      <style dangerouslySetInnerHTML={{__html: `
+        /* Hide native date picker across all browsers — our SVG is the trigger */
+        /* Chrome, Safari, Edge, Opera */
+        .custom-date-input::-webkit-calendar-picker-indicator {
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 0;
+          bottom: 0;
+          width: auto;
+          height: auto;
+          color: transparent;
+          background: transparent;
+          cursor: pointer;
+          z-index: 2;
+        }
+        /* Firefox */
+        .custom-date-input::-moz-calendar-picker-indicator {
+          display: none;
+        }
+        .custom-date-input {
+          appearance: none;
+          -moz-appearance: textfield;
+        }
+      `}} />
     </div>
   );
 }

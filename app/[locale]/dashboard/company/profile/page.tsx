@@ -114,8 +114,10 @@ export default async function CompanyProfilePage({
   // Fetch server-side metadata (countries + initial cities) so the
   // client component receives stable data and avoids hydration flicker
   // when the city select is populated.
-  let serverCountries: Array<Record<string, unknown>> = []
-  let serverCities: Array<Record<string, unknown>> = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let serverCountries: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let serverCities: any[] = []
   try {
     serverCountries = await getCountries(locale, session.accessToken)
     const countryId = initialProfile?.country_id ?? (initialProfile?.country && typeof initialProfile.country === 'object' ? (initialProfile.country as any).id : undefined)

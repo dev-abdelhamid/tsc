@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     // Call upstream and return the raw response so callers receive
     // { data: [...], meta: {...}, links: {...} } when available.
-    const upstream = await api.get<unknown>(endpoint, { locale, token: session?.accessToken })
+    const upstream = await api.get<unknown>(endpoint, { locale, token: session?.accessToken ?? undefined })
 
     const response = NextResponse.json(upstream)
     response.headers.set("Cache-Control", "public, max-age=600, s-maxage=86400, stale-while-revalidate=604800")

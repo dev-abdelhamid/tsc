@@ -79,8 +79,10 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialProfile?.avatar ?? null)
   const [message, setMessage] = useState("")
+  const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [showCurrentPw, setShowCurrentPw] = useState(false)
   const [showNewPw, setShowNewPw] = useState(false)
   const [showConfirmPw, setShowConfirmPw] = useState(false)
   const [activeSocial, setActiveSocial] = useState<string | null>(null)
@@ -212,11 +214,14 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
         if (newPassword !== confirmPassword) {
           throw new Error(isAr ? "كلمتا المرور غير متطابقتين" : "Passwords do not match")
         }
+        if (!currentPassword) {
+          throw new Error(isAr ? "يجب إدخال كلمة المرور الحالية" : "Current password is required")
+        }
         const passRes = await fetch("/api/auth/profile/password", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Accept-Language": locale },
           body: JSON.stringify({
-            current_password: "",
+            current_password: currentPassword,
             new_password: newPassword,
             new_password_confirmation: confirmPassword,
           })
@@ -284,6 +289,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
       setMessage(locale === "ar" ? "تم حفظ البيانات بنجاح" : "Saved successfully")
       if (latestAvatar) setAvatarPreview(latestAvatar)
 
+      setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
     } catch (err: unknown) {
@@ -306,19 +312,37 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
 
   return (
     <div className="w-full flex flex-col gap-6" dir={isAr ? "rtl" : "ltr"}>
-      {/* Hide native date picker calendar indicator */}
+      {/* Hide native date picker across all browsers — our SVG is the trigger */}
       <style dangerouslySetInnerHTML={{__html: `
+        /* Chrome, Safari, Edge, Opera */
         .custom-date-input::-webkit-calendar-picker-indicator {
-          background: transparent;
-          bottom: 0;
-          color: transparent;
-          cursor: pointer;
-          height: auto;
-          left: 0;
           position: absolute;
-          right: 0;
-          top: 0;
-          width: auto;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          cursor: pointer;
+          z-index: 2;
+        }
+        /* Firefox */
+        .custom-date-input::-moz-calendar-picker-indicator {
+          display: none !important;
+        }
+        .custom-date-input[type="date"]::-webkit-inner-spin-button,
+        .custom-date-input[type="date"]::-webkit-clear-button {
+          display: none;
+          -webkit-appearance: none;
+        }
+        /* IE / Edge Legacy */
+        .custom-date-input::-ms-clear,
+        .custom-date-input::-ms-reveal {
+          display: none;
+        }
+        /* Remove default calendar icon in all Webkit browsers */
+        .custom-date-input {
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          appearance: none;
         }
       `}} />
 
@@ -431,16 +455,22 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                 <label className="text-sm font-medium text-[#262626]">
                   {isAr ? "تاريخ الميلاد" : "Date Of Birth"}
                 </label>
+                {/* Wrapper: relative so our SVG overlays the input and the
+                    webkit-calendar-picker-indicator (made fully transparent +
+                    full-size) sits above everything as the click target */}
                 <div className="relative w-full">
                   <input
                     type="date"
                     name="dob"
                     value={profile.dob || ""}
                     onChange={handleChange}
-                    className={`${fieldBase} custom-date-input pe-10`}
+                    className={`${fieldBase} custom-date-input`}
+                    style={{ paddingInlineEnd: "2.25rem" }}
                   />
-                  <div className="absolute end-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <Image src="/portfolio/calender.svg" alt="calendar" width={20} height={20} className="h-5 w-5" />
+                  {/* Our custom calendar SVG — purely decorative, pointer-events-none.
+                      The transparent webkit indicator on top is the real click target. */}
+                  <div className="absolute end-2 top-1/2 -translate-y-1/2 pointer-events-none z-0">
+                    <Image src="/portfolio/calender.svg" alt="" width={20} height={20} className="h-5 w-5" />
                   </div>
                 </div>
               </div>
@@ -461,13 +491,27 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                 </div>
               </div>
 
-              {/* Phone */}
+              {/* Phone — dial-code selector on the RIGHT in RTL, LEFT in LTR */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
                   {isAr ? "رقم الهاتف" : "Phone"}
                 </label>
-                <div className="flex items-center border-b border-[#D4D4D4] py-2.5 focus-within:border-[#40A0CA] transition-colors">
-                  <div className="relative flex items-center shrink-0 pe-2 me-2 border-e border-[#D4D4D4] h-6">
+                <div
+                  className="flex items-center border-b border-[#D4D4D4] py-2.5 focus-within:border-[#40A0CA] transition-colors"
+                  dir="ltr"
+                >
+                  {/* Number digits — always LTR, fills space */}
+                  <input
+                    type="tel"
+                    dir="ltr"
+                    value={profile.phone_raw || ""}
+                    onChange={(e) => setProfile((s) => ({ ...s, phone_raw: e.target.value }))}
+                    placeholder="1003630088"
+                    className="w-full min-w-0 bg-transparent text-sm text-[#525252] outline-none"
+                  />
+
+                  {/* Dial-code selector — always on the RIGHT (end of ltr row = right) */}
+                  <div className="relative flex items-center shrink-0 ps-2 ms-2 border-s border-[#D4D4D4] h-6">
                     <select
                       aria-label="phone-code"
                       value={selectedDialCode}
@@ -484,14 +528,25 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                     <span className="text-sm text-[#525252] font-medium">{activeDialObj.dialCode}</span>
                     <Image src="/portfolio/arrow-down.svg" alt="arrow" width={16} height={16} className="h-4 w-4 ms-1 pointer-events-none" />
                   </div>
+                </div>
+              </div>
+
+              {/* Current Password */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-[#262626]">
+                  {isAr ? "كلمة المرور الحالية" : "Current password"}
+                </label>
+                <div className="relative w-full">
                   <input
-                    type="tel"
-                    dir="ltr"
-                    value={profile.phone_raw || ""}
-                    onChange={(e) => setProfile((s) => ({ ...s, phone_raw: e.target.value }))}
-                    placeholder="1003630088"
-                    className="w-full min-w-0 bg-transparent text-sm text-[#525252] outline-none"
+                    type={showCurrentPw ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className={`${fieldBase} pe-10`}
                   />
+                  <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)} className="absolute end-2 top-1/2 -translate-y-1/2 text-[#A3A3A3] hover:text-[#525252]">
+                    {showCurrentPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
               </div>
 
@@ -584,8 +639,8 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
           </div>
 
           <div className="px-8 pb-8">
-            {/* 4 horizontal pill buttons — plain by default, blue gradient only when open/active */}
-            <div className="flex flex-wrap gap-3">
+            {/* 4 pill buttons — grid like company profile */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {socialPlatforms.map(({ key, label, icon }) => {
                 const isEditing = activeSocial === key
                 return (
@@ -593,10 +648,10 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                     key={key}
                     type="button"
                     onClick={() => setActiveSocial(isEditing ? null : key)}
-                    className={`inline-flex items-center gap-2.5 h-11 px-6 rounded-lg border transition-all font-semibold text-sm ${
+                    className={`inline-flex items-center justify-center gap-2.5 h-11 px-4 rounded-lg border transition-all font-semibold text-sm w-full ${
                       isEditing
-                        ? "bg-gradient-to-b from-[#006EA8] to-[#005685] text-white border-transparent shadow-[0_4px_12px_rgba(0,110,168,0.25)]"
-                        : "bg-white border-[#D4D4D4] text-[#525252] hover:border-[#006EA8] hover:text-[#006EA8]"
+                        ? "bg-gradient-to-b from-[#006EA8] to-[#005685] text-white border-none shadow-[0_4px_12px_rgba(0,110,168,0.2)]"
+                        : "bg-white border-[#E6EEF4] text-[#525252] hover:border-[#006EA8] hover:text-[#006EA8]"
                     }`}
                   >
                     <img
@@ -605,7 +660,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                       className="h-4 w-4 shrink-0"
                       style={{ filter: isEditing ? "brightness(0) invert(1)" : "none" }}
                     />
-                    {label}
+                    <span className="text-sm font-semibold">{label}</span>
                   </button>
                 )
               })}
@@ -645,7 +700,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
           <PrimaryButton
             type="submit"
             disabled={saving || fetching}
-            className="min-w-[180px] h-[46px] text-base font-semibold bg-gradient-to-b from-[#006EA8] to-[#005685] shadow-[0_4px_16px_rgba(0,110,168,0.3)] hover:from-[#005685] hover:to-[#004268]"
+            className="w-auto min-w-[160px] max-w-[220px] h-[44px] px-8 text-sm font-semibold bg-gradient-to-b from-[#006EA8] to-[#005685] shadow-[0_4px_14px_rgba(0,110,168,0.3)] hover:from-[#005685] hover:to-[#004268]"
           >
             {saving ? (isAr ? "جاري التحديث..." : "Updating...") : (isAr ? "تحديث" : "Update")}
           </PrimaryButton>

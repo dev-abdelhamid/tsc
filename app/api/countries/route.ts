@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const session = await getSession().catch(() => null)
 
   try {
-    const list = await getCountries(locale, session?.accessToken)
+    const list = await getCountries(locale ?? undefined, session?.accessToken ?? undefined)
     
     // Browser cache: 10 min, CDN: 24h, Stale: 7d
     // This balances fresh data with performance
