@@ -42,6 +42,23 @@ export async function POST(request: NextRequest) {
     const data = await backendRes.json().catch(() => null)
 
     if (!backendRes.ok) {
+      // Detect unverified email – backend returns 403 or a message indicating verification needed
+      const isUnverified =
+        backendRes.status === 403 ||
+        (data?.message && (
+          String(data.message).toLowerCase().includes("not verified") ||
+          String(data.message).toLowerCase().includes("email_not_verified") ||
+          String(data.message).toLowerCase().includes("verify") ||
+          String(data.message).toLowerCase().includes("البريد الإلكتروني غير مفعل") ||
+          String(data.message).toLowerCase().includes("غير مفعل") ||
+          String(data.message).toLowerCase().includes("تأكيد البريد")
+        ))
+      if (isUnverified) {
+        return NextResponse.json(
+          { pendingVerification: true, email, message: data?.message || "يرجى تأكيد بريدك الإلكتروني أولاً" },
+          { status: 403 }
+        )
+      }
       return NextResponse.json(
         { message: data?.message || "فشل تسجيل الدخول" }, 
         { status: backendRes.status }
@@ -106,6 +123,11 @@ export async function POST(request: NextRequest) {
       user: fullUser, 
       tokens: { access_token: token } 
     })
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        console.log('login route: setting auth cookies', { role, tokenPreview: token ? String(token).slice(0,8) + '...' : null })
+      } catch {}
+    }
     setAuthCookies(response, token, role)
 
     return response

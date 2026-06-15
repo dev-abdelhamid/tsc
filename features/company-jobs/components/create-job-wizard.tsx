@@ -297,31 +297,33 @@ export function CreateJobWizard({
     <div
       dir={isRtl ? "rtl" : "ltr"}
       className={cn(
-        "relative flex w-full max-w-[866px] flex-col items-center gap-10 rounded-lg bg-white p-6 shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)] sm:gap-12 sm:p-8",
+        "relative flex w-full max-w-[920px] flex-col items-stretch gap-6 rounded-lg bg-white p-6 shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)] sm:gap-8 sm:p-8",
         pending && "pointer-events-none opacity-80"
       )}
     >
-      <div className="flex w-full max-w-[802px] items-center justify-between gap-4">
+      <div className="w-full flex flex-col items-center gap-4">
         <h1 className={cn(
-          "bg-clip-text text-[28px] font-bold leading-[116%] text-transparent sm:text-[36px]",
+          "w-full text-center bg-clip-text text-[28px] font-bold leading-[1.05] text-transparent sm:text-[36px]",
           isRtl ? "bg-gradient-to-r" : "bg-gradient-to-l",
           "from-[#032C44] to-[#41A0CA]"
-        )}>
+        )} style={{ marginTop: 4 }}>
           {t("title")}
         </h1>
-        <Link
-          locale={locale}
-          href="/dashboard/company/jobs"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#006EA8] transition-opacity hover:opacity-70"
-          aria-label={t("cancel")}
-        >
-          <X className="h-6 w-6" strokeWidth={1.5} />
-        </Link>
+        <div className="absolute top-3 end-3">
+          <Link
+            locale={locale}
+            href="/dashboard/company/jobs"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#006EA8] transition-opacity hover:opacity-70 bg-white shadow-sm"
+            aria-label={t("cancel")}
+          >
+            <X className="h-5 w-5" strokeWidth={1.5} />
+          </Link>
+        </div>
       </div>
 
       <CreateJobStepper currentStep={step} labels={stepLabels} />
 
-      <div className="flex w-full max-w-[802px] flex-col gap-6">
+      <div className="flex w-full flex-col gap-6">
         {step === 1 && (
           <>
             <JobFieldGroup label={t("fields.title")} required>
@@ -387,18 +389,21 @@ export function CreateJobWizard({
               </JobFieldGroup>
             </div>
 
-            <JobImageUpload
-              file={imageFile}
-              previewUrl={imagePreview}
-              onChange={setImage}
-              label={t("fields.image")}
-              hint={t("placeholders.image")}
-              removeLabel={t("removeImage")}
-              compressingLabel={t("compressing")}
-              sizeHintLabel={t("imageSizeHint")}
-              tooLargeLabel={t("errors.imageSize")}
-              compressFailedLabel={t("errors.imageCompress")}
-            />
+            <div className="w-full">
+              <JobImageUpload
+                file={imageFile}
+                previewUrl={imagePreview}
+                onChange={setImage}
+                label={t("fields.image")}
+                hint={t("placeholders.image")}
+                removeLabel={t("removeImage")}
+                compressingLabel={t("compressing")}
+                sizeHintLabel={t("imageSizeHint")}
+                tooLargeLabel={t("errors.imageSize")}
+                compressFailedLabel={t("errors.imageCompress")}
+                className="flex-col"
+              />
+            </div>
           </>
         )}
 

@@ -23,7 +23,15 @@ export default async function VerifyEmailPage({ params }: Props) {
       footerActionLabel={t("signIn")}
       footerActionHref="/sign-in"
     >
-      <Suspense fallback={<div className="text-white/70">...</div>}>
+      <Suspense fallback={
+        <div className="flex flex-col gap-5">
+          <div className="flex justify-center gap-2 sm:gap-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-12 w-10 sm:h-14 sm:w-12 rounded-xl border border-white/20 bg-[#02223b]/80 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      }>
         <VerifyEmailForm
           codePlaceholder={t("fields.codePlaceholder")}
           submitLabel={t("submit")}
@@ -35,3 +43,4 @@ export default async function VerifyEmailPage({ params }: Props) {
 }
 
 export const dynamic = "force-dynamic"
+

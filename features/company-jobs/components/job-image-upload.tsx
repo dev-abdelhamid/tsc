@@ -83,13 +83,13 @@ export function JobImageUpload({
       </div>
 
       <div className="rounded-[16px] border border-[#E8F2FF] bg-[#F8FBFD] p-4 sm:p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch">
+        <div className="flex flex-col gap-4 items-stretch">
           <button
             type="button"
             disabled={compressing}
             onClick={() => inputRef.current?.click()}
             className={cn(
-              "group relative flex aspect-[867/400] w-full max-w-full shrink-0 overflow-hidden rounded-[16px] border border-dashed border-[#78A3BE] bg-white transition sm:max-w-[320px] lg:max-w-[380px]",
+              "group relative flex w-full max-w-full shrink-0 overflow-hidden rounded-[12px] border border-dashed border-[#78A3BE] bg-white transition",
               "hover:border-[#40A0CA] hover:shadow-[0_8px_24px_rgba(0,110,168,0.08)]",
               previewUrl && "border-solid border-[#D4D4D4]",
               compressing && "pointer-events-none opacity-70"

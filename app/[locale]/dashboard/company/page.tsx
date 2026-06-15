@@ -71,10 +71,14 @@ export default async function CompanyDashboardPage({
       const token = session.accessToken as string | undefined
       if (!token) redirect(`/${locale}/sign-in`)
 
-      const [jobsResult, ticketsResult] = await Promise.allSettled([
-        getCompanyJobs(token as string, 1, locale as "ar" | "en" | "de"),
-        getTickets(token as string, 1, locale as "ar" | "en" | "de"),
-      ])
+      // Start jobs/tickets/stats calls in parallel but do NOT wait for stats to finish —
+      // prefer a fast upstream response (if it resolves quickly) and otherwise
+      // compute a fallback locally after enriching job list.
+      const jobsPromise = getCompanyJobs(token as string, 1, locale as "ar" | "en" | "de")
+      const ticketsPromise = getTickets(token as string, 1, locale as "ar" | "en" | "de")
+      const statsPromise = getCompanyStats(token as string, locale as "ar" | "en" | "de")
+
+      const [jobsResult, ticketsResult] = await Promise.allSettled([jobsPromise, ticketsPromise])
 
       if (jobsResult.status === "fulfilled") {
         const rawJobs = jobsResult.value.data ?? []
@@ -84,7 +88,28 @@ export default async function CompanyDashboardPage({
           token,
           locale as "ar" | "en" | "de"
         )
-        stats = await getCompanyStats(token, locale as "ar" | "en" | "de", jobs)
+
+        // Prefer a quick upstream stats response (2.5s). If it's slow or fails,
+        // compute stats using the enriched jobs list to avoid long blocking.
+        try {
+          const fast = await Promise.race([
+            statsPromise,
+            new Promise((res) => setTimeout(() => res("__SLOW__"), 2500)),
+          ])
+            if (fast !== "__SLOW__") {
+              stats = fast as typeof stats
+            } else {
+              stats = await getCompanyStats(token, locale as "ar" | "en" | "de", jobs)
+            }
+            // If upstream returned zeros but we have jobs with application counts,
+            // prefer computing an accurate fallback instead of showing misleading zeros.
+            if (stats.total_applications === 0 && jobs.length > 0) {
+              const computed = await getCompanyStats(token, locale as "ar" | "en" | "de", jobs)
+              stats = computed
+            }
+        } catch {
+          stats = await getCompanyStats(token, locale as "ar" | "en" | "de", jobs)
+        }
       }
 
       if (ticketsResult.status === "fulfilled") {

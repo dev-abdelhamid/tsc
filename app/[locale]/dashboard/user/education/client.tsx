@@ -657,7 +657,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
   }
 
   return (
-    <div className="w-full space-y-6 max-w-[1000px] mx-auto pb-10" dir={isAr ? "rtl" : "ltr"}>
+    <div className="w-full space-y-6 pb-10" dir={isAr ? "rtl" : "ltr"}>
       {/* 1. CV Section */}
       <div className="rounded-[16px] bg-white p-6 border border-[#E5E7EB] shadow-sm">
         <h2 className={cn("text-[20px] font-bold", gradientTitleClasses)}> CV</h2>

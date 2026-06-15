@@ -76,7 +76,7 @@ export default async function CompanyJobsPage({
         </PrimaryButton>
       }
     >
-      <div className="overflow-hidden rounded-[8px] bg-white p-4 shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)] sm:p-6">
+      <div className="overflow-hidden rounded-[8px] shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)] ">
         {jobs.length === 0 ? (
           <div className="px-4 py-12 text-center">
             <p className="mb-4 text-[#525252]">{t("empty")}</p>

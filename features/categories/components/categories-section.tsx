@@ -71,10 +71,12 @@ export async function CategoriesSection({ override }: CategoriesSectionProps) {
           staggerDelay={0.08}
         >
           <div className="grid grid-cols-1 gap-6 overflow-hidden sm:grid-cols-2 lg:grid-cols-4">
-            {categories.map((cat) => {
+            {/** Show up to 8 categories; hide the 8th on large screens so desktop displays 7 + stats = 8 visible cards */}
+            {categories.slice(0, 8).map((cat, idx) => {
               const slug = cat.slug || String(cat.id)
+              const extraClass = idx === 7 ? "lg:hidden" : ""
               return (
-                <StaggerItem key={slug} className="overflow-hidden p-1">
+                <StaggerItem key={slug} className={cn("overflow-hidden p-1", extraClass)}>
                   <Link locale={locale} href={`/jobs?category=${cat.id}`} className="block">
                     <Card
                       className={cn(
@@ -108,7 +110,7 @@ export async function CategoriesSection({ override }: CategoriesSectionProps) {
                             {(() => {
                               try {
                                 return cat.jobs_count != null ? `${cat.jobs_count} ${t("vacancies")}` : t(`items.${slug}.vacancy`)
-                              } catch (err) {
+                              } catch {
                                 return cat.jobs_count != null ? `${cat.jobs_count} ${t("vacancies")}` : t("vacancy")
                               }
                             })()}
@@ -121,6 +123,7 @@ export async function CategoriesSection({ override }: CategoriesSectionProps) {
               )
             })}
 
+            {/* Stats card - always visible */}
             <StaggerItem className="overflow-hidden p-1 sm:col-span-2 lg:col-span-1">
               <Card className="min-h-[236px] overflow-hidden rounded-lg border border-[#4BB7E7] bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#398DB3_0%,#2D7494_100%)] bg-size-[150px_150px,auto] bg-blend-[plus-lighter,normal] text-white shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19)]">
                 <CardContent className="flex h-full min-h-[236px] flex-col justify-between gap-4 overflow-hidden px-6 py-6">

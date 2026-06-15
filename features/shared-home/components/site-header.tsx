@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Link, stripLocalePrefix, usePathname } from "@/i18n/navigation"
-import { useSession } from "@/hooks/use-auth"
-import { useAuth } from "@/hooks/use-auth"
+import { useSession, useAuth, updateSessionUser } from "@/hooks/use-auth"
+import LogoutButton from "@/components/ui/logout-button"
 import { useDashboardMobileMenu } from "@/features/shared-home/components/dashboard-mobile-menu-context"
 import { cn, resolveImageUrl } from "@/lib/utils"
 import type { User } from "@/lib/api/types"
@@ -143,6 +143,24 @@ export function SiteHeader({
     user: User | null
     checked: boolean
   }>(() => ({ isLoggedIn: Boolean(initialIsLoggedIn), user: initialUser || null, checked: initialIsLoggedIn !== undefined }))
+
+  // Ensure other client auth consumers (sidebar, mobile menu) see the
+  // same server-provided session immediately to avoid render mismatch.
+  React.useEffect(() => {
+    if (initialIsLoggedIn && initialUser) {
+      try {
+        updateSessionUser({
+          id: initialUser.id,
+          name: initialUser.name,
+          email: initialUser.email,
+          avatar: (initialUser as any).avatar || (initialUser as any).avatar_url || undefined,
+          role: (initialUser as any).role || undefined,
+        })
+      } catch {
+        // non-fatal
+      }
+    }
+  }, [initialIsLoggedIn, initialUser])
 
   const [notifications, setNotifications] = React.useState<Notification[]>([])
   const [notificationsLoading, setNotificationsLoading] = React.useState(false)
@@ -431,11 +449,9 @@ export function SiteHeader({
             </Button>
 
             {showNotifications && (
-              <>
-                <div className="fixed inset-0 z-[9998]" onClick={() => setShowNotifications(false)} />
-                <div
-                  className="fixed top-[64px] lg:top-[128px] z-[9999] max-h-[min(60vh,450px)] w-[min(96vw,360px)] overflow-hidden rounded-[16px] border border-gray-100 bg-white shadow-2xl pointer-events-auto ltr:right-[16px] rtl:left-[16px]"
-                >
+              <div
+                className="absolute top-full mt-2 z-[200] max-h-[min(60vh,450px)] w-[min(96vw,360px)] overflow-hidden rounded-[16px] border border-gray-100 bg-white shadow-2xl pointer-events-auto ltr:right-0 rtl:left-0"
+              >
                   <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gradient-to-r from-[#006EA8]/5 to-[#005685]/5 flex-row">
                     <h3 className="font-bold text-gray-900 text-[15px] sm:text-base">
                       {isRTL ? `الإشعارات (${unreadCount})` : `Notifications (${unreadCount})`}
@@ -500,7 +516,6 @@ export function SiteHeader({
                     ))}
                   </div>
                 </div>
-              </>
             )}
           </div>
 
@@ -641,20 +656,15 @@ export function SiteHeader({
                     <div className="border-t border-gray-100 my-1" />
 
                     {/* Logout */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAvatarMenu(false)
-                        signOut()
-                      }}
+                    <LogoutButton
+                      onDone={() => setShowAvatarMenu(false)}
                       className={cn(
                         "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-100 cursor-pointer",
                         isRTL ? "text-right" : "text-left"
                       )}
-                    >
-                      <LogOut className="h-4 w-4 stroke-[1.5]" />
-                      <span>{isRTL ? "تسجيل الخروج" : "Logout"}</span>
-                    </button>
+                      label={isRTL ? "تسجيل الخروج" : "Logout"}
+                      isRTL={isRTL}
+                    />
                   </div>
                 )}
               </div>

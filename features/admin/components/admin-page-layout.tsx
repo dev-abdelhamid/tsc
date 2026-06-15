@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils"
-import SessionPersist from "@/features/auth/components/session-persist"
 import { useLocale } from "next-intl"
 
 type AdminPageLayoutProps = {
@@ -33,7 +32,7 @@ export function AdminPageLayout({ title, description, action, children, needsCli
         {action && <div className="shrink-0 w-full sm:w-auto">{action}</div>}
       </div>
       {children}
-      {needsClientPersist ? <SessionPersist needsClientPersist={needsClientPersist} initialTokens={initialAuthTokens} /> : null}
+      {/* Session persistence removed; server handles HttpOnly cookies now */}
     </div>
   )
 }

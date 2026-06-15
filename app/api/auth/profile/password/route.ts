@@ -9,13 +9,13 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({} as Record<string, unknown>))
     const { current_password, new_password, new_password_confirmation } = body as Record<string, string>
-    if (!current_password || !new_password || !new_password_confirmation) {
+    if (!new_password || !new_password_confirmation) {
       return NextResponse.json({ message: "Missing fields" }, { status: 400 })
     }
 
     if (!session || !session.accessToken) return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
 
-    await updatePassword(current_password, new_password, new_password_confirmation, session.accessToken as string, session.locale || "ar")
+    await updatePassword(current_password || "", new_password, new_password_confirmation, session.accessToken as string, session.locale || "ar")
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     const status = error instanceof ApiError ? error.status : 500

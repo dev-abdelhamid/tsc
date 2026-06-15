@@ -70,10 +70,19 @@ export async function getAdminTickets(
   page = 1,
   locale = "ar"
 ): Promise<{ data: Ticket[]; meta: PaginationMeta }> {
-  const response = await api.get<ApiResponse<Ticket[]>>(
-    `/tickets?page=${page}`,
-    { token, locale }
-  )
+  // Prefer admin list endpoint when available, fall back to generic tickets list
+  let response: ApiResponse<Ticket[]>
+  try {
+    response = await api.get<ApiResponse<Ticket[]>>(
+      `/admin/tickets?page=${page}`,
+      { token, locale }
+    )
+  } catch {
+    response = await api.get<ApiResponse<Ticket[]>>(
+      `/tickets?page=${page}`,
+      { token, locale }
+    )
+  }
   return { data: response.data, meta: response.meta! }
 }
 
@@ -83,11 +92,21 @@ export async function getAdminTicket(
   token: string,
   locale = "ar"
 ): Promise<Ticket> {
-  const response = await api.get<ApiResponse<Ticket>>(
-    `/tickets/${id}`,
-    { token, locale }
-  )
-  return response.data
+  // Some backends expose an admin-specific ticket detail endpoint. Try
+  // `/admin/tickets/:id` first and fall back to the generic `/tickets/:id`.
+  try {
+    const response = await api.get<ApiResponse<Ticket>>(
+      `/admin/tickets/${id}`,
+      { token, locale }
+    )
+    return response.data
+  } catch {
+    const response = await api.get<ApiResponse<Ticket>>(
+      `/tickets/${id}`,
+      { token, locale }
+    )
+    return response.data
+  }
 }
 
 export async function replyToTicket(

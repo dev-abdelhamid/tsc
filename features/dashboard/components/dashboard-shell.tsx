@@ -43,8 +43,14 @@ export function DashboardShell({ locale, user, children, isMobileMenuOpen, onOpe
     <div className="min-h-screen bg-[#F7F9FC]">
       <div className="mx-auto w-full max-w-[1512px] px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-6 lg:px-4 lg:pt-6">
         <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:gap-6">
-          <div className="lg:sticky lg:top-[134px] lg:self-start lg:shrink-0 lg:flex lg:flex-col">
-            <DashboardSidebar locale={locale} userRole={normalizeRole(user) || "user"} open={isOpen} onOpenChange={handleOpenChange} />
+            <div className="lg:sticky lg:top-[134px] lg:self-start lg:shrink-0 lg:flex lg:flex-col">
+            <DashboardSidebar
+              locale={locale}
+              userRole={normalizeRole(user) || "user"}
+              initialUser={user}
+              open={isOpen}
+              onOpenChange={handleOpenChange}
+            />
           </div>
           <main className="min-w-0 flex-1">{children}</main>
         </div>

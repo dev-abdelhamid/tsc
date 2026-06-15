@@ -69,8 +69,11 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   // Normalize the session into a plain object and use it as the single
   // source of truth during SSR. Do NOT call `getProfile` here.
+  // Only consider the user logged in when we have a resolved `user` object
+  // from the upstream profile call. This prevents transient `isLoggedIn: true`
+  // with a null `user` which causes header/sidebar hydration mismatches.
   const sessionData = {
-    isLoggedIn: Boolean(session?.isLoggedIn),
+    isLoggedIn: Boolean(session?.user),
     user: session?.user
       ? {
         id: session.user.id,

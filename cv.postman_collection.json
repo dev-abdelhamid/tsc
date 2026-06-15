@@ -286,58 +286,8 @@
             }
           },
           "response": []
-        },
-        {
-          "name": "refreshToken",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Accept-Language",
-                "value": "ar",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "refresh_token",
-                  "value": "TSngsZgSWHvGTi8mlA7iM8GKzQGCvIc8qv95Q95sf1StQtLIyHRXAExReX4aHvoE",
-                  "type": "text",
-                  "uuid": "64b50100-f666-4f60-bffc-eb28c436a3fe"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{url}}/auth/refresh-token",
-              "host": [
-                "{{url}}"
-              ],
-              "path": [
-                "auth",
-                "refresh-token"
-              ]
-            }
-          },
-          "response": []
         }
-      ]
+            ]
     },
     {
       "name": "Forget Password",

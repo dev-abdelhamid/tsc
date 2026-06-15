@@ -100,10 +100,15 @@ export function JobUnderlineSelect({
           </option>
         ))}
       </select>
-      <ChevronDown
+      <svg
         className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2 text-[#40A0CA] opacity-80"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
         aria-hidden
-      />
+      >
+        <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
     </div>
   )
 }
@@ -120,6 +125,7 @@ export function JobUnderlineDate({
   return (
     <div className={cn("relative w-full", className)}>
       <input
+        aria-label="date"
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}

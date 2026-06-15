@@ -63,12 +63,14 @@ export async function HeroSection({ title: titleOverride, description: descripti
         }}
       />
 
-      <Image src="/home/hero/hero-bg-image.png" alt="" fill className="z-1 object-cover opacity-[0.15] mix-blend-overlay" aria-hidden />
-      <Image src="/home/hero/hero-blur.svg" alt="" fill className="z-2 object-cover opacity-50" aria-hidden />
+      <div className="absolute inset-0 z-0">
+        <Image src={heroBackgroundImage} alt="" fill className="object-cover opacity-[0.08] mix-blend-overlay" aria-hidden />
+        <Image src="/home/hero/hero-blur.svg" alt="" fill className="object-cover opacity-90" aria-hidden />
+      </div>
 
       {/* Bottom Glow / Spotlight Arc */}
       <div 
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[160%] h-[300px] sm:h-[450px] rounded-[100%] bg-gradient-to-t from-[#40a0ca]/70 via-[#006ea8]/30 to-transparent blur-[50px] sm:blur-[75px] pointer-events-none z-[1]"
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[160%] h-[400px] sm:h-[450px] rounded-[100%] bg-gradient-to-t from-[#40a0ca]/70 via-[#006ea8]/30 to-transparent blur-[50px] sm:blur-[75px] pointer-events-none z-[1]"
         style={{
           transform: "translateX(-50%) translateY(50%)",
         }}

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { setRequestLocale } from "next-intl/server"
-import { getProfile } from "@/lib/api/services/auth.service"
+import { getProfile, getCountries, getCities } from "@/lib/api/services/auth.service"
 import { ApiError } from "@/lib/api/client"
 import { getSession } from "@/lib/auth-token"
 import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
@@ -111,6 +111,22 @@ export default async function CompanyProfilePage({
     }
   }
 
+  // Fetch server-side metadata (countries + initial cities) so the
+  // client component receives stable data and avoids hydration flicker
+  // when the city select is populated.
+  let serverCountries: Array<Record<string, unknown>> = []
+  let serverCities: Array<Record<string, unknown>> = []
+  try {
+    serverCountries = await getCountries(locale, session.accessToken)
+    const countryId = initialProfile?.country_id ?? (initialProfile?.country && typeof initialProfile.country === 'object' ? (initialProfile.country as any).id : undefined)
+    if (countryId) {
+      serverCities = await getCities(Number(countryId), locale, session.accessToken)
+    }
+  } catch (e) {
+    // Non-fatal: client will fetch metadata as a fallback.
+    console.warn('[Profile] Failed to fetch countries/cities server-side', e)
+  }
+
   const isAr = locale === "ar"
   return (
     <DashboardPageShell
@@ -118,7 +134,11 @@ export default async function CompanyProfilePage({
       description={isAr ? "تعديل بيانات الشركة" : "Edit company profile"}
       isRTL={isAr}
     >
-      <CompanyProfileForm initialProfile={initialProfile as any} />
+      <CompanyProfileForm
+        initialProfile={initialProfile as any}
+        serverCountries={serverCountries}
+        serverCities={serverCities}
+      />
     </DashboardPageShell>
   )
 }

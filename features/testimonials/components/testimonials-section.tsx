@@ -28,7 +28,7 @@ export async function TestimonialsSection({ override }: TestimonialsSectionProps
   const locale = await getLocale()
   setRequestLocale(locale)
   const t = await getTranslations("Landing.testimonials")
-  const isRtl = locale === "ar"
+  const isRtl = typeof locale === "string" && locale.startsWith("ar")
 
   let stories: SuccessStory[] = []
   try {

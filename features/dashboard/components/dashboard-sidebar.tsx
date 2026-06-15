@@ -4,6 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import { Link, stripLocalePrefix, usePathname } from "@/i18n/navigation"
 import { useAuth } from "@/hooks/use-auth"
+import LogoutButton from "@/components/ui/logout-button"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { ExternalLink } from "lucide-react"
@@ -84,26 +85,35 @@ function SidebarItem({ iconSrc, label, href, locale, active, flipIcon, isRTL }: 
   )
 }
 
-function SidebarLogout({ label, flipIcon }: { label: string; flipIcon?: boolean }) {
-  const { logout, isLoading } = useAuth()
+function SidebarLogout({ label, flipIcon, initialUser }: { label: string; flipIcon?: boolean; initialUser?: any }) {
+  // Start with the server-provided snapshot so the SSR render matches the
+  // initial HTML. After hydration, subscribe to the client auth state and
+  // enable the button if a session is present client-side. This keeps the
+  // UX consistent with the header while avoiding hydration mismatches.
+  const { user: clientUser, isLoading: clientLoading } = useAuth()
+  // Consider any non-null `initialUser` as authenticated on the server
+  // (some backends use id=0 as a placeholder). After hydration, enable the
+  // button when a client-side user object exists regardless of `id` value.
+  const initiallyAuthenticated = Boolean(initialUser)
+  const [enabled, setEnabled] = React.useState<boolean>(initiallyAuthenticated)
+
+  React.useEffect(() => {
+    if (clientUser) {
+      setEnabled(true)
+    } else if (!clientLoading) {
+      setEnabled(false)
+    }
+  }, [clientUser, clientLoading])
 
   return (
-    <button
-      type="button"
-      onClick={() => logout()}
-      disabled={isLoading}
-      className="relative flex h-12 lg:h-10 w-full items-center gap-2 px-4 py-3 lg:py-2 text-[#6B7280] transition-colors rounded-[8px] hover:bg-red-50 hover:text-red-600 disabled:opacity-60 text-base lg:text-[14px]"
-    >
-      <Image
-        src="/dashboard/logout.svg"
-        alt=""
-        width={24}
-        height={24}
-        className={cn(flipIcon && "scale-x-[-1]")}
-        aria-hidden
-      />
-      <span className="text-base font-medium">{isLoading ? "..." : label}</span>
-    </button>
+    <LogoutButton
+      label={label}
+      disabled={!enabled}
+      className={cn(
+        "relative flex h-12 lg:h-10 w-full items-center gap-2 px-4 py-3 lg:py-2 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors rounded-[8px] disabled:opacity-60 text-base lg:text-[14px]",
+        flipIcon && ""
+      )}
+    />
   )
 }
 
@@ -258,10 +268,12 @@ function getUserItems(locale: string, userRole: "user" | "company") {
 function SidebarNav({
   locale,
   userRole,
+  initialUser,
   onNavigate,
 }: {
   locale: string
   userRole: "user" | "company" | "admin"
+  initialUser?: any
   onNavigate?: () => void
 }) {
   const rawPathname = usePathname() ?? ""
@@ -338,7 +350,7 @@ function SidebarNav({
           <ExternalLink className="h-[16px] w-[16px] flex-none opacity-70" />
           <span className="text-[13px] font-semibold">{viewSiteLabel}</span>
         </Link>
-        <SidebarLogout label={isRTL ? "تسجيل الخروج" : "Logout"} flipIcon={flipIcon} />
+        <SidebarLogout label={isRTL ? "تسجيل الخروج" : "Logout"} flipIcon={flipIcon} initialUser={initialUser} />
       </div>
     </div>
   )
@@ -347,6 +359,7 @@ function SidebarNav({
 interface DashboardSidebarProps {
   locale: string
   userRole: "user" | "company" | "admin"
+  initialUser?: any
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }
@@ -354,6 +367,7 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({
   locale,
   userRole,
+  initialUser,
   open,
   onOpenChange,
 }: DashboardSidebarProps) {
@@ -375,7 +389,7 @@ export function DashboardSidebar({
 
   const sidebarPanel = (
     <aside className="flex h-full w-full min-h-0 flex-col rounded-[8px] border border-[#E5E7EB] bg-[#F0F4F8] p-0 lg:w-[280px] overflow-hidden lg:overflow-visible lg:h-auto lg:min-h-0">
-      <SidebarNav locale={locale} userRole={userRole} />
+        <SidebarNav locale={locale} userRole={userRole} initialUser={initialUser} />
     </aside>
   )
 
@@ -399,7 +413,7 @@ export function DashboardSidebar({
                 <Image src="/jobs/icon-close-circle.svg" alt="" width={28} height={28} className="h-7 w-7" aria-hidden />
               </button>
             </div>
-            <SidebarNav locale={locale} userRole={userRole} onNavigate={() => handleOpenChange(false)} />
+            <SidebarNav locale={locale} userRole={userRole} initialUser={initialUser} onNavigate={() => handleOpenChange(false)} />
           </div>
         </SheetContent>
       </Sheet>

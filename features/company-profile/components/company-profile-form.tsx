@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import React, { useEffect, useState, useSyncExternalStore, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useLocale } from "next-intl";
 import { Globe, Eye, EyeOff } from "lucide-react";
@@ -12,14 +12,9 @@ import Image from "next/image";
 import { COUNTRIES } from "@/lib/countries";
 import { resolveImageUrl } from "@/lib/utils";
 
-// FontAwesome
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faFacebook,
-  faLinkedin,
-  faTwitter,
-  faPinterest,
-} from "@fortawesome/free-brands-svg-icons";
+// Use SVG assets from /public/Linked_accounts for social icons
+
+// ============================================================================
 
 // ============================================================================
 // Types
@@ -72,15 +67,7 @@ type InitialProfileData = {
   website?: string
 }
 
-const DIALING_CODES = [...COUNTRIES]
-  .sort((a, b) => b.dialCode.length - a.dialCode.length)
-  .map((c, idx) => ({
-    code: c.dialCode,
-    country: c.code,
-    uniqueKey: `${c.code}-${idx}`,
-    flag: c.flag,
-    name: c.name,
-  }));
+// DIALING_CODES will be computed inside the component with useMemo
 
 // ============================================================================
 // Styles
@@ -91,17 +78,109 @@ const fieldBase =
 const selectBase =
   "w-full border-b border-[#D4D4D4] py-2.5 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] appearance-none cursor-pointer";
 
+const socialField =
+  "w-full rounded-lg border border-[#E6EEF4] px-3 py-2 text-sm text-[#525252] bg-white outline-none transition-colors placeholder:text-[#A3A3A3]";
+
 // ============================================================================
 // Main Component
 // ============================================================================
-export default function CompanyProfileForm({ initialProfile }: { initialProfile?: InitialProfileData }) {
+export default function CompanyProfileForm({
+  initialProfile,
+  serverCountries,
+  serverCities,
+}: {
+  initialProfile?: InitialProfileData
+  serverCountries?: CountryData[]
+  serverCities?: CityData[]
+}) {
   const locale = useLocale();
   const isAr = locale === "ar";
-  const isMounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
+  const DIALING_CODES = React.useMemo(() => {
+    try {
+      return [...COUNTRIES]
+        .sort((a, b) => b.dialCode.length - a.dialCode.length)
+        .map((c, idx) => ({
+          code: c.dialCode,
+          country: c.code,
+          uniqueKey: `${c.code}-${idx}`,
+          flag: c.flag,
+          name: c.name,
+        }));
+    } catch (e) {
+      return [] as Array<{ code: string; country: string; uniqueKey: string; flag: string; name: string }>;
+    }
+  }, []);
+  // NOTE: avoid client-only conditional rendering that changes the DOM
+  // between server and client — compute stable initial defaults instead
+  // so SSR output matches the client initial render and prevents
+  // hydration mismatches.
+
+  const labelAlignClass = isAr ? "text-right" : "text-left";
+
+  const initialFormDefaults = React.useMemo(() => {
+    const out: Record<string, any> = {
+      name: "",
+      ceo_name: "",
+      email: "",
+      website: "",
+      country_id: "",
+      city_id: "",
+      phone: "",
+      dial_code: "+20",
+      postal_code: "",
+      num_of_employees: "",
+      company_type_id: "",
+      description: "",
+      facebook: "",
+      linkedin: "",
+      twitter_x: "",
+      pinterest: "",
+    } as Record<string, string>
+
+    if (!initialProfile) return out
+
+    const raw = initialProfile as any
+    const cp = raw.companyProfile || raw.company_profile || raw.company || null
+
+    out.name = raw.name || (cp && (cp.companyName || cp.name)) || raw.company_name || ""
+    out.ceo_name = raw.ceo_name || (cp && (cp.ceoName || cp.ceo_name)) || ""
+    out.email = raw.email || raw.email_address || ""
+    out.website = raw.website || (cp && (cp.website || cp.website_url)) || ""
+    out.postal_code = raw.postal_code || (cp && (cp.postalCode || cp.postal_code)) || ""
+    out.num_of_employees = String((raw.num_of_employees as any) ?? (cp && (cp.numOfEmployees || cp.num_of_employees)) ?? "")
+
+    out.company_type_id = String(
+      raw.company_type_id ?? (raw.company_type && (raw.company_type.id ?? raw.company_type_id)) ?? (cp && (cp.company_type_id || cp.companyType?.id)) ?? ""
+    )
+
+    const countryId = raw.country_id ?? (raw.country && (raw.country.id ?? undefined)) ?? (cp && (cp.country?.id ?? undefined)) ?? ""
+    out.country_id = String(countryId || "")
+
+    const cityId = raw.city ? (typeof raw.city === "object" ? (raw.city as any).id : raw.city) : (cp && (cp.city ?? undefined)) ?? ""
+    out.city_id = String(cityId || "")
+
+    // Phone/dial
+    const rawPhone = raw.phone || ""
+    let parsedDial = "+20"
+    let parsedPhone = rawPhone
+    for (const d of DIALING_CODES) {
+      if (rawPhone && rawPhone.startsWith(d.code)) {
+        parsedDial = d.code
+        parsedPhone = rawPhone.slice(d.code.length)
+        break
+      }
+    }
+    out.dial_code = parsedDial
+    out.phone = parsedPhone
+
+    out.description = raw.description || (cp && (cp.description || cp.desc)) || ""
+    out.facebook = raw.facebook || (cp && (cp.socialMedia?.facebook || cp.facebook)) || ""
+    out.linkedin = raw.linkedin || (cp && (cp.socialMedia?.linkedin || cp.linkedin)) || ""
+    out.twitter_x = raw.twitter_x || (cp && (cp.socialMedia?.twitterX || cp.twitter_x)) || ""
+    out.pinterest = raw.pinterest || (cp && (cp.socialMedia?.pinterest || cp.pinterest)) || ""
+
+    return out as ProfileFormValues
+  }, [initialProfile, DIALING_CODES])
 
   const {
     register,
@@ -110,14 +189,13 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
     watch,
     formState: { isSubmitting },
   } = useForm<ProfileFormValues>({
-    defaultValues: {
-      dial_code: "+20",
-    },
+    defaultValues: initialFormDefaults,
   });
 
   const [loading, setLoading] = useState(false);
-  const [countries, setCountries] = useState<CountryData[]>([]);
-  const [cities, setCities] = useState<CityData[]>([]);
+  const [countries, setCountries] = useState<CountryData[]>(serverCountries || []);
+  const [cities, setCities] = useState<CityData[]>(serverCities || []);
+  const [citiesLoading, setCitiesLoading] = useState<boolean>(false);
   const [companyTypes, setCompanyTypes] = useState<CompanyTypeData[]>([]);
 
   // Images
@@ -129,6 +207,7 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
   const [message, setMessage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const lastFetchedCountryIdRef = React.useRef<string | null>(null);
+  const [activeSocial, setActiveSocial] = useState<string | null>(null);
 
   // Password visibility
   const [showNewPw, setShowNewPw] = useState(false);
@@ -136,6 +215,42 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
 
   const selectedCountryId = watch("country_id");
   const selectedDialCode = watch("dial_code");
+
+  // Use server-provided initialProfile to compute a stable initial country id
+  // so the `disabled` attribute on the city select is the same during SSR
+  // and on the client initial render (pre-hydration).
+  const initialCountryIdFromProfile = initialProfile
+    ? String(
+        (initialProfile.country_id ?? (initialProfile.country && typeof initialProfile.country === "object" ? (initialProfile.country as any).id : initialProfile.country) ?? "")
+      )
+    : "";
+  const computedSelectedCountryId = (selectedCountryId || initialCountryIdFromProfile) as string;
+
+  // Start the city select in a disabled state on both server and client to
+  // avoid SSR/client markup mismatches (we fetch cities client-side). After
+  // the client finishes loading cities we'll update `cityDisabled`.
+  const initialCityDisabled = true;
+  const [cityDisabled, setCityDisabled] = useState<boolean>(initialCityDisabled);
+  useEffect(() => {
+    // After hydration/update, compute actual runtime disabled state.
+    setCityDisabled(Boolean(!computedSelectedCountryId || cities.length === 0));
+  }, [computedSelectedCountryId, cities.length]);
+
+  // Debugging helper: log values after mount so we can see what differs
+  useEffect(() => {
+    console.debug("CompanyProfileForm:init", {
+      initialCountryIdFromProfile,
+      computedSelectedCountryId,
+      initialCityDisabled,
+      cityDisabled,
+      citiesLength: cities.length,
+      citiesLoading,
+    });
+  }, [initialCountryIdFromProfile, computedSelectedCountryId, initialCityDisabled, cityDisabled, cities.length]);
+  // Position helper for avatar edit button (use logical placement for RTL)
+  // Position the avatar edit button slightly inside the avatar circle; use
+  // logical sides for RTL/LTR to keep placement deterministic.
+  const avatarEditPosClass = isAr ? "left-3 md:left-4" : "right-3 md:right-4";
 
   // --------------------------------------------------------------------------
   // Load initial data and hydrate form from server-provided initialProfile
@@ -147,13 +262,14 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
 
     const loadMetadata = async () => {
       try {
-        const [countriesRes, companyTypesRes] = await Promise.all([
-          fetch(`/api/countries?locale=${locale}`).then((r) => r.json()),
-          fetch(`/api/categories?locale=${locale}`).then((r) => r.json()),
-        ]);
+        // If server provided countries, use them; otherwise fetch.
+        const countriesPromise = serverCountries ? Promise.resolve({ data: serverCountries }) : fetch(`/api/countries?locale=${locale}`).then((r) => r.json());
+        const companyTypesPromise = fetch(`/api/company-types?locale=${locale}`).then((r) => r.json());
+
+        const [countriesRes, companyTypesRes] = await Promise.all([countriesPromise, companyTypesPromise]);
         if (!active) return;
-        if (countriesRes.data) setCountries(countriesRes.data);
-        if (companyTypesRes.data) setCompanyTypes(companyTypesRes.data);
+        if (countriesRes?.data) setCountries(countriesRes.data);
+        if (companyTypesRes?.data) setCompanyTypes(companyTypesRes.data);
       } catch (err) {
         console.error("Failed to load metadata", err);
       }
@@ -208,14 +324,26 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
       const cityId = raw.city ? (typeof raw.city === "object" ? (raw.city as { id?: number }).id : raw.city) : "";
       if (countryId) {
         lastFetchedCountryIdRef.current = String(countryId);
-        fetch(`/api/cities?countryId=${countryId}&locale=${locale}`)
-          .then((r) => r.json())
-          .then((cData) => {
-            if (active && cData.data) {
-              setCities(cData.data);
-              setValue("city_id", String(cityId));
-            }
-          });
+        setCitiesLoading(true);
+        // If server provided cities for this country, use them. Otherwise fetch.
+        if (serverCities && serverCities.length > 0) {
+          setCities(serverCities);
+          setValue("city_id", String(cityId));
+          if (active) setCitiesLoading(false);
+        } else {
+          fetch(`/api/cities?countryId=${countryId}&locale=${locale}`)
+            .then((r) => r.json())
+            .then((cData) => {
+              if (active && cData.data) {
+                setCities(cData.data);
+                setValue("city_id", String(cityId));
+              }
+            })
+            .catch(() => {})
+            .finally(() => {
+              if (active) setCitiesLoading(false);
+            });
+        }
       }
 
       // Phone & dial code
@@ -280,19 +408,26 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
     if (!selectedCountryId) {
       setCities([]);
       lastFetchedCountryIdRef.current = null;
+      setCitiesLoading(false);
       return;
     }
-    if (selectedCountryId === lastFetchedCountryIdRef.current) {
+    // If we've already fetched this country's cities and they are present,
+    // avoid refetching. If cities are empty, still attempt to fetch again.
+    if (selectedCountryId === lastFetchedCountryIdRef.current && cities.length > 0) {
       return;
     }
     let active = true;
     lastFetchedCountryIdRef.current = selectedCountryId;
+    setCitiesLoading(true);
     fetch(`/api/cities?countryId=${selectedCountryId}&locale=${locale}`)
       .then((r) => r.json())
       .then((cData) => {
         if (active && cData.data) setCities(cData.data);
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => {
+        if (active) setCitiesLoading(false);
+      });
     return () => {
       active = false;
     };
@@ -312,58 +447,168 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
           throw new Error(isAr ? "كلمتا المرور غير متطابقتين" : "Passwords do not match");
         }
 
-        const fd = new FormData();
-        if (avatarFile) fd.append("logo", avatarFile);
-        if (coverFile) fd.append("cover_image", coverFile);
+        // Build both a plain JSON payload and a FormData fallback. If no files
+        // are present, prefer JSON so structured nested fields (like
+        // `company_type: { id: ... }`) are reliably interpreted by upstream.
+        const shouldUseForm = Boolean(avatarFile || coverFile);
 
-        fd.append("name", data.name);
-        fd.append("website", data.website);
-        fd.append("country_id", data.country_id);
-        fd.append("city_id", data.city_id);
-        fd.append("postal_code", data.postal_code);
-        fd.append("num_of_employees", data.num_of_employees);
-        fd.append("company_type_id", data.company_type_id);
-        fd.append("phone", `${data.dial_code}${data.phone}`);
+        const plain: Record<string, any> = {};
+        const putIf = (key: string, value: unknown) => {
+          if (value === undefined || value === null) return;
+          if (typeof value === 'string' && value.trim() === '') return;
+          plain[key] = value;
+        };
 
-        // Localized fields
-        fd.append("company_name[ar]", data.name);
-        fd.append("company_name[en]", data.name);
-        fd.append("company_name[de]", data.name);
-        fd.append("ceo_name[ar]", data.ceo_name);
-        fd.append("ceo_name[en]", data.ceo_name);
-        fd.append("ceo_name[de]", data.ceo_name);
-        fd.append("description[ar]", data.description);
-        fd.append("description[en]", data.description);
-        fd.append("description[de]", data.description);
+        putIf('name', data.name);
+        putIf('website', data.website);
+        putIf('country_id', data.country_id ? Number(data.country_id) : undefined);
+        putIf('city_id', data.city_id ? Number(data.city_id) : undefined);
+        putIf('postal_code', data.postal_code);
+        putIf('num_of_employees', data.num_of_employees ? Number(data.num_of_employees) : undefined);
+        putIf('company_type_id', data.company_type_id ? Number(data.company_type_id) : undefined);
+        if (data.company_type_id) {
+          putIf('company_type', { id: Number(data.company_type_id) });
+        }
+        if ((data.phone || '').trim()) putIf('phone', `${data.dial_code || ''}${data.phone}`);
 
-        fd.append("facebook", data.facebook || "");
-        fd.append("linkedin", data.linkedin || "");
-        fd.append("twitter_x", data.twitter_x || "");
-        fd.append("pinterest", data.pinterest || "");
+        if (data.name) {
+          putIf('company_name', { ar: data.name, en: data.name, de: data.name });
+        }
+        if (data.ceo_name) {
+          putIf('ceo_name', { ar: data.ceo_name, en: data.ceo_name, de: data.ceo_name });
+        }
+        if (data.description) {
+          putIf('description', { ar: data.description, en: data.description, de: data.description });
+        }
 
-        const res = await fetch("/api/auth/profile", { method: "POST", body: fd });
+        putIf('facebook', data.facebook);
+        putIf('linkedin', data.linkedin);
+        putIf('twitter_x', data.twitter_x);
+        putIf('pinterest', data.pinterest);
+
+        let res: Response;
+        if (shouldUseForm) {
+          const fd = new FormData();
+          if (avatarFile) fd.append('logo', avatarFile);
+          if (coverFile) fd.append('cover_image', coverFile);
+
+          const appendIf = (key: string, value: unknown) => {
+            if (value === undefined || value === null) return;
+            if (typeof value === 'string' && value.trim() === '') return;
+            if (value instanceof File || value instanceof Blob) {
+              fd.append(key, value as any);
+              return;
+            }
+            if (Array.isArray(value)) {
+              value.forEach((it) => appendIf(`${key}[]`, it));
+              return;
+            }
+            if (typeof value === 'object') {
+              Object.entries(value as Record<string, unknown>).forEach(([k, v]) => appendIf(`${key}[${k}]`, v));
+              return;
+            }
+            fd.append(key, String(value));
+          };
+
+          appendIf('name', data.name);
+          appendIf('website', data.website);
+          appendIf('country_id', data.country_id);
+          appendIf('city_id', data.city_id);
+          appendIf('postal_code', data.postal_code);
+          appendIf('num_of_employees', data.num_of_employees);
+          appendIf('company_type_id', data.company_type_id);
+          if ((data.phone || '').trim()) appendIf('phone', `${data.dial_code || ''}${data.phone}`);
+
+          if (data.name) {
+            appendIf('company_name[ar]', data.name);
+            appendIf('company_name[en]', data.name);
+            appendIf('company_name[de]', data.name);
+          }
+          if (data.ceo_name) {
+            appendIf('ceo_name[ar]', data.ceo_name);
+            appendIf('ceo_name[en]', data.ceo_name);
+            appendIf('ceo_name[de]', data.ceo_name);
+          }
+          if (data.description) {
+            appendIf('description[ar]', data.description);
+            appendIf('description[en]', data.description);
+            appendIf('description[de]', data.description);
+          }
+
+          appendIf('facebook', data.facebook);
+          appendIf('linkedin', data.linkedin);
+          appendIf('twitter_x', data.twitter_x);
+          appendIf('pinterest', data.pinterest);
+
+          res = await fetch('/api/auth/profile', { method: 'POST', body: fd });
+        } else {
+          res = await fetch('/api/auth/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(plain) });
+        }
         const payload = await res.json();
         if (!res.ok) throw new Error(payload?.message || "Failed to update profile");
 
-        // Step 1: invalidate the client-side cache so the stale session is cleared
-        invalidateSessionCache();
-
-        // Step 2: immediately re-fetch /api/auth/session — the profile POST set the
-        // updated_user cookie which the session GET will merge and return, giving us
-        // the fresh avatar without a full re-login.
+        // Update session locally from POST payload first (avoid triggering
+        // a global invalidate which causes other components to refetch
+        // before we have an authoritative state). We'll still attempt a
+        // no-store fetch to confirm how the backend persisted fields.
         try {
-          const sessRes = await fetch("/api/auth/session", {
-            credentials: "include",
-            cache: "no-store",
-            headers: { "Content-Type": "application/json" },
-          });
-          if (sessRes.ok) {
-            const sessData = await sessRes.json();
-            if (sessData?.user) {
-              updateSessionUser(sessData.user);
+          const updated = payload?.data || payload;
+          const norm = normalizeProfile(updated);
+          const sessionUpdate: Record<string, unknown> = {};
+          if (norm.avatar) sessionUpdate.avatar = resolveImageUrl(norm.avatar) || norm.avatar;
+          if (norm.name) sessionUpdate.name = norm.name;
+          if (Object.keys(sessionUpdate).length > 0) updateSessionUser(sessionUpdate);
+        } catch {}
+
+        // Re-fetch authoritative profile quietly (no global invalidate) to
+        // ensure persisted fields like `company_type` are accurate.
+        try {
+          const fresh = await fetch("/api/auth/profile", { cache: "no-store" });
+          if (fresh.ok) {
+            const freshPayload = await fresh.json();
+            const updated = freshPayload?.data || freshPayload;
+            const norm = normalizeProfile(updated);
+
+            // Apply to session and form
+            const sessionUpdate: Record<string, unknown> = {};
+            if (norm.avatar) sessionUpdate.avatar = resolveImageUrl(norm.avatar) || norm.avatar;
+            if (norm.name) sessionUpdate.name = norm.name;
+            if (Object.keys(sessionUpdate).length > 0) updateSessionUser(sessionUpdate);
+
+            // Update local form fields from authoritative profile
+            setValue("name", norm.name || "");
+            setValue("ceo_name", (typeof norm.ceo_name === "string" ? norm.ceo_name : "") || "");
+            setValue("email", norm.email || "");
+            setValue("website", norm.website || "");
+            setValue("postal_code", norm.postal_code || "");
+            setValue("num_of_employees", String(norm.num_of_employees || ""));
+            setValue("company_type_id", String((norm.company_type_id as any) ?? ""));
+            setValue("description", typeof norm.description === "string" ? norm.description : "");
+            setValue("facebook", norm.facebook || "");
+            setValue("linkedin", norm.linkedin || "");
+            setValue("twitter_x", norm.twitter_x || "");
+            setValue("pinterest", norm.pinterest || "");
+
+            if (norm.country_id) {
+              setValue("country_id", String(norm.country_id));
+              lastFetchedCountryIdRef.current = String(norm.country_id);
+              try {
+                const cRes = await fetch(`/api/cities?countryId=${norm.country_id}&locale=${locale}`, { cache: "no-store" });
+                if (cRes.ok) {
+                  const cData = await cRes.json();
+                  if (cData.data) {
+                    setCities(cData.data);
+                    const cityId = norm.city ? (typeof norm.city === "object" ? (norm.city as any).id : norm.city) : "";
+                    setValue("city_id", String(cityId));
+                  }
+                }
+              } catch {}
             }
+
+            setAvatarUrl(norm.avatar ? resolveImageUrl(norm.avatar) : null);
+            setCoverUrl(norm.cover_image ? resolveImageUrl(norm.cover_image) : null);
           } else {
-            // Fallback: apply optimistic update from the profile response directly
+            // If profile fetch failed, fallback to payload returned from POST
             const updated = payload?.data || payload;
             const norm = normalizeProfile(updated);
             const sessionUpdate: Record<string, unknown> = {};
@@ -371,8 +616,8 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
             if (norm.name) sessionUpdate.name = norm.name;
             if (Object.keys(sessionUpdate).length > 0) updateSessionUser(sessionUpdate);
           }
-        } catch {
-          // Non-critical fallback
+        } catch (e) {
+          // Non-critical: try optimistic fallback to POST payload
           try {
             const updated = payload?.data || payload;
             const norm = normalizeProfile(updated);
@@ -529,19 +774,23 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
   // Render
   // --------------------------------------------------------------------------
   return (
-    <div className="w-full flex flex-col gap-6" dir={isAr ? "rtl" : "ltr"}>
+    <div className="w-full flex flex-col " dir={isAr ? "rtl" : "ltr"}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* ==================== COMPANY BASIC INFO CARD ==================== */}
         <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
+          <div className="px-8 pt-8 pb-2">
+            <h2 className="text-xl font-bold text-start text-[#006EA8]">
+              {isAr ? "بيانات الشركة الأساسية" : "Company Basic Info"}
+            </h2>
+          </div>
           {/* Cover + Avatar */}
-          <div className="px-8 pt-8">
-            <div className="relative w-full rounded-xl h-[260px]">
+          <div className="px-8 pt-4">
+              <div className="relative w-full rounded-xl h-[180px] md:h-[260px]">
               <div className="absolute inset-0 overflow-hidden rounded-xl">
                 {coverUrl ? (
                   <img src={coverUrl} alt="Cover Banner" className="h-full w-full object-cover" />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center bg-[linear-gradient(135deg,_#0a1628_0%,_#1a3a5c_40%,_#2a4a6c_60%,_#1a3a5c_100%)]">
-                    {/* City skyline placeholder SVG (اختصاراً) */}
                     <svg
                       viewBox="0 0 800 260"
                       className="absolute inset-0 w-full h-full opacity-30"
@@ -581,51 +830,57 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                 <input type="file" accept="image/*" aria-label={isAr ? "تحميل صورة الغلاف" : "Upload cover image"} className="hidden" onChange={handleCoverChange} />
               </label>
 
-              <div className="absolute left-1/2 top-full z-30 -translate-x-1/2 -translate-y-10">
-                <div className="relative h-[120px] w-[120px] rounded-full border-4 border-white bg-white shadow-[0_25px_60px_rgba(15,23,42,0.18)] overflow-hidden">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Company logo" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center text-[#006EA8]">
-                      <Globe className="h-12 w-12 stroke-[1.5]" />
+              <div className="absolute left-1/2 top-full z-30 -translate-x-1/2 -translate-y-10 md:-translate-y-16">
+                <div className="relative h-[140px] w-[140px] md:h-[170px] md:w-[170px]">
+                  <div className="h-full w-full rounded-full p-0.5 bg-white flex items-center justify-center shadow-[0_30px_80px_rgba(15,23,42,0.18)] overflow-visible">
+                    <div className="h-full w-full rounded-full overflow-hidden">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Company logo" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center text-[#006EA8]">
+                          <Globe className="h-12 w-12 stroke-[1.5]" />
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
+                  {/* Edit button sits over the avatar (floating) */}
                   <label
-                    className="absolute bottom-2 right-2 h-9 w-9 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-transform hover:scale-105 bg-gradient-to-b from-[#006EA8] to-[#005685]"
+                    aria-label={isAr ? "تحميل صورة الشعار" : "Upload avatar image"}
+                    className="absolute bottom-2 right-2 h-10 w-10 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 bg-gradient-to-b from-[#006EA8] to-[#005685] z-50 shadow-[0_10px_30px_rgba(0,110,168,0.28)]"
                   >
                     <img src="/update.svg" alt="update" className="h-4 w-4 text-white" />
-                    <input type="file" accept="image/*" aria-label={isAr ? "تحميل صورة الشعار" : "Upload avatar image"} className="hidden" onChange={handleAvatarChange} />
+                    <input type="file" accept="image/*" aria-hidden className="hidden" onChange={handleAvatarChange} />
                   </label>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="h-20" /> {/* spacer for avatar */}
+          <div className="h-[110px] md:h-[140px]" /> {/* spacer for avatar */}
 
           {/* Form fields grid */}
           <div className="px-8 pb-8">
             <div className="grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-2">
               {/* Company Name */}
-              <div className="flex flex-col gap-1.5 text-start">
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "اسم الشركة" : "Company Name"} <span className="text-red-500">*</span>
+                  {isAr ? "اسم الشركة *" : "Company Name *"}
                 </label>
-                <input type="text" required className={fieldBase} {...register("name")} />
+                <input type="text" className={fieldBase} {...register("name")} />
               </div>
 
               {/* CEO Name */}
-              <div className="flex flex-col gap-1.5 text-start">
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "اسم الرئيس التنفيذي" : "Company CEO name"} <span className="text-red-500">*</span>
+                  {isAr ? "اسم الرئيس التنفيذي *" : "Company ceo name *"}
                 </label>
-                <input type="text" required className={fieldBase} {...register("ceo_name")} />
+                <input type="text" className={fieldBase} {...register("ceo_name")} />
               </div>
 
               {/* Email (disabled) */}
-              <div className="flex flex-col gap-1.5 text-start">
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "البريد الإلكتروني" : "Email"} <span className="text-red-500">*</span>
+                  {isAr ? "البريد الإلكتروني *" : "Email *"}
                 </label>
                 <input
                   type="email"
@@ -636,20 +891,20 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
               </div>
 
               {/* Website */}
-              <div className="flex flex-col gap-1.5 text-start">
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "الموقع الإلكتروني" : "Website"} <span className="text-red-500">*</span>
+                  {isAr ? "الموقع الإلكتروني *" : "Website *"}
                 </label>
-                <input type="url" required placeholder="https://example.com" className={fieldBase} {...register("website")} />
+                <input type="url" placeholder="https://example.com" className={fieldBase} {...register("website")} />
               </div>
 
               {/* New Password */}
-              <div className="flex flex-col gap-1.5 text-start">
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">{isAr ? "كلمة المرور الجديدة" : "New password"}</label>
                 <div className="relative">
                   <input
                     type={showNewPw ? "text" : "password"}
-                    placeholder={isAr ? "كلمة مرور جديدة (اختياري)" : "New password (optional)"}
+                    placeholder="••••••••••••"
                     autoComplete="new-password"
                     className={fieldBase + " pe-10"}
                     {...register("new_password")}
@@ -658,22 +913,22 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                     type="button"
                     tabIndex={-1}
                     onClick={() => setShowNewPw((p) => !p)}
-                    className="absolute end-0 top-1/2 -translate-y-1/2 p-1.5 text-[#A3A3A3] hover:text-[#525252] transition-colors"
+                    className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showNewPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
 
               {/* Confirm Password */}
-              <div className="flex flex-col gap-1.5 text-start">
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "تأكيد كلمة المرور الجديدة" : "Confirm new password"}
+                  {isAr ? "تأكيد كلمة المرور الجديدة *" : "Confirm password *"}
                 </label>
                 <div className="relative">
                   <input
                     type={showConfirmPw ? "text" : "password"}
-                    placeholder={isAr ? "تأكيد كلمة المرور الجديدة (اختياري)" : "Confirm new password (optional)"}
+                    placeholder="••••••••••••"
                     autoComplete="new-password"
                     className={fieldBase + " pe-10"}
                     {...register("confirm_password")}
@@ -682,20 +937,20 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                     type="button"
                     tabIndex={-1}
                     onClick={() => setShowConfirmPw((p) => !p)}
-                    className="absolute end-0 top-1/2 -translate-y-1/2 p-1.5 text-[#A3A3A3] hover:text-[#525252] transition-colors"
+                    className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showConfirmPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
 
               {/* Country */}
-              <div className="flex flex-col gap-1.5 text-start">
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "البلد" : "Country"} <span className="text-red-500">*</span>
+                  {isAr ? "البلد *" : "Country *"}
                 </label>
                 <div className="relative w-full">
-                  <select required className={selectBase} {...register("country_id")}>
+                  <select className={selectBase} {...register("country_id")}>
                     <option value="" disabled>{isAr ? "اختر البلد" : "Select Country"}</option>
                     {countries.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
@@ -712,13 +967,19 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
               </div>
 
               {/* City */}
-              <div className="flex flex-col gap-1.5 text-start">
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "المدينة" : "City"} <span className="text-red-500">*</span>
+                  {isAr ? "المدينة *" : "City *"}
                 </label>
                 <div className="relative w-full">
-                  <select required className={selectBase} {...register("city_id")} disabled={isMounted ? !selectedCountryId : false}>
-                    <option value="" disabled>{isAr ? "اختر المدينة" : "Select City"}</option>
+                  <select className={selectBase} {...register("city_id")} disabled={cityDisabled} suppressHydrationWarning>
+                    {cities.length === 0 ? (
+                      <option value="" disabled>
+                        {computedSelectedCountryId ? (isAr ? "لا توجد مدن" : "No cities found") : isAr ? "اختر البلد أولاً" : "Select a country first"}
+                      </option>
+                    ) : (
+                      <option value="" disabled>{isAr ? "اختر المدينة" : "Select City"}</option>
+                    )}
                     {cities.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -734,9 +995,9 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
               </div>
 
               {/* Phone with dial code */}
-              <div className="flex flex-col gap-1.5 text-start">
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "رقم الهاتف" : "Phone"} <span className="text-red-500">*</span>
+                  {isAr ? "رقم الهاتف *" : "Phone *"}
                 </label>
                 <div className="flex items-center border-b border-[#D4D4D4] py-2 focus-within:border-[#40A0CA] transition-colors">
                   <div className="relative flex items-center shrink-0 pe-2 me-2 border-e border-[#D4D4D4]">
@@ -745,12 +1006,10 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                         <option key={d.uniqueKey} value={d.code}>{d.flag} {d.code}</option>
                       ))}
                     </select>
-                    {isMounted && (
-                      <>
-                        <span className="text-base me-1">{activeDialObj.flag}</span>
-                        <span className="text-sm text-[#525252] font-medium">{activeDialObj.code}</span>
-                      </>
-                    )}
+                    <>
+                      <span className="text-base me-1">{activeDialObj.flag}</span>
+                      <span className="text-sm text-[#525252] font-medium">{activeDialObj.code}</span>
+                    </>
                     <Image
                       src="/portfolio/arrow-down.svg"
                       alt="arrow"
@@ -759,30 +1018,30 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
                       className="h-4 w-4 text-[#A3A3A3] ms-1 pointer-events-none"
                     />
                   </div>
-                  <input type="tel" required dir={isAr ? "rtl" : "ltr"} className={`w-full min-w-0 bg-transparent text-sm text-[#525252] outline-none ${isAr ? "text-right" : "text-left"}`} {...register("phone")} />
+                  <input type="tel" dir={isAr ? "rtl" : "ltr"} className={`w-full min-w-0 bg-transparent text-sm text-[#525252] outline-none ${isAr ? "text-right" : "text-left"}`} {...register("phone")} />
                 </div>
               </div>
 
               {/* Postal Code */}
-              <div className="flex flex-col gap-1.5 text-start">
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">{isAr ? "الرمز البريدي" : "Postal Code"}</label>
                 <input type="text" className={fieldBase} {...register("postal_code")} />
               </div>
 
               {/* Number of Employees */}
-              <div className="flex flex-col gap-1.5 text-start">
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">{isAr ? "عدد الموظفين" : "Number Of Employees"}</label>
                 <input type="number" min={0} className={fieldBase} {...register("num_of_employees")} />
               </div>
 
               {/* Company Type */}
-              <div className="flex flex-col gap-1.5 text-start">
-                <label className="text-sm font-medium text-[#262626]">{isAr ? "تصنيف الشركة (القطاع)" : "Company Category (Sector)"}</label>
+              <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
+                <label className="text-sm font-medium text-[#262626]">{isAr ? "تصنيف الشركة (القطاع)" : "Type Of Company"}</label>
                 <div className="relative w-full">
                   <select className={selectBase} {...register("company_type_id")}>
                     <option value="">{isAr ? "اختر القطاع" : "Select Sector"}</option>
                     {companyTypes.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
+                      <option key={`${t.id}-${t.name}`} value={String(t.id)}>{t.name}</option>
                     ))}
                   </select>
                   <Image
@@ -796,12 +1055,11 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
               </div>
 
               {/* Description (full width) */}
-              <div className="flex flex-col gap-1.5 md:col-span-2 text-start">
+              <div className={`flex flex-col gap-1.5 md:col-span-2 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "وصف الشركة" : "Company Description"} <span className="text-red-500">*</span>
+                  {isAr ? "وصف الشركة *" : "Company Description *"}
                 </label>
                 <textarea
-                  required
                   rows={4}
                   className="w-full rounded-lg border border-[#E5E7EB] p-3 text-sm text-[#525252] bg-[#FAFAFA] outline-none transition-colors focus:border-[#40A0CA] focus:bg-white resize-y min-h-[100px] placeholder:text-[#A3A3A3]"
                   placeholder={isAr ? "أدخل وصف الشركة..." : "Enter company description..."}
@@ -812,70 +1070,127 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
           </div>
         </div>
 
-        {/* ==================== SOCIAL LINKS CARD ==================== */}
+        {/* ==================== COMPANY SOCIAL LINKS CARD ==================== */}
         <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
           <div className="px-8 pt-8 pb-4">
-            <h2 className="text-[22px] font-bold italic text-start bg-gradient-to-r from-[#032C44] via-[#0e5f83] to-[#41A0CA] bg-clip-text text-transparent">
+            <h2 className="text-xl font-bold text-start text-[#006EA8]">
               {isAr ? "روابط التواصل الاجتماعي" : "Company Social Links"}
             </h2>
           </div>
 
           <div className="px-8 pb-8">
-            {/* Buttons row */}
-            <div className="flex flex-wrap items-center gap-3">
-              <SocialLinkButton
-                icon={<FontAwesomeIcon icon={faFacebook} className="h-4 w-4" />}
-                label="Facebook"
-                variant="facebook"
-                isActive={!!watch("facebook")}
-              />
-              <SocialLinkButton
-                icon={<FontAwesomeIcon icon={faLinkedin} className="h-4 w-4" />}
-                label="LinkedIn"
-                variant="linkedin"
-                isActive={!!watch("linkedin")}
-              />
-              <SocialLinkButton
-                icon={<FontAwesomeIcon icon={faTwitter} className="h-4 w-4" />}
-                label="X"
-                variant="twitter"
-                isActive={!!watch("twitter_x")}
-              />
-              <SocialLinkButton
-                icon={<FontAwesomeIcon icon={faPinterest} className="h-4 w-4" />}
-                label="Pinterest"
-                variant="pinterest"
-                isActive={!!watch("pinterest")}
-              />
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {/* Facebook Button */}
+              <button
+                type="button"
+                onClick={() => setActiveSocial(activeSocial === 'facebook' ? null : 'facebook')}
+                className={`inline-flex items-center gap-3 h-11 px-5 rounded-lg border transition-all justify-center ${
+                  activeSocial === 'facebook'
+                    ? "bg-gradient-to-b from-[#006EA8] to-[#005685] text-white border-none shadow-[0_4px_12px_rgba(0,110,168,0.2)]"
+                    : "bg-white border-[#E6EEF4] text-[#525252] hover:border-[#006EA8] hover:text-[#006EA8]"
+                }`}
+              >
+                <img
+                  src="/Linked_accounts/Facebook.svg"
+                  alt="Facebook"
+                  className="h-4 w-4 shrink-0 transition-all"
+                  style={{
+                    filter: activeSocial === 'facebook' ? "brightness(0) invert(1)" : "none",
+                  }}
+                />
+                <span className="text-sm font-semibold">Facebook</span>
+              </button>
+
+              {/* LinkedIn Button */}
+              <button
+                type="button"
+                onClick={() => setActiveSocial(activeSocial === 'linkedin' ? null : 'linkedin')}
+                className={`inline-flex items-center gap-3 h-11 px-5 rounded-lg border transition-all justify-center ${
+                  activeSocial === 'linkedin'
+                    ? "bg-gradient-to-b from-[#006EA8] to-[#005685] text-white border-none shadow-[0_4px_12px_rgba(0,110,168,0.2)]"
+                    : "bg-white border-[#E6EEF4] text-[#525252] hover:border-[#006EA8] hover:text-[#006EA8]"
+                }`}
+              >
+                <img
+                  src="/Linked_accounts/LinkedIn.svg"
+                  alt="LinkedIn"
+                  className="h-4 w-4 shrink-0 transition-all"
+                  style={{
+                    filter: activeSocial === 'linkedin' ? "brightness(0) invert(1)" : "none",
+                  }}
+                />
+                <span className="text-sm font-semibold">LinkedIn</span>
+              </button>
+
+              {/* X Button */}
+              <button
+                type="button"
+                onClick={() => setActiveSocial(activeSocial === 'twitter' ? null : 'twitter')}
+                className={`inline-flex items-center gap-3 h-11 px-5 rounded-lg border transition-all justify-center ${
+                  activeSocial === 'twitter'
+                    ? "bg-gradient-to-b from-[#006EA8] to-[#005685] text-white border-none shadow-[0_4px_12px_rgba(0,110,168,0.2)]"
+                    : "bg-white border-[#E6EEF4] text-[#525252] hover:border-[#006EA8] hover:text-[#006EA8]"
+                }`}
+              >
+                <img
+                  src="/Linked_accounts/X.svg"
+                  alt="X"
+                  className="h-4 w-4 shrink-0 transition-all"
+                  style={{
+                    filter: activeSocial === 'twitter' ? "brightness(0) invert(1)" : "none",
+                  }}
+                />
+                <span className="text-sm font-semibold">X</span>
+              </button>
+
+              {/* Pinterest Button */}
+              <button
+                type="button"
+                onClick={() => setActiveSocial(activeSocial === 'pinterest' ? null : 'pinterest')}
+                className={`inline-flex items-center gap-3 h-11 px-5 rounded-lg border transition-all justify-center ${
+                  activeSocial === 'pinterest'
+                    ? "bg-gradient-to-b from-[#006EA8] to-[#005685] text-white border-none shadow-[0_4px_12px_rgba(0,110,168,0.2)]"
+                    : "bg-white border-[#E6EEF4] text-[#525252] hover:border-[#006EA8] hover:text-[#006EA8]"
+                }`}
+              >
+                <img
+                  src="/Linked_accounts/pinterest.svg"
+                  alt="Pinterest"
+                  className="h-4 w-4 shrink-0 transition-all"
+                  style={{
+                    filter: activeSocial === 'pinterest' ? "brightness(0) invert(1)" : "none",
+                  }}
+                />
+                <span className="text-sm font-semibold">Pinterest</span>
+              </button>
             </div>
 
-            {/* Input fields for social links */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 mt-6">
-              <div className="flex flex-col gap-1.5 text-start">
-                <label className="text-xs font-medium text-[#6B7280] flex items-center gap-1.5">
-                  <FontAwesomeIcon icon={faFacebook} className="h-3.5 w-3.5 text-[#1877F2]" /> Facebook
-                </label>
-                <input type="url" placeholder="https://facebook.com/company" className={fieldBase} {...register("facebook")} />
+            {/* Dynamic Editing Field */}
+            {activeSocial && (
+              <div className="mt-6 p-4 rounded-lg border border-[#E5E7EB] bg-[#FAFAFA] transition-all">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold text-[#006EA8] uppercase">
+                    {activeSocial === "facebook" && (isAr ? "رابط حساب فيسبوك للشركة" : "Company Facebook URL")}
+                    {activeSocial === "linkedin" && (isAr ? "رابط حساب LinkedIn للشركة" : "Company LinkedIn URL")}
+                    {activeSocial === "twitter" && (isAr ? "رابط حساب X (Twitter) للشركة" : "Company X (Twitter) URL")}
+                    {activeSocial === "pinterest" && (isAr ? "رابط حساب Pinterest للشركة" : "Company Pinterest URL")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSocial(null)}
+                    className="text-xs text-red-500 hover:text-red-600 font-semibold"
+                  >
+                    {isAr ? "إغلاق" : "Close"}
+                  </button>
+                </div>
+                <input
+                  type="url"
+                  placeholder={`https://${activeSocial === "twitter" ? "x" : activeSocial}.com/...`}
+                  className="w-full rounded-lg border border-[#D4D4D4] px-4 py-2.5 text-sm text-[#525252] bg-white outline-none focus:border-[#40A0CA]"
+                  {...register(activeSocial === "twitter" ? "twitter_x" : (activeSocial as any))}
+                />
               </div>
-              <div className="flex flex-col gap-1.5 text-start">
-                <label className="text-xs font-medium text-[#6B7280] flex items-center gap-1.5">
-                  <FontAwesomeIcon icon={faLinkedin} className="h-3.5 w-3.5 text-[#0A66C2]" /> LinkedIn
-                </label>
-                <input type="url" placeholder="https://linkedin.com/company/name" className={fieldBase} {...register("linkedin")} />
-              </div>
-              <div className="flex flex-col gap-1.5 text-start">
-                <label className="text-xs font-medium text-[#6B7280] flex items-center gap-1.5">
-                  <FontAwesomeIcon icon={faTwitter} className="h-3.5 w-3.5 text-black" /> X (Twitter)
-                </label>
-                <input type="url" placeholder="https://x.com/company" className={fieldBase} {...register("twitter_x")} />
-              </div>
-              <div className="flex flex-col gap-1.5 text-start">
-                <label className="text-xs font-medium text-[#6B7280] flex items-center gap-1.5">
-                  <FontAwesomeIcon icon={faPinterest} className="h-3.5 w-3.5 text-[#E60023]" /> Pinterest
-                </label>
-                <input type="url" placeholder="https://pinterest.com/company" className={fieldBase} {...register("pinterest")} />
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -891,7 +1206,7 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
               {errorMsg}
             </div>
           )}
-          <PrimaryButton type="submit" disabled={loading || isSubmitting} className="max-w-[220px] h-[48px] text-base font-semibold">
+          <PrimaryButton type="submit" disabled={loading || isSubmitting} className="max-w-[220px] h-[48px] text-base font-semibold shadow-[0_4px_14px_rgba(0,110,168,0.3)] bg-gradient-to-b from-[#006EA8] to-[#005685] hover:from-[#005685] hover:to-[#004066]">
             {loading || isSubmitting
               ? isAr
                 ? "جاري الحفظ..."
@@ -906,37 +1221,5 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
   );
 }
 
-// ============================================================================
-// Social Link Button Component
-// ============================================================================
-function SocialLinkButton({
-  icon,
-  label,
-  variant,
-  isActive,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  variant: "facebook" | "linkedin" | "twitter" | "pinterest";
-  isActive: boolean;
-}) {
-  const activeClasses = isActive
-    ? variant === "facebook"
-      ? "bg-[#1877F2] text-white shadow-[0_2px_8px_rgba(24,119,242,0.25)]"
-      : variant === "linkedin"
-      ? "bg-[#0A66C2] text-white shadow-[0_2px_8px_rgba(10,102,194,0.25)]"
-      : variant === "twitter"
-      ? "bg-black text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
-      : "bg-[#E60023] text-white shadow-[0_2px_8px_rgba(230,0,35,0.25)]"
-    : "bg-[#F5F5F5] text-[#737373] border border-[#E5E7EB]";
 
-  return (
-    <div
-      className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 ${activeClasses}`}
-    >
-      {icon}
-      <span>{label}</span>
-    </div>
-  );
-}
 

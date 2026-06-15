@@ -34,7 +34,7 @@ declare global {
   }
 }
 
-const AUTH_ROUTES = new Set(["sign-in", "sign-up", "forgot-password"])
+const AUTH_ROUTES = new Set(["sign-in", "sign-up", "forgot-password", "verify-email"])
 
 export function SiteChrome({ children, footer, session }: SiteChromeProps) {
   const pathname = usePathname() ?? "/"

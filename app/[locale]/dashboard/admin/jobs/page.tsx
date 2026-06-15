@@ -108,10 +108,20 @@ export default async function AdminJobsPage({
         try {
           const lastPage = Number(allRes.meta?.last_page ?? 1)
           if (lastPage > 1 && (jobs.length || 0) < totalCount) {
-            for (let p = 2; p <= lastPage; p++) {
-              const next = await getAdminJobs(token as string, undefined, p, locale).catch(() => ({ data: [], meta: { total: 0 } }))
-              for (const job of next.data) {
-                if (!jobs.find((j) => j.id === job.id)) jobs.push(job)
+            const pages: number[] = []
+            for (let p = 2; p <= lastPage; p++) pages.push(p)
+            const concurrency = 4
+            for (let i = 0; i < pages.length; i += concurrency) {
+              const batch = pages.slice(i, i + concurrency)
+              const results = await Promise.all(
+                batch.map((p) =>
+                  getAdminJobs(token as string, undefined, p, locale).catch(() => ({ data: [], meta: { total: 0 } }))
+                )
+              )
+              for (const next of results) {
+                for (const job of next.data) {
+                  if (!jobs.find((j) => j.id === job.id)) jobs.push(job)
+                }
               }
               if (jobs.length >= totalCount) break
             }
@@ -132,10 +142,18 @@ export default async function AdminJobsPage({
               const status = statuses[idx]
               const last = Number(results[idx].meta?.last_page ?? 1)
               if (last <= 1) continue
-              for (let p = 2; p <= last; p++) {
-                const pageRes = await getAdminJobs(token as string, status, p, locale).catch(() => ({ data: [], meta: { total: 0 } }))
-                for (const job of pageRes.data) {
-                  if (!jobs.find((j) => j.id === job.id)) jobs.push(job)
+              const pages: number[] = []
+              for (let p = 2; p <= last; p++) pages.push(p)
+              const concurrency = 3
+              for (let i = 0; i < pages.length; i += concurrency) {
+                const batch = pages.slice(i, i + concurrency)
+                const batchResults = await Promise.all(
+                  batch.map((p) => getAdminJobs(token as string, status, p, locale).catch(() => ({ data: [], meta: { total: 0 } })))
+                )
+                for (const pageRes of batchResults) {
+                  for (const job of pageRes.data) {
+                    if (!jobs.find((j) => j.id === job.id)) jobs.push(job)
+                  }
                 }
                 const newCollected = jobs.filter((j) => j.status === "approved" || j.status === "active").length
                 if (newCollected >= desiredApproved) break

@@ -324,6 +324,40 @@ export async function getCompanyStats(
     pending_applications: 0,
   }
 
+  // If caller provided a job list, try computing stats from it immediately
+  // This is used as a fast fallback by the dashboard page to avoid
+  // re-calling the upstream stats endpoint when we already have job data.
+  if (Array.isArray(jobs) && jobs.length > 0) {
+    try {
+      const enriched = await enrichJobsWithApplicationCounts(jobs, token, locale)
+
+      let computedApplications = enriched.reduce((sum, job) => sum + (job.applications_count ?? 0), 0)
+      let pendingApplications = parsed.pending_applications
+
+      if (computedApplications === 0 && enriched.length > 0) {
+        try {
+          const allApplications = await getAllCompanyApplications(token, locale, enriched)
+          computedApplications = allApplications.length
+          pendingApplications =
+            pendingApplications ||
+            allApplications.filter((application) => mapApplicationStatus(application.status) === "pending").length
+        } catch {
+          // ignore failures computing full applications list and fall through
+        }
+      }
+
+      return {
+        total_jobs: parsed.total_jobs || enriched.length,
+        total_applications: parsed.total_applications || computedApplications,
+        pending_applications: pendingApplications,
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[getCompanyStats] Fast compute from provided jobs failed, falling back to API:", err)
+      // fall through to API attempt below
+    }
+  }
+
   try {
     const response = await api.get<unknown>("/company/dashboard/stats", { token, locale })
     parsed = unwrapCompanyStats(response)

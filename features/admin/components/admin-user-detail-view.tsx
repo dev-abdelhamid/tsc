@@ -53,12 +53,43 @@ export function AdminUserDetailView({ user, locale }: { user: User; locale: stri
                 <span className="text-sm font-medium text-[#374151]">
                   {isAr ? "التحقق" : "Verified"}
                 </span>
-                <span className={cn(
-                  "px-3 py-1 rounded-full text-xs font-semibold",
-                  user.emailVerified ? "bg-[#DCFCE7] text-[#166534]" : "bg-[#FEE2E2] text-[#991B1B]"
-                )}>
-                  {user.emailVerified ? (isAr ? "مؤكد" : "Verified") : (isAr ? "غير مؤكد" : "Not Verified")}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className={cn(
+                    "px-3 py-1 rounded-full text-xs font-semibold",
+                    user.emailVerified ? "bg-[#DCFCE7] text-[#166534]" : "bg-[#FEE2E2] text-[#991B1B]"
+                  )}>
+                    {user.emailVerified ? (isAr ? "مؤكد" : "Verified") : (isAr ? "غير مؤكد" : "Not Verified")}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`/api/proxy/users/${user.id}/verify`, {
+                          method: 'POST',
+                          credentials: 'include',
+                          headers: { 'Accept-Language': locale }
+                        })
+                        if (!res.ok) {
+                          const err = await res.json().catch(() => ({}))
+                          alert(err.message || (isAr ? 'فشل تحديث التحقق' : 'Failed to update verification'))
+                          return
+                        }
+                        location.reload()
+                      } catch (e) {
+                        // eslint-disable-next-line no-console
+                        console.error('Verify toggle error', e)
+                        alert(isAr ? 'فشل الاتصال بالخادم' : 'Failed to contact server')
+                      }
+                    }}
+                    className={cn(
+                      "text-xs font-semibold px-3 py-1 rounded-lg",
+                      user.emailVerified ? "bg-white border border-gray-200 text-[#006EA8]" : "bg-[#006EA8] text-white"
+                    )}
+                  >
+                    {user.emailVerified ? (isAr ? 'إلغاء التحقق' : 'Unverify') : (isAr ? 'تأكيد الحساب' : 'Verify')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

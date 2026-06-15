@@ -7,6 +7,7 @@ import { formatNewsDate } from "@/features/news/lib/format-news-date"
 import { resolveNewsImageUrl } from "@/features/news/lib/resolve-news-image"
 import { NewsCalendarIcon, NewsEyebrowGlobe } from "@/features/news/components/news-icons"
 import { NewsReadMoreButton } from "@/features/news/components/news-read-more-button"
+import { PrimaryButton } from "@/components/ui/primary-button"
 import { cn } from "@/lib/utils"
 
 type NewsSectionProps = {
@@ -26,6 +27,7 @@ export async function NewsSection({ override }: NewsSectionProps) {
   const sideItems = items.slice(1, 4)
   const title = override?.title ?? t("title")
   const description = override?.description ?? t("description")
+  const isRtl = locale?.toString().startsWith("ar")
 
   if (!featured) return null
 
@@ -82,7 +84,6 @@ export async function NewsSection({ override }: NewsSectionProps) {
               locale,
               t(`items.${["second", "third", "fourth"][idx] ?? "second"}.date`)
             )
-
             return (
               <Link
                 key={item.id}
@@ -90,28 +91,44 @@ export async function NewsSection({ override }: NewsSectionProps) {
                 href={`/news/${item.slug}`}
                 className="group block overflow-visible rounded-2xl transition-opacity hover:opacity-95"
               >
-                <article className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-8">
-                  <Image
-                    src={resolveNewsImageUrl(item.image, idx + 1)}
-                    alt={item.title}
-                    width={223}
-                    height={223}
-                    className="h-[180px] w-full shrink-0 rounded-[14px] object-cover sm:h-[223px] sm:w-[223px]"
-                    unoptimized={resolveNewsImageUrl(item.image, idx + 1).startsWith("http")}
-                  />
-                  <div className="flex min-h-[180px] flex-1 flex-col justify-between gap-4 sm:min-h-[223px]">
+                <article
+                  className={cn(
+                    "grid grid-cols-1 gap-4 items-start",
+                    "lg:gap-8",
+                    // On large screens use 40% image / remaining for content
+                    "lg:grid-cols-[40%_1fr]",
+                    isRtl && "lg:grid-cols-[1fr_40%]"
+                  )}
+                >
+                  <div className={cn("overflow-hidden rounded-2xl shadow-sm", isRtl ? "order-2 lg:order-1" : "order-1")}>
+                    <Image
+                      src={resolveNewsImageUrl(item.image, idx + 1)}
+                      alt={item.title}
+                      width={480}
+                      height={320}
+                      className="h-[140px] w-full shrink-0 rounded-[14px] object-cover lg:h-[220px] lg:w-full"
+                      unoptimized={resolveNewsImageUrl(item.image, idx + 1).startsWith("http")}
+                    />
+                  </div>
+
+                  <div className={cn("flex flex-1 flex-col justify-between gap-4 p-2 lg:p-0", isRtl ? "text-right lg:text-right" : "text-left lg:text-left", isRtl ? "order-1 lg:order-2" : "order-2")}>
                     <div className="space-y-2">
-                      <h3 className="font-heading text-[20px] font-bold leading-[1.2] text-[#171717] transition-colors group-hover:text-[#006EA8] sm:text-[24px] lg:text-[28px]">
+                      <h3 className={cn(
+                        "font-heading font-bold leading-[1.2] transition-colors group-hover:text-[#006EA8]",
+                        "text-[18px] sm:text-[20px] lg:text-[24px]"
+                      )}>
                         {item.title}
                       </h3>
-                      <p className="line-clamp-3 text-[14px] leading-[1.35] text-[#525252] sm:text-[16px]">
+                      <p className="line-clamp-3 text-[14px] leading-[1.35] text-[#525252]">
                         {item.excerpt}
                       </p>
                     </div>
-                    <p className="inline-flex items-center gap-2 text-[14px] leading-[1.16] text-[#525252] sm:text-[16px]">
-                      <NewsCalendarIcon className="h-5 w-5 text-[#40A0CA]" />
-                      {dateLabel}
-                    </p>
+                    <div className="flex items-center justify-start gap-3">
+                      <p className={cn("inline-flex items-center gap-2 text-[13px] leading-[1.16] text-[#525252] sm:text-[14px]", isRtl ? "justify-end" : "justify-start")}>
+                        <NewsCalendarIcon className="h-5 w-5 text-[#40A0CA]" />
+                        {dateLabel}
+                      </p>
+                    </div>
                   </div>
                 </article>
               </Link>
@@ -122,15 +139,11 @@ export async function NewsSection({ override }: NewsSectionProps) {
 
       <StaggerInView className="mt-8 flex justify-center lg:justify-start">
         <StaggerItem>
-          <Link
-            locale={locale}
-            href="/news"
-            className={cn(
-              "inline-flex items-center gap-2 text-[16px] font-medium text-[#006EA8] underline-offset-4 hover:underline"
-            )}
-          >
-            {t("viewAll")}
-          </Link>
+          <PrimaryButton asChild className="h-[44px] w-auto px-6">
+            <Link locale={locale} href="/news">
+              {t("viewAll")}
+            </Link>
+          </PrimaryButton>
         </StaggerItem>
       </StaggerInView>
     </SectionShell>

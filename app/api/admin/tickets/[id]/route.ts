@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getSession, getCanonicalRole } from "@/lib/auth-token"
-import { getAdminTicket } from "@/lib/api/services/tickets.service"
+import { getAdminTicket, getAdminTickets } from "@/lib/api/services/tickets.service"
 import { normalizeRole } from "@/lib/auth-token"
 
 export async function GET(
@@ -64,8 +64,23 @@ export async function GET(
 
     // Fetch ticket using session access token only. Fail-fast on missing token.
     if (!session.accessToken) return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
-    const ticket = await getAdminTicket(Number(id), session.accessToken as string, locale)
-    return NextResponse.json({ data: ticket })
+    try {
+      const ticket = await getAdminTicket(Number(id), session.accessToken as string, locale)
+      return NextResponse.json({ data: ticket })
+    } catch (err: any) {
+      // If upstream doesn't expose a detail endpoint, fall back to fetching
+      // the tickets list and locate the requested id. This handles backends
+      // that only implement a list endpoint which already includes replies.
+      if (err && err.status === 404) {
+        try {
+          const list = await getAdminTickets(session.accessToken as string, 1, locale)
+          const found = (list.data || []).find((t: any) => Number(t.id) === Number(id))
+          if (found) return NextResponse.json({ data: found })
+        } catch {}
+        return NextResponse.json({ message: "Not found" }, { status: 404 })
+      }
+      throw err
+    }
   } catch (error) {
     console.error("[Admin Ticket Detail GET] Exception:", error)
     if (error && (error as any).status === 401) {

@@ -4,17 +4,25 @@ import { ApiError } from "@/lib/api/client"
 
 export async function POST(request: NextRequest) {
   try {
-    let body: Record<string, unknown> = {}
-    try { body = await request.json() } catch {}
-    if (!body || !body.email) {
+    let email = ""
+    // Prefer FormData (client sends FormData), then JSON, then query param
+    try {
+      const form = await request.formData()
+      email = String(form.get("email") || "")
+    } catch {}
+
+    if (!email) {
       try {
-        const form = await request.formData()
-        body = {}
-        form.forEach((v, k) => { body[k] = typeof v === "string" ? v : v })
+        const body = await request.json()
+        email = String((body as any).email || "")
       } catch {}
     }
+
+    try {
+      if (!email) email = String(request.nextUrl.searchParams.get("email") || "")
+    } catch {}
+
     const locale = request.headers.get("accept-language")?.split(",")[0] || "ar"
-    const email = String((body.email as string) || "")
     if (!email) return NextResponse.json({ message: "email missing" }, { status: 400 })
 
     await resendVerification(email, locale)

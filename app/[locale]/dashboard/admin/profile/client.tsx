@@ -70,7 +70,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
       })
       setAvatar(resolveAvatar(initialProfile.avatar))
     }
-  }, [])
+  }, [initialProfile])
 
   /* ── Handle avatar file selection ── */
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,17 +191,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
 
   return (
     <div className="space-y-8 pb-12" dir={isAr ? "rtl" : "ltr"}>
-      {/* ── Page heading ── */}
-      <div>
-        <h1 className={cn("text-2xl", gradientTitle)}>
-          {isAr ? "الملف الشخصي للمدير" : "Admin Profile"}
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {isAr
-            ? "تحديث معلومات حسابك الشخصي وصورتك وكلمة المرور"
-            : "Update your personal account info, photo, and password"}
-        </p>
-      </div>
+     
 
       <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
         {/* ── Left: Avatar card ── */}
@@ -254,7 +244,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
         </div>
 
         {/* ── Right: Forms ── */}
-        <div className="space-y-6">
+        <div>
           {/* Profile info form */}
           <form
             onSubmit={handleSaveProfile}
@@ -347,8 +337,10 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
               </PrimaryButton>
             </div>
           </form>
+        </div>
 
-          {/* Change password form */}
+        {/* ── Password (full width row) ── */}
+        <div className="lg:col-span-2">
           <form
             onSubmit={handleSavePassword}
             className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm space-y-6"

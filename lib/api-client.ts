@@ -3,13 +3,14 @@ export async function apiCall<T>(
   options: RequestInit = {}
 ): Promise<{data: T|null, error: string|null, status: number}> {
   try {
-    const res = await fetch(path, options)
-    
+    // Ensure cookies are sent with requests by default. Allow callers to
+    // override `credentials` in the `options` if needed.
+    const mergedOptions: RequestInit = { credentials: 'include', ...options }
+    const res = await fetch(path, mergedOptions)
+
+    // Do not perform aggressive client-side logout/redirect here. Return
+    // the 401 to callers so they can decide how to handle session expiry.
     if (res.status === 401) {
-      if (typeof window !== 'undefined') {
-        await fetch("/api/auth/logout", { method: "POST" }).catch(() => {})
-        window.location.href = "/sign-in"
-      }
       return { data: null, error: 'UNAUTHORIZED', status: 401 }
     }
 

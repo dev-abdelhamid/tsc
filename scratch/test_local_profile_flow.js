@@ -1,4 +1,4 @@
-const baseUrl = 'http://localhost:3000';
+const baseUrl = process.env.BASE_URL || 'http://localhost:3001';
 
 async function run() {
   console.log('1. Logging in locally as company test3@example.com...');
@@ -24,17 +24,20 @@ async function run() {
     return;
   }
 
-  console.log('\n2. Verifying session via /api/auth/session...');
-  const sessionRes = await fetch(`${baseUrl}/api/auth/session`, {
+  console.log('\n2. Verifying session via /api/auth/profile (session endpoint removed)...');
+  // The old /api/auth/session endpoint was removed. Verify by fetching profile using the cookie
+  const cookiePair = cookies.split(',').pop().split(';')[0].trim();
+  const sessionRes = await fetch(`${baseUrl}/api/auth/profile`, {
+    method: 'GET',
     headers: {
-      'Cookie': cookies,
+      'Cookie': cookiePair,
       'Accept-Language': 'ar'
     }
   });
 
-  console.log('Session Status:', sessionRes.status);
+  console.log('Profile Status:', sessionRes.status);
   const sessionData = await sessionRes.json();
-  console.log('Session Body:', JSON.stringify(sessionData, null, 2));
+  console.log('Profile Body:', JSON.stringify(sessionData, null, 2));
 
   console.log('\n3. Fetching profile via /api/auth/profile GET...');
   const profileGetRes = await fetch(`${baseUrl}/api/auth/profile`, {

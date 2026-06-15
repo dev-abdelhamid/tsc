@@ -33,7 +33,9 @@
         "emailLabel": "البريد الإلكتروني",
         "emailPlaceholder": "البريد الإلكتروني",
         "passwordLabel": "كلمة المرور",
-        "passwordPlaceholder": "كلمة المرور"
+        "passwordPlaceholder": "كلمة المرور",
+        "showPassword": "إظهار كلمة المرور",
+        "hidePassword": "إخفاء كلمة المرور"
       }
     },
     "signUp": {

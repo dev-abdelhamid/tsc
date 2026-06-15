@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { useAuth } from "@/hooks/use-auth"
 import { useLocale, useTranslations } from "next-intl"
@@ -9,6 +10,7 @@ import { AuthFieldGroup } from "@/features/auth/components/auth-field-group"
 import { AuthUserCompanyTabs } from "@/features/auth/components/auth-user-company-tabs"
 import Image from "next/image"
 import { Link } from "@/i18n/navigation"
+import { PrimaryButton } from "@/components/ui/primary-button"
 
 type FormValues = {
   email: string
@@ -16,9 +18,19 @@ type FormValues = {
 }
 
 export default function SignInPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignInContent />
+    </Suspense>
+  )
+}
+
+function SignInContent() {
   const t = useTranslations("Auth.signIn")
   const { signIn, isLoading, error: authError } = useAuth()
   const locale = useLocale()
+  const searchParams = useSearchParams()
+  const isVerified = searchParams.get("verified") === "1"
   const {
     register,
     handleSubmit,
@@ -63,20 +75,32 @@ export default function SignInPage() {
         </Link>
       }
     >
+      {/* Email verified success banner */}
+      {isVerified && (
+        <div className="flex items-center gap-2 rounded-lg border border-green-400/40 bg-green-950/40 px-3 py-2 text-sm text-green-300">
+          <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          {locale === "ar" ? "تم تأكيد بريدك الإلكتروني بنجاح! يمكنك الآن تسجيل الدخول." : "Your email has been verified! You can now sign in."}
+        </div>
+      )}
       <form onSubmit={handleSubmit(onSubmit)} className="flex w-full flex-col gap-4">
         <AuthFieldGroup>
           <div className="space-y-1">
-            <label className="flex h-[52px] items-center gap-2 border-b border-white py-4">
-              <Image src="/auth/email.svg" alt="" width={20} height={20} aria-hidden />
-              <input
-                {...register("email", {
-                  required: true,
-                  pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                })}
-                type="email"
-                placeholder={t("fields.emailPlaceholder")}
-                className="w-full bg-transparent text-base leading-6 text-white placeholder:text-white/60 focus:outline-none"
-              />
+            <label className="auth-field block">
+              <div className="auth-input-wrap">
+                <Image src="/auth/email.svg" alt="" width={20} height={20} aria-hidden className="h-5 w-5 shrink-0 opacity-90" />
+                <input
+                  {...register("email", {
+                    required: true,
+                    pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  })}
+                  id="email"
+                  type="email"
+                  placeholder={t("fields.emailPlaceholder")}
+                  className="auth-input w-full text-base leading-6 text-white placeholder:text-white/60"
+                />
+              </div>
             </label>
             {errors.email && (
               <span className="text-xs text-red-300">
@@ -86,23 +110,25 @@ export default function SignInPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="flex h-[52px] items-center justify-between gap-2 border-b border-white py-4">
-              <div className="flex min-w-0 items-center gap-2 flex-1">
-                <Image src="/auth/password.svg" alt="" width={20} height={20} aria-hidden />
+            <label className="auth-field block">
+              <div className="auth-input-wrap">
+                <Image src="/auth/password.svg" alt="" width={20} height={20} aria-hidden className="h-5 w-5 shrink-0 opacity-90" />
                 <input
                   {...register("password", { required: true, minLength: 6 })}
+                  id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder={t("fields.passwordPlaceholder")}
-                  className="w-full bg-transparent text-base leading-6 text-white placeholder:text-white/60 focus:outline-none"
+                  className="auth-input w-full text-base leading-6 text-white placeholder:text-white/60"
                 />
+                <button
+                  type="button"
+                  className="cursor-pointer shrink-0 p-2 rounded-md hover:bg-white/6 transition focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[var(--ring)]"
+                  onClick={() => setShowPassword((p) => !p)}
+                  aria-label={showPassword ? (locale === "ar" ? "إخفاء كلمة المرور" : "Hide password") : (locale === "ar" ? "عرض كلمة المرور" : "Show password")}
+                >
+                  <Image src="/auth/eye.svg" alt="" width={20} height={20} aria-hidden />
+                </button>
               </div>
-              <button
-                type="button"
-                className="cursor-pointer shrink-0"
-                onClick={() => setShowPassword((p) => !p)}
-              >
-                <Image src="/auth/eye.svg" alt="" width={20} height={20} aria-hidden />
-              </button>
             </label>
             {errors.password && (
               <span className="text-xs text-red-300">
@@ -112,11 +138,7 @@ export default function SignInPage() {
           </div>
         </AuthFieldGroup>
 
-        <button
-          type="submit"
-          className="w-full rounded-md bg-[#40A0CA] py-3 text-white font-semibold shadow-md transition-all hover:bg-[#3490b8] active:translate-y-px disabled:opacity-60 flex items-center justify-center gap-2"
-          disabled={isLoading}
-        >
+        <PrimaryButton type="submit" disabled={isLoading} className="font-semibold">
           {isLoading ? (
             <>
               <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -128,7 +150,7 @@ export default function SignInPage() {
           ) : (
             t("submit")
           )}
-        </button>
+        </PrimaryButton>
 
         {(error || authError) && (
           <div className="mt-2 text-sm text-red-300 bg-red-950/40 border border-red-400/40 rounded-lg px-3 py-2">

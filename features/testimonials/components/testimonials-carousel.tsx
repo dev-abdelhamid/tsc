@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useRef, useState, useEffect } from "react"
 import Autoplay from "embla-carousel-autoplay"
 import Image from "next/image"
 import { motion } from "motion/react"
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import type { SuccessStory } from "@/lib/api/types"
 import { resolveStoryImageUrl } from "@/features/testimonials/lib/resolve-story-image"
 import { TestimonialArrowNext, TestimonialArrowPrev } from "@/features/testimonials/components/testimonial-arrows"
+import Portal from "@/components/ui/portal"
 
 
 export type TestimonialsLabels = {
@@ -67,15 +68,17 @@ function StoryMeta({
 // أزرار التنقل للشاشات الكبيرة (تظهر في مكانها الأصلي)
 function DesktopCarouselNav({ isRtl }: { isRtl: boolean }) {
   const { scrollPrev, scrollNext } = useCarousel()
+  const moveLeft = isRtl ? scrollPrev : scrollNext
+  const moveRight = isRtl ? scrollNext : scrollPrev
 
   const prevControl = (
     <button
       type="button"
       aria-label={isRtl ? "السابق" : "Previous slide"}
-      onClick={scrollPrev}
+      onClick={moveLeft}
       className="inline-flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-2 transition-opacity hover:opacity-80"
     >
-      <TestimonialArrowPrev />
+      <TestimonialArrowPrev rotate={isRtl} />
     </button>
   )
 
@@ -83,26 +86,17 @@ function DesktopCarouselNav({ isRtl }: { isRtl: boolean }) {
     <button
       type="button"
       aria-label={isRtl ? "التالي" : "Next slide"}
-      onClick={scrollNext}
+      onClick={moveRight}
       className="inline-flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-2 transition-opacity hover:opacity-80"
     >
-      <TestimonialArrowNext />
+      <TestimonialArrowNext rotate={isRtl} />
     </button>
   )
 
   return (
     <div className="hidden lg:flex items-center justify-center gap-3 sm:gap-4">
-      {isRtl ? (
-        <>
-          {nextControl}
-          {prevControl}
-        </>
-      ) : (
-        <>
-          {prevControl}
-          {nextControl}
-        </>
-      )}
+      {prevControl}
+      {nextControl}
     </div>
   )
 }
@@ -115,10 +109,10 @@ function MobileCarouselNav({ isRtl }: { isRtl: boolean }) {
     <button
       type="button"
       aria-label={isRtl ? "السابق" : "Previous slide"}
-      onClick={scrollPrev}
+      onClick={isRtl ? scrollPrev : scrollNext}
       className="inline-flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-3 transition-all hover:scale-110 active:scale-95 lg:hidden"
     >
-      <TestimonialArrowPrev />
+      <TestimonialArrowPrev rotate={isRtl} />
     </button>
   )
 
@@ -126,26 +120,17 @@ function MobileCarouselNav({ isRtl }: { isRtl: boolean }) {
     <button
       type="button"
       aria-label={isRtl ? "التالي" : "Next slide"}
-      onClick={scrollNext}
+      onClick={isRtl ? scrollNext : scrollPrev}
       className="inline-flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-3 transition-all hover:scale-110 active:scale-95 lg:hidden"
     >
-      <TestimonialArrowNext />
+      <TestimonialArrowNext rotate={isRtl} />
     </button>
   )
 
   return (
     <div className="flex items-center justify-center gap-6 mt-8 lg:hidden">
-      {isRtl ? (
-        <>
-          {nextControl}
-          {prevControl}
-        </>
-      ) : (
-        <>
-          {prevControl}
-          {nextControl}
-        </>
-      )}
+      {prevControl}
+      {nextControl}
     </div>
   )
 }
@@ -213,6 +198,7 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
 
           <div className="w-full overflow-visible px-1 py-3">
             <CarouselContent
+              noClip
               className={cn(
                 "ml-0 cursor-grab active:cursor-grabbing",
                 isRtl ? "-me-4 pe-0 ps-0 sm:-me-6" : "-ms-4 ps-0 pe-0 sm:-ms-6"
@@ -221,7 +207,6 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
               {items.map((story, index) => {
                 const imageSrc = resolveStoryImageUrl(story.image_url ?? story.image, index)
                 const { role, location } = parseRoleParts(story)
-
                 return (
                   <CarouselItem
                     key={story.id}
@@ -230,84 +215,17 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
                       isRtl ? "pe-4 sm:pe-6" : "ps-4 sm:ps-6"
                     )}
                   >
-                    <motion.article
-                      initial="rest"
-                      whileHover="hover"
-                      className="group mx-auto flex w-[min(92vw,445px)] shrink-0 flex-col gap-6 overflow-visible sm:gap-8"
-                    >
-                      <div className="relative mx-auto h-[min(72vw,445px)] w-full max-w-[445px] shrink-0 overflow-visible">
-                        <Image
-                          src={imageSrc}
-                          alt={story.name}
-                          width={445}
-                          height={445}
-                          className="h-full w-full rounded-[32px] object-cover"
-                          unoptimized={imageSrc.startsWith("http")}
-                          draggable={false}
-                        />
-                        <motion.div
-                          variants={{
-                            rest: { opacity: 0, y: 32, scale: 0.96, rotate: tilt },
-                            hover: {
-                              opacity: 1,
-                              y: 0,
-                              scale: 1,
-                              rotate: tilt,
-                              transition: {
-                                type: "spring",
-                                stiffness: 280,
-                                damping: 26,
-                                opacity: { duration: 0.2 },
-                              },
-                            },
-                          }}
-                          transition={{ duration: 0.25, ease: "easeOut" }}
-                          className={cn(
-                            "pointer-events-none absolute inset-x-0 bottom-0 top-auto z-20 mx-auto hidden lg:block",
-                            "h-[min(380px,94%)] w-[calc(100%-12px)] max-w-[445px] origin-center overflow-visible rounded-[32px]",
-                            "border-0 bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)]",
-                            "bg-size-[120px_120px,auto] bg-blend-[plus-lighter,normal] text-white",
-                            "shadow-[0px_42px_107px_rgba(123,190,255,0.34),0px_24px_32px_rgba(0,86,133,0.19),0px_10px_13px_rgba(0,86,133,0.22),0px_4px_5px_rgba(0,86,133,0.15),0px_0px_0px_4px_#E8F2FF,0px_0px_0px_5px_#FFFFFF,inset_0px_1px_18px_2px_#E8F2FF,inset_0px_1px_4px_2px_#C2DDFF]"
-                          )}
-                        >
-                          <Card className="h-full overflow-visible border-0 bg-transparent shadow-none">
-                            <CardContent
-                              className={cn(
-                                "flex h-full flex-col justify-between gap-8 p-6 text-start sm:gap-10 sm:p-8 lg:p-10",
-                                isRtl && "text-end"
-                              )}
-                            >
-                              <p className="text-[18px] leading-[1.5] sm:text-[20px] lg:text-[24px]">
-                                &ldquo;{story.quote}&rdquo;
-                              </p>
-                              <div className="space-y-4 sm:space-y-5">
-                                <StoryMeta role={role} location={location} inverted />
-                                <p className="text-[26px] font-bold leading-[1.5] sm:text-[32px] lg:text-[46px]">
-                                  {story.name}
-                                </p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      </div>
-
-                      {/* Mobile content */}
-                      <div
-                        className={cn(
-                          "flex w-full max-w-[445px] flex-col items-center gap-4 text-center",
-                          "[@media(hover:hover)]:lg:hidden",
-                          isRtl ? "lg:items-end lg:text-end" : "lg:items-start lg:text-start"
-                        )}
-                      >
-                        <p className="text-[14px] leading-[1.5] text-[#525252] sm:text-[16px]">
-                          &ldquo;{story.quote}&rdquo;
-                        </p>
-                        <StoryMeta role={role} location={location} muted />
-                        <p className="text-[24px] font-bold leading-[1.5] text-[#171717] sm:text-[28px]">
-                          {story.name}
-                        </p>
-                      </div>
-                    </motion.article>
+                    {
+                      // per-slide state for portal overlay
+                    }
+                    <StorySlideInner
+                      story={story}
+                      imageSrc={imageSrc}
+                      role={role}
+                      location={location}
+                      isRtl={isRtl}
+                      tilt={tilt}
+                    />
                   </CarouselItem>
                 )
               })}
@@ -319,5 +237,119 @@ export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCar
         </Carousel>
       </div>
     </SectionShell>
+  )
+}
+
+function StorySlideInner({
+  story,
+  imageSrc,
+  role,
+  location,
+  isRtl,
+  tilt,
+}: {
+  story: SuccessStory
+  imageSrc: string
+  role: string
+  location?: string
+  isRtl: boolean
+  tilt: number
+}) {
+  const imageRef = useRef<HTMLDivElement | null>(null)
+  const [hovered, setHovered] = useState(false)
+  const [rect, setRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
+
+  useEffect(() => {
+    function handleUpdate() {
+      if (imageRef.current && hovered) {
+        const r = imageRef.current.getBoundingClientRect()
+        setRect({ top: r.top, left: r.left, width: r.width, height: r.height })
+      }
+    }
+
+    window.addEventListener("resize", handleUpdate)
+    window.addEventListener("scroll", handleUpdate, { passive: true })
+    return () => {
+      window.removeEventListener("resize", handleUpdate)
+      window.removeEventListener("scroll", handleUpdate)
+    }
+  }, [hovered])
+
+  function handleEnter() {
+    if (imageRef.current) {
+      const r = imageRef.current.getBoundingClientRect()
+      setRect({ top: r.top, left: r.left, width: r.width, height: r.height })
+    }
+    setHovered(true)
+  }
+
+  function handleLeave() {
+    setHovered(false)
+  }
+
+  return (
+    <>
+      <motion.article
+        initial="rest"
+        className="group mx-auto flex w-[min(92vw,445px)] shrink-0 flex-col gap-6 overflow-visible sm:gap-8"
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+      >
+        <div ref={imageRef} className="relative mx-auto h-[min(72vw,445px)] w-full max-w-[445px] shrink-0 overflow-visible">
+          <Image
+            src={imageSrc}
+            alt={story.name}
+            width={445}
+            height={445}
+            className="h-full w-full rounded-[32px] object-cover"
+            unoptimized={imageSrc.startsWith("http")}
+            draggable={false}
+          />
+        </div>
+
+        {/* Portal overlay for desktop */}
+        {rect && hovered && typeof window !== "undefined" && window.innerWidth >= 1024 && (
+          <Portal>
+            <motion.div
+              initial={{ opacity: 0, y: 32, scale: 0.96, rotate: tilt }}
+              animate={hovered ? { opacity: 1, y: 0, scale: 1, rotate: tilt } : { opacity: 0, y: 32, scale: 0.96, rotate: tilt }}
+              transition={{ type: "spring", stiffness: 280, damping: 26, opacity: { duration: 0.2 } }}
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+              style={{ position: "fixed", top: rect.top, left: rect.left, width: rect.width, height: rect.height, zIndex: 30, pointerEvents: "auto" }}
+              className={cn(
+                "mx-auto hidden lg:block h-[min(380px,94%)] w-[calc(100%-12px)] max-w-[445px] origin-center overflow-visible rounded-[32px]",
+                "border-0 bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)]",
+                "bg-size-[120px_120px,auto] bg-blend-[plus-lighter,normal] text-white",
+                "shadow-[0px_42px_107px_rgba(123,190,255,0.34),0px_24px_32px_rgba(0,86,133,0.19),0px_10px_13px_rgba(0,86,133,0.22),0px_4px_5px_rgba(0,86,133,0.15),0px_0px_0px_4px_#E8F2FF,0px_0px_0px_5px_#FFFFFF,inset_0px_1px_18px_2px_#E8F2FF,inset_0px_1px_4px_2px_#C2DDFF]"
+              )}
+            >
+              <Card className="h-full overflow-visible border-0 bg-transparent shadow-none">
+                <CardContent className={cn("flex h-full flex-col justify-between gap-8 p-6 text-start sm:gap-10 sm:p-8 lg:p-10", isRtl && "text-end")}>
+                  <p className="text-[18px] leading-[1.5] sm:text-[20px] lg:text-[24px]">&ldquo;{story.quote}&rdquo;</p>
+                  <div className="space-y-4 sm:space-y-5">
+                    <StoryMeta role={role} location={location} inverted />
+                    <p className="text-[26px] font-bold leading-[1.5] sm:text-[32px] lg:text-[46px]">{story.name}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </Portal>
+        )}
+
+        {/* Mobile content */}
+        <div
+          className={cn(
+            "flex w-full max-w-[445px] flex-col items-center gap-4 text-center",
+            "[@media(hover:hover)]:lg:hidden",
+            isRtl ? "lg:items-end lg:text-end" : "lg:items-start lg:text-start"
+          )}
+        >
+          <p className="text-[14px] leading-[1.5] text-[#525252] sm:text-[16px]">&ldquo;{story.quote}&rdquo;</p>
+          <StoryMeta role={role} location={location} muted />
+          <p className="text-[24px] font-bold leading-[1.5] text-[#171717] sm:text-[28px]">{story.name}</p>
+        </div>
+      </motion.article>
+    </>
   )
 }

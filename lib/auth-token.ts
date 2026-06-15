@@ -7,15 +7,16 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://cv.subcodeco.com
 
 export interface SessionData {
   isLoggedIn: boolean
-  accessToken?: string
+  accessToken: string | null
   locale?: string
+  role?: "user" | "company" | "admin" | null
   user?: {
     id: number
     name: string
     email: string
     role: "user" | "company" | "admin"
     avatar?: string
-  }
+  } | null
 }
 
 // Server-side: read token from cookies() [Next.js server component]
@@ -53,7 +54,9 @@ export function setAuthCookies(res: NextResponse, token: string, role: string): 
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict' as const,
+    // Use 'lax' during development to avoid sameSite blocking when ports
+    // differ (dev servers may run on 3000/3001). Keep 'strict' in production.
+    sameSite: process.env.NODE_ENV === 'production' ? ('strict' as const) : ('lax' as const),
     maxAge: 60 * 60 * 24 * 7,   // 7 days
     path: '/'
   }
@@ -76,38 +79,126 @@ export function clearRefreshCookie(body: unknown = { success: true }, status = 2
 }
 
 // Compatibility helper: normalizeRole
-export function normalizeRole(roleInput: any): "user" | "company" | "admin" {
+export function normalizeRole(roleInput: unknown): "user" | "company" | "admin" {
   if (!roleInput) return "user"
-  const r = typeof roleInput === 'string' ? roleInput : (roleInput.role || roleInput.roles?.[0]?.name || roleInput.roles?.[0] || 'user')
-  const str = String(r).toLowerCase()
-  if (str.includes('admin')) return 'admin'
-  if (str.includes('company') || str.includes('employer')) return 'company'
+
+  // If caller passed a simple string role, handle quickly
+  if (typeof roleInput === 'string') {
+    const s = roleInput.toLowerCase()
+    if (s.includes('admin')) return 'admin'
+    if (s.includes('company') || s.includes('employer')) return 'company'
+    return 'user'
+  }
+
+  // If an object was passed, prefer explicit role fields instead of
+  // stringifying the whole object (which can contain unrelated values
+  // like company names that falsely match).
+  try {
+    const obj = roleInput as Record<string, unknown>
+    const candidates: string[] = []
+
+    if (obj == null || typeof obj !== 'object') return 'user'
+
+    if (typeof obj.role === 'string') candidates.push(obj.role)
+    if (typeof obj.type === 'string') candidates.push(obj.type)
+    if (typeof obj.name === 'string') candidates.push(obj.name)
+
+    if (obj.roles) {
+      if (Array.isArray(obj.roles)) {
+        for (const r of obj.roles) {
+          if (typeof r === 'string') candidates.push(r)
+          else if (r && typeof r.name === 'string') candidates.push(r.name)
+        }
+      } else if (typeof obj.roles === 'string') {
+        candidates.push(obj.roles)
+      } else if (typeof obj.roles === 'object' && obj.roles !== null) {
+        const rolesObj = obj.roles as Record<string, unknown>
+        if (typeof rolesObj.name === 'string') candidates.push(rolesObj.name)
+      }
+    }
+
+    for (const c of candidates) {
+      const s = String(c || '').toLowerCase()
+      if (s.includes('admin')) return 'admin'
+      if (s.includes('company') || s.includes('employer')) return 'company'
+    }
+  } catch {
+    // ignore and fallthrough to user
+  }
+
   return 'user'
 }
 
 // Compatibility helper: getSession
 export async function getSession(): Promise<SessionData> {
   const token = await getTokenFromCookie()
-  const role = await getRoleFromCookie()
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      console.log('getSession: tokenPreview', token ? String(token).slice(0, 8) + '...' : null)
+    } catch {}
+  }
+  // const role intentionally not read here; server will attempt an
+  // upstream profile fetch when a token exists and fall back to
+  // returning a minimal session if the profile call fails.
   
   if (!token) {
-    return { isLoggedIn: false }
+    return { isLoggedIn: false, accessToken: null, user: null, role: null }
   }
-  
-  return {
-    isLoggedIn: true,
-    accessToken: token,
-    user: {
-      id: 0,
-      name: "",
-      email: "",
-      role: normalizeRole(role)
+  // Try to fetch a server-side profile for richer SSR state. If the
+  // upstream profile call fails (network / 401 / etc.) return a minimal
+  // session object with `isLoggedIn: true` and the `accessToken` so
+  // server-side callers can still call the backend directly. We avoid
+  // returning a stub user with `id: 0` since `0` is falsey and causes
+  // downstream UI mismatches during hydration.
+  try {
+    // Propagate the request locale when calling the upstream API so the
+    // backend can validate/resolve localized resources correctly.
+    let acceptLang = 'ar'
+    try {
+      const { headers } = await import('next/headers')
+      const h = await headers()
+      acceptLang = h.get('accept-language')?.split(',')[0] || acceptLang
+    } catch {}
+
+    const { data: profile, error, status } = await callBackend<Record<string, unknown>>('/auth/profile', { method: 'GET', headers: { 'Accept-Language': acceptLang } }, token)
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        console.log('getSession: profile fetch', { status, hasProfile: !!profile, error })
+      } catch {}
     }
+    if (!error && profile) {
+        const userRaw = (profile && (profile.data || profile)) || null
+        if (userRaw) {
+          const ur = userRaw as unknown as { id?: number; name?: string; username?: string; email?: string; avatar?: string; avatar_url?: string; role?: string }
+
+          if (typeof ur.id === 'number' && !Number.isNaN(ur.id) && ur.id > 0) {
+            const r = normalizeRole(ur)
+            return {
+              isLoggedIn: true,
+              accessToken: token,
+              role: r,
+              user: {
+                id: ur.id,
+                name: ur.name || ur.username || "",
+                email: ur.email || "",
+                role: r,
+                avatar: ur.avatar || ur.avatar_url || undefined,
+              }
+            }
+          }
+        }
+    }
+  } catch {
+    // best-effort; fall back below
   }
+
+  // If we could not validate the token by fetching the upstream profile
+  // treat the session as unauthenticated. Do NOT return a stub user.
+  return { isLoggedIn: false, accessToken: null, user: null, role: null }
 }
 
 // Compatibility helper: getCanonicalRole
-export async function getCanonicalRole(session: any): Promise<"user" | "company" | "admin"> {
+export async function getCanonicalRole(session: SessionData | undefined): Promise<"user" | "company" | "admin"> {
   if (session?.user?.role) return normalizeRole(session.user.role)
   const role = await getRoleFromCookie()
   return normalizeRole(role)
@@ -181,7 +272,7 @@ export function getDashboardPath(role: string): string {
  * Alias of normalizeRole for components that import resolveUserRole.
  * Accepts a user object or a raw role string.
  */
-export function resolveUserRole(userOrRole: any, fallback?: string): "user" | "company" | "admin" {
+export function resolveUserRole(userOrRole: unknown, fallback?: string): "user" | "company" | "admin" {
   return normalizeRole(userOrRole ?? fallback)
 }
 

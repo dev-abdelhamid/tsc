@@ -13,6 +13,21 @@ export interface AuthUser {
   roles?: string[]
 }
 
+// Small helper to abort fetches that take too long (client-side UX improvement)
+async function fetchWithTimeout(input: RequestInfo, init?: RequestInit, timeoutMs = 10000) {
+  const controller = new AbortController()
+  const id = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const merged = { ...(init || {}), signal: controller.signal } as RequestInit
+    const res = await fetch(input, merged)
+    clearTimeout(id)
+    return res
+  } catch (err) {
+    clearTimeout(id)
+    throw err
+  }
+}
+
 // ── Module-level cache shared across all hook instances ──────────────────────
 let cachedUser: AuthUser | null = null
 let isFetchingUser = false
@@ -68,7 +83,7 @@ export function useAuth() {
     isFetchingUser = true
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/auth/profile?t=${Date.now()}`, { cache: "no-store" })
+      const res = await fetchWithTimeout(`/api/auth/profile?t=${Date.now()}`, { cache: "no-store", credentials: "include" }, 10000)
       hasFetchedUser = true
       if (res.ok) {
         const data = await res.json()
@@ -81,8 +96,12 @@ export function useAuth() {
         const errData = await res.json().catch(() => ({}))
         setError(errData.message || "Failed to load profile")
       }
-    } catch {
-      setError("Network error fetching profile")
+    } catch (err) {
+      if ((err as any)?.name === 'AbortError') {
+        setError('Request timed out fetching profile')
+      } else {
+        setError("Network error fetching profile")
+      }
     } finally {
       isFetchingUser = false
       setIsLoading(false)
@@ -112,14 +131,17 @@ export function useAuth() {
   // ── Logout ──────────────────────────────────────────────────────────────────
   const logout = useCallback(async () => {
     setIsLoading(true)
+    // Logout: just call server route and clear client cache. Do NOT touch
+    // any client-side token templates or flags — persistence is server-side.
+
     try {
       await fetch("/api/auth/logout", { method: "POST" })
     } catch { /* ignore */ } finally {
       hasFetchedUser = true
       emit(null)
       setIsLoading(false)
-      router.push("/sign-in")
-      router.refresh()
+      try { router.push("/sign-in") } catch {}
+      try { router.refresh() } catch {}
     }
   }, [router])
 
@@ -128,21 +150,54 @@ export function useAuth() {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetchWithTimeout("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password, type }),
-      })
+      }, 10000)
       const data = await res.json()
+
+      // Email not verified – redirect to verify page
+      if (res.status === 403 && data?.pendingVerification) {
+        router.push(`/verify-email?email=${encodeURIComponent(data.email || email)}`)
+        return
+      }
+
       if (!res.ok) throw new Error(data.message || "Login failed")
-      const role = data.role || type
-      hasFetchedUser = false
-      emit(data.user)
-      fetchProfile(true).catch(() => {})
-      router.replace(`/dashboard/${role}`)
-      router.refresh()
+
+      // Wait a short time to allow the server to set HttpOnly cookies,
+      // then verify the session by re-fetching the profile via our
+      // proxied `/api/auth/profile` route (which reads cookies server-side).
+      await new Promise((r) => setTimeout(r, 100))
+      try {
+        await fetchProfile(true)
+        if (!cachedUser) {
+          const msg = "Failed to verify session after login"
+          setError(msg)
+          throw new Error(msg)
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to verify session after login")
+        throw err
+      }
+
+      const rawRole = data.role || (cachedUser && (cachedUser.role || (cachedUser.roles && cachedUser.roles[0]))) || type
+      const roleStr = String(rawRole || type).toLowerCase()
+      const dest = roleStr.includes('admin') ? '/dashboard/admin' : (roleStr.includes('company') || roleStr.includes('employer') ? '/dashboard/company' : '/dashboard/user')
+      try {
+        if (typeof window !== 'undefined') {
+          window.location.href = dest
+        } else {
+          await router.replace(dest)
+        }
+      } catch {}
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed")
+      if ((err as any)?.name === 'AbortError') {
+        setError('Login request timed out')
+      } else {
+        setError(err instanceof Error ? err.message : "Login failed")
+      }
       throw err
     } finally {
       setIsLoading(false)
@@ -164,25 +219,58 @@ export function useAuth() {
     setIsLoading(true)
     setError(null)
     try {
-      const formData = new FormData()
-      Object.entries(payload).forEach(([k, v]) => {
-        if (v !== undefined && v !== null) formData.append(k, String(v))
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       })
-      const res = await fetch("/api/auth/register", { method: "POST", body: formData })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || "Registration failed")
 
-      // If email verification required
+      // If server explicitly requests pending verification
       if (data.pendingVerification) {
+        router.push(`/verify-email?email=${encodeURIComponent(data.email || payload.email)}`)
+        return
+      }
+
+      const registeredUser = data.user || null
+
+      // Helper: determine whether user is verified (check common fields)
+      const userIsVerified = (u: any) => {
+        if (!u) return true
+        if (typeof u.emailVerified === 'boolean') return u.emailVerified
+        if (u.email_verified_at !== undefined) return Boolean(u.email_verified_at)
+        if (typeof u.email_verified === 'boolean') return u.email_verified
+        if (u.status && (u.status === 'pending' || u.status === 'inactive')) return false
+        return true
+      }
+
+      if (!userIsVerified(registeredUser)) {
         router.push(`/verify-email?email=${encodeURIComponent(payload.email)}`)
         return
       }
 
+      // Determine dashboard path from returned user role or fallback to requested type
+      const getDashboardPathFromUser = (u: any, fallback: string) => {
+        const raw = u?.role || (Array.isArray(u?.roles) && u.roles[0]) || fallback
+        const s = String(raw || fallback || 'user').toLowerCase()
+        if (s.includes('admin')) return '/dashboard/admin'
+        if (s.includes('company') || s.includes('employer')) return '/dashboard/company'
+        return '/dashboard/user'
+      }
+
       hasFetchedUser = false
-      if (data.user) emit(data.user)
-      fetchProfile(true).catch(() => {})
-      router.replace(`/dashboard/${payload.type}`)
-      router.refresh()
+      if (registeredUser) emit(registeredUser)
+      try {
+        await fetchProfile(true)
+      } catch {}
+      const dest = getDashboardPathFromUser(registeredUser, payload.type)
+      try {
+        await router.replace(dest)
+      } catch {}
+      try {
+        router.refresh()
+      } catch {}
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed")
       throw err
