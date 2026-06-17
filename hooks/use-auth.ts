@@ -82,8 +82,13 @@ export function useAuth() {
 
     isFetchingUser = true
     setIsLoading(true)
+    const clientLocale = pathname ? (pathname.split("/")[1] || "ar") : "ar"
     try {
-      const res = await fetchWithTimeout(`/api/auth/profile?t=${Date.now()}`, { cache: "no-store", credentials: "include" }, 10000)
+      const res = await fetchWithTimeout(`/api/auth/profile?t=${Date.now()}`, { 
+        cache: "no-store", 
+        credentials: "include",
+        headers: { "Accept-Language": clientLocale }
+      }, 10000)
       hasFetchedUser = true
       if (res.ok) {
         const data = await res.json()
@@ -134,8 +139,12 @@ export function useAuth() {
     // Logout: just call server route and clear client cache. Do NOT touch
     // any client-side token templates or flags — persistence is server-side.
 
+    const clientLocale = pathname ? (pathname.split("/")[1] || "ar") : "ar"
     try {
-      await fetch("/api/auth/logout", { method: "POST" })
+      await fetch("/api/auth/logout", { 
+        method: "POST",
+        headers: { "Accept-Language": clientLocale }
+      })
     } catch { /* ignore */ } finally {
       hasFetchedUser = true
       emit(null)
@@ -149,10 +158,14 @@ export function useAuth() {
   const signIn = useCallback(async (email: string, password: string, type = "user") => {
     setIsLoading(true)
     setError(null)
+    const clientLocale = pathname ? (pathname.split("/")[1] || "ar") : "ar"
     try {
       const res = await fetchWithTimeout("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept-Language": clientLocale
+        },
         credentials: "include",
         body: JSON.stringify({ email, password, type }),
       }, 10000)
@@ -218,10 +231,14 @@ export function useAuth() {
   }) => {
     setIsLoading(true)
     setError(null)
+    const clientLocale = pathname ? (pathname.split("/")[1] || "ar") : "ar"
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept-Language": clientLocale
+        },
         body: JSON.stringify(payload),
       })
       const data = await res.json()
@@ -283,10 +300,15 @@ export function useAuth() {
   const forgotPassword = useCallback(async (email: string) => {
     setIsLoading(true)
     setError(null)
+    const clientLocale = pathname ? (pathname.split("/")[1] || "ar") : "ar"
     try {
       const formData = new FormData()
       formData.append("email", email)
-      const res = await fetch("/api/auth/forgot-password", { method: "POST", body: formData })
+      const res = await fetch("/api/auth/forgot-password", { 
+        method: "POST", 
+        headers: { "Accept-Language": clientLocale },
+        body: formData 
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || "Failed to send reset email")
     } catch (err) {
@@ -301,11 +323,16 @@ export function useAuth() {
   const verifyResetCode = useCallback(async (email: string, code: string): Promise<string> => {
     setIsLoading(true)
     setError(null)
+    const clientLocale = pathname ? (pathname.split("/")[1] || "ar") : "ar"
     try {
       const formData = new FormData()
       formData.append("email", email)
       formData.append("code", code)
-      const res = await fetch("/api/auth/verify-reset-code", { method: "POST", body: formData })
+      const res = await fetch("/api/auth/verify-reset-code", { 
+        method: "POST", 
+        headers: { "Accept-Language": clientLocale },
+        body: formData 
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || "Invalid code")
       return data?.data?.token || data?.token || ""
@@ -321,12 +348,17 @@ export function useAuth() {
   const resetPassword = useCallback(async (token: string, password: string, password_confirmation: string) => {
     setIsLoading(true)
     setError(null)
+    const clientLocale = pathname ? (pathname.split("/")[1] || "ar") : "ar"
     try {
       const formData = new FormData()
       formData.append("token", token)
       formData.append("password", password)
       formData.append("password_confirmation", password_confirmation)
-      const res = await fetch("/api/auth/reset-password", { method: "POST", body: formData })
+      const res = await fetch("/api/auth/reset-password", { 
+        method: "POST", 
+        headers: { "Accept-Language": clientLocale },
+        body: formData 
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || "Failed to reset password")
       router.push("/sign-in")
@@ -342,11 +374,16 @@ export function useAuth() {
   const verifyEmail = useCallback(async (email: string, code: string) => {
     setIsLoading(true)
     setError(null)
+    const clientLocale = pathname ? (pathname.split("/")[1] || "ar") : "ar"
     try {
       const formData = new FormData()
       formData.append("email", email)
       formData.append("code", code)
-      const res = await fetch("/api/auth/verify", { method: "POST", body: formData })
+      const res = await fetch("/api/auth/verify", { 
+        method: "POST", 
+        headers: { "Accept-Language": clientLocale },
+        body: formData 
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || "Verification failed")
       router.push("/sign-in?verified=1")
@@ -362,10 +399,15 @@ export function useAuth() {
   const resendVerification = useCallback(async (email: string) => {
     setIsLoading(true)
     setError(null)
+    const clientLocale = pathname ? (pathname.split("/")[1] || "ar") : "ar"
     try {
       const formData = new FormData()
       formData.append("email", email)
-      const res = await fetch("/api/auth/resend-verification", { method: "POST", body: formData })
+      const res = await fetch("/api/auth/resend-verification", { 
+        method: "POST", 
+        headers: { "Accept-Language": clientLocale },
+        body: formData 
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || "Failed to resend verification")
     } catch (err) {

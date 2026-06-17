@@ -316,11 +316,13 @@
     align-items: center;
     gap: 0.75rem;
     width: 100%;
-    padding: 0.6rem 0.9rem;
+    height: 52px;
+    padding: 0 0.9rem;
     border-radius: 0.625rem;
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.06);
     transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+    box-sizing: border-box;
   }
 
   .auth-input-wrap:focus-within {
@@ -339,8 +341,9 @@
     line-height: 1.25;
     color: inherit;
     outline: none;
+    height: 100%;
     -webkit-appearance: none;
-    -moz-appearance: textfield;
+    -moz-appearance: none;
     appearance: none;
   }
 

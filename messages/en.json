@@ -60,7 +60,7 @@
         "phonePlaceholder": "Phone number",
         "confirmPasswordPlaceholder": "Confirm password",
         "companyNamePlaceholder": "Company name",
-        "termsLabel": "I accept the terms and privacy policy"
+        "termsLabel": "I accept the <termsLink>terms</termsLink> and <privacyLink>privacy policy</privacyLink>"
       }
     },
     "forgotPassword": {

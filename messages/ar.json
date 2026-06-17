@@ -62,7 +62,7 @@
         "phonePlaceholder": "رقم الهاتف",
         "confirmPasswordPlaceholder": "تأكيد كلمة المرور",
         "companyNamePlaceholder": "اسم الشركة",
-        "termsLabel": "أوافق على الشروط وسياسة الخصوصية"
+        "termsLabel": "أوافق على <termsLink>الشروط</termsLink> و<privacyLink>سياسة الخصوصية</privacyLink>"
       }
     },
     "forgotPassword": {

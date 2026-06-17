@@ -96,9 +96,11 @@ export function AdminSettingsPanel({
   })
 
   const [socialsState, setSocialsState] = useState({
+    telegram: getSettingValue("telegram_url", ""),
+    youtube: getSettingValue("youtube_url", ""),
     facebook: getSettingValue("facebook_url", ""),
     linkedin: getSettingValue("linkedin_url", ""),
-    instagram: getSettingValue("instagram_url", ""),
+    twitter: getSettingValue("twitter_url", ""),
   })
 
   const [heroStatsState, setHeroStatsState] = useState({
@@ -116,9 +118,11 @@ export function AdminSettingsPanel({
     "contact_latitude",
     "contact_longitude",
     "google_maps_api_key",
+    "telegram_url",
+    "youtube_url",
     "facebook_url",
     "linkedin_url",
-    "instagram_url",
+    "twitter_url",
     "hero_stats",
   ]
   const otherSettings = settings.filter((s) => !knownKeys.includes(s.key))
@@ -213,9 +217,11 @@ export function AdminSettingsPanel({
     startTransition(async () => {
       try {
         const keys = [
-          { k: "facebook_url", v: socialsState.facebook },
-          { k: "linkedin_url", v: socialsState.linkedin },
-          { k: "instagram_url", v: socialsState.instagram },
+          { k: "telegram_url",  v: socialsState.telegram },
+          { k: "youtube_url",   v: socialsState.youtube },
+          { k: "facebook_url",  v: socialsState.facebook },
+          { k: "linkedin_url",  v: socialsState.linkedin },
+          { k: "twitter_url",   v: socialsState.twitter },
         ]
 
         let ok = true
@@ -495,39 +501,66 @@ export function AdminSettingsPanel({
             </div>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#374151] mb-1">Facebook URL</label>
-                <input
-                  type="url"
-                  value={socialsState.facebook}
-                  onChange={(e) => setSocialsState((prev) => ({ ...prev, facebook: e.target.value }))}
-                  placeholder="https://facebook.com/..."
-                  className="w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]"
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-[#374151] mb-1">Telegram URL</label>
+                  <input
+                    type="url"
+                    value={socialsState.telegram}
+                    onChange={(e) => setSocialsState((prev) => ({ ...prev, telegram: e.target.value }))}
+                    placeholder="https://t.me/..."
+                    className="w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#374151] mb-1">YouTube URL</label>
+                  <input
+                    type="url"
+                    value={socialsState.youtube}
+                    onChange={(e) => setSocialsState((prev) => ({ ...prev, youtube: e.target.value }))}
+                    placeholder="https://youtube.com/@..."
+                    className="w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-[#374151] mb-1">Facebook URL</label>
+                  <input
+                    type="url"
+                    value={socialsState.facebook}
+                    onChange={(e) => setSocialsState((prev) => ({ ...prev, facebook: e.target.value }))}
+                    placeholder="https://facebook.com/..."
+                    className="w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#374151] mb-1">LinkedIn URL</label>
+                  <input
+                    type="url"
+                    value={socialsState.linkedin}
+                    onChange={(e) => setSocialsState((prev) => ({ ...prev, linkedin: e.target.value }))}
+                    placeholder="https://linkedin.com/company/..."
+                    className="w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-1">LinkedIn URL</label>
+                <label className="block text-sm font-medium text-[#374151] mb-1">X (Twitter) URL</label>
                 <input
                   type="url"
-                  value={socialsState.linkedin}
-                  onChange={(e) => setSocialsState((prev) => ({ ...prev, linkedin: e.target.value }))}
-                  placeholder="https://linkedin.com/company/..."
-                  className="w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#374151] mb-1">Instagram URL</label>
-                <input
-                  type="url"
-                  value={socialsState.instagram}
-                  onChange={(e) => setSocialsState((prev) => ({ ...prev, instagram: e.target.value }))}
-                  placeholder="https://instagram.com/..."
+                  value={socialsState.twitter}
+                  onChange={(e) => setSocialsState((prev) => ({ ...prev, twitter: e.target.value }))}
+                  placeholder="https://x.com/..."
                   className="w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]"
                 />
               </div>
             </div>
+
           </div>
 
           <div className="flex justify-end gap-3 border-t border-[#E5E7EB] pt-4 mt-6">

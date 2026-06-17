@@ -5,13 +5,15 @@ import Image from "next/image"
 import { useForm } from "react-hook-form"
 import { useAuth } from "@/hooks/use-auth"
 import { AuthFieldGroup } from "./auth-field-group"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
+import { COUNTRIES as STATIC_COUNTRIES } from "@/lib/countries"
 
 type FormValues = {
   name: string
   email: string
   phone: string
+  phone_code: string
   password: string
   password_confirmation: string
   company_name?: string
@@ -33,6 +35,7 @@ type Props = {
   showPasswordLabel: string
   hidePasswordLabel: string
   submitLabel: string
+  initialCountries?: CountryOption[]
 }
 
 type CountryOption = {
@@ -64,19 +67,28 @@ export function SignUpTabForm({
   phonePlaceholder = "Phone",
   confirmPasswordPlaceholder = "Confirm password",
   companyNamePlaceholder = "Company name",
-  termsLabel = "I agree with Privacy Policy, Terms Of Service, Security Information",
+  termsLabel,
   showPasswordLabel,
   hidePasswordLabel,
   submitLabel,
+  initialCountries = [],
 }: Props) {
   const [activeTab, setActiveTab] = useState<"user" | "company">("user")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [countries, setCountries] = useState<CountryOption[]>([])
+  const [countries, setCountries] = useState<CountryOption[]>(initialCountries)
   const [selectedCountry, setSelectedCountry] = useState<CountryOption | null>(null)
+  const [isWindows, setIsWindows] = useState(false)
   const { signUp, loading, error } = useAuth()
   const locale = useLocale()
+  const t = useTranslations("Auth.signUp")
   const isRTL = locale === "ar"
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.navigator?.userAgent?.includes("Windows")) {
+      setIsWindows(true)
+    }
+  }, [])
 
   const {
     register,
@@ -85,11 +97,12 @@ export function SignUpTabForm({
     setValue,
     formState: { errors },
   } = useForm<FormValues>({
-    defaultValues: { accept_terms: true },
+    defaultValues: { accept_terms: true, phone_code: "+20", country_id: "1" },
   })
 
-  // Fetch countries
+  // Fetch countries if initialCountries is empty
   useEffect(() => {
+    if (countries.length > 0) return
     async function loadCountries() {
       try {
         const res = await fetch(`/api/countries?locale=${locale}`)
@@ -102,22 +115,44 @@ export function SignUpTabForm({
       }
     }
     loadCountries()
-  }, [locale])
+  }, [locale, countries.length])
 
   const acceptTerms = watch("accept_terms")
   const password = watch("password")
   const passwordConfirmation = watch("password_confirmation")
   const selectedCountryId = watch("country_id")
+  const selectedDialCode = watch("phone_code") || "+20"
 
-  // Update selected country object when country_id changes
+  // Update selected country object when country_id changes and sync phone dial code
   useEffect(() => {
     if (selectedCountryId && countries.length > 0) {
       const found = countries.find((c) => String(c.id) === String(selectedCountryId))
       setSelectedCountry(found || null)
-    }
-  }, [selectedCountryId, countries])
 
-  
+      // Sync phone dial code
+      if (found) {
+        const sc = STATIC_COUNTRIES.find(s => s.code.toLowerCase() === found.code.toLowerCase())
+        if (sc) {
+          setValue("phone_code", sc.dialCode)
+        }
+      }
+    }
+  }, [selectedCountryId, countries, setValue])
+
+  // Sync country selector when dial code changes
+  const handleDialCodeChange = (newDialCode: string) => {
+    setValue("phone_code", newDialCode)
+    
+    // Find matching country code from static countries
+    const staticC = STATIC_COUNTRIES.find((c) => c.dialCode === newDialCode)
+    if (staticC && countries.length > 0) {
+      // Find matching country in API countries list
+      const found = countries.find((c) => c.code.toLowerCase() === staticC.code.toLowerCase())
+      if (found) {
+        setValue("country_id", String(found.id))
+      }
+    }
+  }
 
   const passwordsMatch = !passwordConfirmation || password === passwordConfirmation
 
@@ -137,7 +172,7 @@ export function SignUpTabForm({
         ? values.company_name
         : values.name
     // Combine phone with selected country dial code when available
-    const fullPhone = phoneCode ? `${phoneCode}${values.phone}` : values.phone
+    const fullPhone = `${values.phone_code}${values.phone}`
 
     try {
       await signUp({
@@ -156,14 +191,12 @@ export function SignUpTabForm({
     }
   }
 
-  // Get country flag to display in phone field
-  const phoneFlag = selectedCountry?.flag
-    ? selectedCountry.flag
-    : selectedCountry?.code
-      ? countryCodeToFlag(selectedCountry.code)
-      : "🌐"
+  // Resolve dial code from static countries first, fallback to API fields
+  const staticCountry = selectedCountry?.code
+    ? STATIC_COUNTRIES.find((c) => c.code.toLowerCase() === selectedCountry.code.toLowerCase())
+    : null
 
-  const phoneCode = selectedCountry?.phone_code || ""
+  const phoneCode = staticCountry?.dialCode || selectedCountry?.phone_code || ""
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex w-full flex-col gap-4" noValidate>
@@ -263,25 +296,36 @@ export function SignUpTabForm({
           {/* Country Selector */}
           <div className="space-y-1">
             <label className="auth-field block text-white">
-              <div className="auth-input-wrap">
-                <span className="text-lg shrink-0 select-none" aria-hidden>
-                  {selectedCountry
-                    ? (selectedCountry.flag || countryCodeToFlag(selectedCountry.code))
-                    : "🌐"}
-                </span>
+              <div className="auth-input-wrap relative flex items-center justify-center cursor-pointer">
                 <select
                   {...register("country_id", { required: true })}
-                  className="auth-input w-full bg-transparent text-sm text-white [&_option]:bg-[#041d33] [&_option]:text-white"
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                 >
                   <option value="" disabled hidden>
                     {isRTL ? "الدولة" : "Country"}
                   </option>
-                  {countries.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {(c.flag || countryCodeToFlag(c.code)) + " " + c.name}
-                    </option>
-                  ))}
+                  {countries.map((c) => {
+                    const sc = STATIC_COUNTRIES.find((s) => s.code.toLowerCase() === c.code.toLowerCase())
+                    const flagStr = sc?.flag || c.flag || countryCodeToFlag(c.code)
+                    return (
+                      <option key={c.id} value={c.id} className="bg-[#041d33] text-white">
+                        {flagStr} {c.name}
+                      </option>
+                    )
+                  })}
                 </select>
+                <span className="text-xl select-none" aria-hidden>
+                  {selectedCountry
+                    ? (STATIC_COUNTRIES.find((sc) => sc.code.toLowerCase() === selectedCountry.code.toLowerCase())?.flag || selectedCountry.flag || countryCodeToFlag(selectedCountry.code))
+                    : "🌐"}
+                </span>
+                <Image 
+                  src="/portfolio/arrow-down.svg" 
+                  alt="arrow" 
+                  width={16} 
+                  height={16} 
+                  className="h-4 w-4 ms-1 pointer-events-none brightness-0 invert" 
+                />
               </div>
             </label>
             {errors.country_id && (
@@ -289,17 +333,37 @@ export function SignUpTabForm({
                 {isRTL ? "اختر الدولة" : "Select country"}
               </span>
             )}
-
-            
           </div>
 
           {/* Phone */}
           <div className="space-y-1">
             <label className="auth-field block">
               <div className="auth-input-wrap">
-                <span className="shrink-0 text-sm font-medium text-white/70 select-none">
-                  {phoneFlag}{phoneCode ? ` ${phoneCode}` : ""}
-                </span>
+                <div className="relative flex items-center shrink-0 pe-2 me-2 border-e border-white/10 h-6">
+                  <select
+                    {...register("phone_code")}
+                    value={selectedDialCode}
+                    onChange={(e) => handleDialCodeChange(e.target.value)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                  >
+                    {STATIC_COUNTRIES.map((c) => (
+                      <option key={`dial-${c.id}`} value={c.dialCode} className="bg-[#041d33] text-white">
+                        {c.flag} {c.dialCode} ({c.name})
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-base me-1">
+                    {STATIC_COUNTRIES.find((c) => c.dialCode === selectedDialCode)?.flag || "🌐"}
+                  </span>
+                  <span className="text-sm text-white font-medium">{selectedDialCode}</span>
+                  <Image 
+                    src="/portfolio/arrow-down.svg" 
+                    alt="arrow" 
+                    width={16} 
+                    height={16} 
+                    className="h-4 w-4 ms-1 pointer-events-none brightness-0 invert" 
+                  />
+                </div>
                 <input
                   {...register("phone", { required: true, minLength: 6 })}
                   type="tel"
@@ -387,7 +451,20 @@ export function SignUpTabForm({
           {...register("accept_terms", { required: true })}
           className="mt-0.5 h-4 w-4 shrink-0 accent-[#40A0CA] cursor-pointer"
         />
-        <span>{termsLabel}</span>
+        <span>
+          {t.rich("fields.termsLabel", {
+            termsLink: (chunks) => (
+              <a href={`/${locale}/terms`} target="_blank" rel="noopener noreferrer" className="text-[#40A0CA] underline hover:text-[#52b3dd] mx-0.5">
+                {chunks}
+              </a>
+            ),
+            privacyLink: (chunks) => (
+              <a href={`/${locale}/privacy`} target="_blank" rel="noopener noreferrer" className="text-[#40A0CA] underline hover:text-[#52b3dd] mx-0.5">
+                {chunks}
+              </a>
+            ),
+          })}
+        </span>
       </label>
 
       {/* Server error */}

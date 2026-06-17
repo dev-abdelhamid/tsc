@@ -100,7 +100,7 @@ export async function NewsSection({ override }: NewsSectionProps) {
                     isRtl && "lg:grid-cols-[1fr_60%]"
                   )}
                 >
-
+               
 
                   <div className={cn("flex flex-1 flex-col justify-between gap-4 p-2 lg:p-0", isRtl ? "text-right lg:text-right" : "text-left lg:text-left", isRtl ? "order-1 lg:order-2" : "order-2")}>
                     <div className="space-y-2">
@@ -123,7 +123,7 @@ export async function NewsSection({ override }: NewsSectionProps) {
                   </div>
 
 
-                  <div className={cn("overflow-hidden rounded-2xl shadow-sm", isRtl ? "order-2 lg:order-1" : "order-1")}>
+                     <div className={cn("overflow-hidden rounded-2xl shadow-sm", isRtl ? "order-2 lg:order-1" : "order-1")}>
                     <Image
                       src={resolveNewsImageUrl(item.image, idx + 1)}
                       alt={item.title}

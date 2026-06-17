@@ -3,6 +3,7 @@ import {
   AuthCardWrapper,
 } from "@/features/auth/components/auth-card-wrapper"
 import { SignUpTabForm } from "@/features/auth/components/sign-up-tab-form"
+import { getCountries } from "@/lib/api/services/auth.service"
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -12,6 +13,9 @@ export default async function SignUpPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
   const t = await getTranslations("Auth.signUp")
+
+  // Pre-fetch countries list on the server side
+  const countries = await getCountries(locale).catch(() => [])
 
   return (
     <AuthCardWrapper
@@ -36,8 +40,8 @@ export default async function SignUpPage({ params }: Props) {
         phonePlaceholder={t("fields.phonePlaceholder")}
         confirmPasswordPlaceholder={t("fields.confirmPasswordPlaceholder")}
         companyNamePlaceholder={t("fields.companyNamePlaceholder")}
-        termsLabel={t("fields.termsLabel")}
         submitLabel={t("submit")}
+        initialCountries={countries as any}
       />
     </AuthCardWrapper>
   )
