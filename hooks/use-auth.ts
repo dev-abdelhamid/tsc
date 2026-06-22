@@ -11,6 +11,9 @@ export interface AuthUser {
   avatar?: string
   role?: string
   roles?: string[]
+  company?: any
+  company_profile?: any
+  companyProfile?: any
 }
 
 // Small helper to abort fetches that take too long (client-side UX improvement)
@@ -32,6 +35,10 @@ async function fetchWithTimeout(input: RequestInfo, init?: RequestInit, timeoutM
 let cachedUser: AuthUser | null = null
 let isFetchingUser = false
 let hasFetchedUser = false
+/** True after SSR data has been seeded into the cache. Prevents the brief
+ *  flash of unauthenticated UI that occurs when the module-level cache is
+ *  empty on a fresh page load but the server already provided a user. */
+let isSeeded = false
 const listeners = new Set<(u: AuthUser | null) => void>()
 const refetchListeners = new Set<() => void>()
 
@@ -44,7 +51,23 @@ function emit(user: AuthUser | null) {
 export function invalidateSessionCache() {
   cachedUser = null
   hasFetchedUser = false
+  isSeeded = false
   refetchListeners.forEach((r) => r())
+}
+
+/**
+ * Seed the module-level session cache with data from SSR so that the first
+ * client render already has the correct auth state. Must be called BEFORE
+ * any useAuth/useSession hooks run (e.g. in a top-level useEffect in the
+ * root layout or SiteChrome). Seeding is a one-time operation per page load;
+ * subsequent calls are no-ops unless `invalidateSessionCache()` was called.
+ */
+export function seedSessionCache(user: AuthUser | null) {
+  if (isSeeded) return
+  isSeeded = true
+  cachedUser = user
+  hasFetchedUser = true
+  emit(user)
 }
 
 /** Update the cached user data without a refetch (e.g. after profile update) */
@@ -57,9 +80,6 @@ export function updateSessionUser(partial: Partial<AuthUser>) {
 
 // ── Main hook ─────────────────────────────────────────────────────────────────
 export function useAuth() {
-  const [user, setUser] = useState<AuthUser | null>(cachedUser)
-  const [isLoading, setIsLoading] = useState(!hasFetchedUser)
-  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const pathname = usePathname()
 
@@ -70,6 +90,15 @@ export function useAuth() {
     pathname.includes("/reset-password") || 
     pathname.includes("/verify")
   ) : false
+
+  const [user, setUser] = useState<AuthUser | null>(cachedUser)
+  const [isLoading, setIsLoading] = useState(() => {
+    // If we have cachedUser or have already fetched, we are not loading.
+    if (cachedUser || hasFetchedUser) return false
+    // If we are on an auth page, we do not fetch, so we are not loading.
+    return !isAuthPage
+  })
+  const [error, setError] = useState<string | null>(null)
 
   const fetchProfile = useCallback(async (force = false) => {
     if (hasFetchedUser && !force) {
@@ -93,6 +122,16 @@ export function useAuth() {
       if (res.ok) {
         const data = await res.json()
         const userObj = data?.data || data
+        if (userObj) {
+          const rawRole = userObj.role || (userObj.roles && userObj.roles[0]) || "user"
+          const roleStr = String(rawRole).toLowerCase()
+          const rNormalized = roleStr.includes('admin') ? 'admin' : (roleStr.includes('company') || roleStr.includes('employer') ? 'company' : 'user')
+          const cp = userObj.companyProfile || userObj.company_profile || userObj.company
+          const companyLogo = cp ? (cp.logoUrl || cp.logo || cp.logo_url || cp.avatar || cp.avatar_url) : undefined
+          if (rNormalized === 'company' && companyLogo) {
+            userObj.avatar = companyLogo
+          }
+        }
         emit(userObj)
         setError(null)
       } else if (res.status === 401) {
@@ -146,13 +185,25 @@ export function useAuth() {
         headers: { "Accept-Language": clientLocale }
       })
     } catch { /* ignore */ } finally {
+      // Clear client-side cache BEFORE navigating so the header/sidebar
+      // immediately reflect the logged-out state with no avatar flash.
+      cachedUser = null
       hasFetchedUser = true
+      isSeeded = false
       emit(null)
-      setIsLoading(false)
-      try { router.push("/sign-in") } catch {}
-      try { router.refresh() } catch {}
+
+      const targetPath = `/${clientLocale}/sign-in`
+      if (typeof window !== "undefined") {
+        // hard redirect avoids partial layout state issues
+        window.location.href = targetPath
+      } else {
+        setIsLoading(false)
+        // fallback for SSR
+        try { router.push(targetPath) } catch {}
+        try { router.refresh() } catch {}
+      }
     }
-  }, [router])
+  }, [router, pathname])
 
   // ── Sign In ─────────────────────────────────────────────────────────────────
   const signIn = useCallback(async (email: string, password: string, type = "user") => {
@@ -445,10 +496,17 @@ export function useAuth() {
  */
 export function useSession() {
   const { user, isLoading, isAuthenticated } = useAuth()
+  // `checked` should only be true when we have actually resolved the auth
+  // state. If the cache was seeded from SSR we consider it checked
+  // immediately. Otherwise, we must wait for `hasFetchedUser` to be true
+  // (set after the profile fetch completes or returns 401). Falling back to
+  // `!isLoading` alone can cause a premature `checked=true` on auth pages
+  // where no fetch runs, so we explicitly include `isSeeded`.
+  const checked = hasFetchedUser || isSeeded || !!user
   return {
     user,
     isLoggedIn: isAuthenticated,
     isLoading,
-    checked: !isLoading,
+    checked,
   }
 }

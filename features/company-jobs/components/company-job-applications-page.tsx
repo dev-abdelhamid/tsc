@@ -22,10 +22,13 @@ export async function CompanyJobApplicationsPage({
   const isRtl = locale === "ar"
   const t = await getTranslations("CompanyJobs")
 
-  const job = await getCompanyJob(jobId, accessToken, locale)
+  const [job, appsResult] = await Promise.all([
+    getCompanyJob(jobId, accessToken, locale),
+    getJobApplications(jobId, accessToken, 1, locale),
+  ])
   if (!job) notFound()
 
-  const { data: applications } = await getJobApplications(jobId, accessToken, 1, locale)
+  const applications = appsResult.data
   const jobTitle = getJobTitle(job, locale)
 
   const statusLabels: Record<string, string> = {

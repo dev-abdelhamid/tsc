@@ -35,6 +35,7 @@ function resolveAvatar(url?: string): string {
 
 export default function AdminProfileClient({ locale, initialProfile }: Props) {
   const isAr = locale === "ar"
+  const isDe = locale === "de"
 
   /* ── Profile form state ── */
   const [form, setForm] = useState({
@@ -97,7 +98,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
         })
         const avatarData = await avatarRes.json()
         if (!avatarRes.ok) {
-          throw new Error(avatarData.message || (isAr ? "فشل حفظ الصورة الشخصية" : "Failed to save avatar image"))
+          throw new Error(avatarData.message || (isAr ? "فشل حفظ الصورة الشخصية" : (isDe ? "Profilbild konnte nicht gespeichert werden" : "Failed to save avatar image")))
         }
         const updatedObj = avatarData.data || avatarData
         uploadedAvatarUrl = updatedObj.avatar || updatedObj.avatar_url || ""
@@ -116,7 +117,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
 
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        throw new Error(data.message || (isAr ? "فشل حفظ الملف الشخصي" : "Failed to save profile"))
+        throw new Error(data.message || (isAr ? "فشل حفظ الملف الشخصي" : (isDe ? "Profil konnte nicht gespeichert werden" : "Failed to save profile")))
       }
 
       // Sync updated avatar from response
@@ -131,9 +132,9 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
       if (newAvatar) setAvatar(resolveAvatar(newAvatar))
 
       setAvatarFile(null)
-      toast.success(isAr ? "تم حفظ الملف الشخصي بنجاح ✓" : "Profile saved successfully ✓")
+      toast.success(isAr ? "تم حفظ الملف الشخصي بنجاح ✓" : (isDe ? "Profil erfolgreich gespeichert ✓" : "Profile saved successfully ✓"))
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "حدث خطأ" : "An error occurred"))
+      toast.error(err.message || (isAr ? "حدث خطأ" : (isDe ? "Ein Fehler ist aufgetreten" : "An error occurred")))
     } finally {
       setSavingProfile(false)
     }
@@ -143,15 +144,15 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
   const handleSavePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!pwForm.current_password || !pwForm.new_password) {
-      toast.error(isAr ? "يرجى ملء جميع حقول كلمة المرور" : "Please fill in all password fields")
+      toast.error(isAr ? "يرجى ملء جميع حقول كلمة المرور" : (isDe ? "Bitte füllen Sie alle Passwortfelder aus" : "Please fill in all password fields"))
       return
     }
     if (pwForm.new_password !== pwForm.new_password_confirmation) {
-      toast.error(isAr ? "كلمات المرور الجديدة غير متطابقة" : "New passwords do not match")
+      toast.error(isAr ? "كلمات المرور الجديدة غير متطابقة" : (isDe ? "Neue Passwörter stimmen nicht überein" : "New passwords do not match"))
       return
     }
     if (pwForm.new_password.length < 8) {
-      toast.error(isAr ? "يجب أن تكون كلمة المرور 8 أحرف على الأقل" : "Password must be at least 8 characters")
+      toast.error(isAr ? "يجب أن تكون كلمة المرور 8 أحرف على الأقل" : (isDe ? "Passwort muss mindestens 8 Zeichen lang sein" : "Password must be at least 8 characters"))
       return
     }
 
@@ -173,13 +174,13 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
 
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        throw new Error(data.message || (isAr ? "فشل تغيير كلمة المرور" : "Failed to change password"))
+        throw new Error(data.message || (isAr ? "فشل تغيير كلمة المرور" : (isDe ? "Passwort konnte nicht geändert werden" : "Failed to change password")))
       }
 
       setPwForm({ current_password: "", new_password: "", new_password_confirmation: "" })
-      toast.success(isAr ? "تم تغيير كلمة المرور بنجاح ✓" : "Password changed successfully ✓")
+      toast.success(isAr ? "تم تغيير كلمة المرور بنجاح ✓" : (isDe ? "Passwort erfolgreich geändert ✓" : "Password changed successfully ✓"))
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "حدث خطأ" : "An error occurred"))
+      toast.error(err.message || (isAr ? "حدث خطأ" : (isDe ? "Ein Fehler ist aufgetreten" : "An error occurred")))
     } finally {
       setSavingPw(false)
     }
@@ -214,7 +215,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="absolute bottom-0 end-0 w-8 h-8 rounded-full bg-[#006EA8] text-white shadow-md flex items-center justify-center hover:bg-[#005685] transition-colors"
-              title={isAr ? "تغيير الصورة" : "Change photo"}
+              title={isAr ? "تغيير الصورة" : (isDe ? "Bild ändern" : "Change photo")}
             >
               <Camera className="w-4 h-4" />
             </button>
@@ -232,14 +233,16 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
             <p className="text-[17px] font-bold text-[#032C44]">{form.name || "—"}</p>
             <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#E4ECF5] px-3 py-1 text-xs font-bold text-[#006EA8]">
               <ShieldCheck className="h-3.5 w-3.5" />
-              {isAr ? "مدير النظام" : "System Admin"}
+              {isAr ? "مدير النظام" : (isDe ? "Systemadministrator" : "System Admin")}
             </span>
           </div>
 
           <p className="text-xs text-gray-400">
             {isAr
               ? "انقر على أيقونة الكاميرا لتغيير الصورة"
-              : "Click the camera icon to change your photo"}
+              : isDe
+                ? "Klicken Sie auf das Kamerasymbol, um Ihr Foto zu ändern"
+                : "Click the camera icon to change your photo"}
           </p>
         </div>
 
@@ -253,7 +256,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
             <div className="flex items-center gap-2 pb-3 border-b border-[#E5E7EB]">
               <User className="h-5 w-5 text-[#006EA8]" />
               <h2 className="font-bold text-[#111827]">
-                {isAr ? "المعلومات الشخصية" : "Personal Information"}
+                {isAr ? "المعلومات الشخصية" : (isDe ? "Persönliche Informationen" : "Personal Information")}
               </h2>
             </div>
 
@@ -261,7 +264,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
               {/* Name */}
               <div>
                 <label className="block text-sm font-semibold text-[#374151] mb-1.5">
-                  {isAr ? "الاسم الكامل" : "Full Name"}
+                  {isAr ? "الاسم الكامل" : (isDe ? "Vollständiger Name" : "Full Name")}
                 </label>
                 <div className="relative">
                   <User className={cn("absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none", isAr ? "right-3" : "left-3")} />
@@ -269,7 +272,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
                     type="text"
                     value={form.name}
                     onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                    placeholder={isAr ? "اسمك الكامل" : "Your full name"}
+                    placeholder={isAr ? "اسمك الكامل" : (isDe ? "Ihr vollständiger Name" : "Your full name")}
                     className={cn(
                       "w-full rounded-lg border border-[#E5E7EB] py-2.5 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]",
                       isAr ? "pr-9 pl-3" : "pl-9 pr-3"
@@ -281,7 +284,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
               {/* Email (read-only) */}
               <div>
                 <label className="block text-sm font-semibold text-[#374151] mb-1.5">
-                  {isAr ? "البريد الإلكتروني" : "Email Address"}
+                  {isAr ? "البريد الإلكتروني" : (isDe ? "E-Mail-Adresse" : "Email Address")}
                 </label>
                 <div className="relative">
                   <Mail className={cn("absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none", isAr ? "right-3" : "left-3")} />
@@ -296,14 +299,14 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
                   />
                 </div>
                 <p className="mt-1 text-xs text-gray-400">
-                  {isAr ? "لا يمكن تغيير البريد الإلكتروني" : "Email cannot be changed"}
+                  {isAr ? "لا يمكن تغيير البريد الإلكتروني" : (isDe ? "E-Mail kann nicht geändert werden" : "Email cannot be changed")}
                 </p>
               </div>
 
               {/* Phone */}
               <div>
                 <label className="block text-sm font-semibold text-[#374151] mb-1.5">
-                  {isAr ? "رقم الهاتف" : "Phone Number"}
+                  {isAr ? "رقم الهاتف" : (isDe ? "Telefonnummer" : "Phone Number")}
                 </label>
                 <div className="relative">
                   <Phone className={cn("absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none", isAr ? "right-3" : "left-3")} />
@@ -311,7 +314,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
                     type="tel"
                     value={form.phone}
                     onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                    placeholder={isAr ? "رقم هاتفك" : "Your phone number"}
+                    placeholder={isAr ? "رقم هاتفك" : (isDe ? "Ihre Telefonnummer" : "Your phone number")}
                     className={cn(
                       "w-full rounded-lg border border-[#E5E7EB] py-2.5 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]",
                       isAr ? "pr-9 pl-3" : "pl-9 pr-3"
@@ -326,12 +329,12 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
                 {savingProfile ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin me-2" />
-                    {isAr ? "جاري الحفظ..." : "Saving..."}
+                    {isAr ? "جاري الحفظ..." : (isDe ? "Wird gespeichert..." : "Saving...")}
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4 me-2" />
-                    {isAr ? "حفظ التغييرات" : "Save Changes"}
+                    {isAr ? "حفظ التغييرات" : (isDe ? "Änderungen speichern" : "Save Changes")}
                   </>
                 )}
               </PrimaryButton>
@@ -348,7 +351,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
             <div className="flex items-center gap-2 pb-3 border-b border-[#E5E7EB]">
               <Lock className="h-5 w-5 text-[#006EA8]" />
               <h2 className="font-bold text-[#111827]">
-                {isAr ? "تغيير كلمة المرور" : "Change Password"}
+                {isAr ? "تغيير كلمة المرور" : (isDe ? "Passwort ändern" : "Change Password")}
               </h2>
             </div>
 
@@ -356,7 +359,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
               {/* Current password */}
               <div className="sm:col-span-2">
                 <label className="block text-sm font-semibold text-[#374151] mb-1.5">
-                  {isAr ? "كلمة المرور الحالية" : "Current Password"}
+                  {isAr ? "كلمة المرور الحالية" : (isDe ? "Aktuelles Passwort" : "Current Password")}
                 </label>
                 <div className="relative">
                   <Lock className={cn("absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none", isAr ? "right-3" : "left-3")} />
@@ -364,7 +367,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
                     type={showPw.current ? "text" : "password"}
                     value={pwForm.current_password}
                     onChange={(e) => setPwForm((p) => ({ ...p, current_password: e.target.value }))}
-                    placeholder={isAr ? "أدخل كلمة المرور الحالية" : "Enter current password"}
+                    placeholder={isAr ? "أدخل كلمة المرور الحالية" : (isDe ? "Aktuelles Passwort eingeben" : "Enter current password")}
                     className={cn(
                       "w-full rounded-lg border border-[#E5E7EB] py-2.5 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]",
                       isAr ? "pr-9 pl-10" : "pl-9 pr-10"
@@ -383,7 +386,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
               {/* New password */}
               <div>
                 <label className="block text-sm font-semibold text-[#374151] mb-1.5">
-                  {isAr ? "كلمة المرور الجديدة" : "New Password"}
+                  {isAr ? "كلمة المرور الجديدة" : (isDe ? "Neues Passwort" : "New Password")}
                 </label>
                 <div className="relative">
                   <Lock className={cn("absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none", isAr ? "right-3" : "left-3")} />
@@ -391,7 +394,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
                     type={showPw.new ? "text" : "password"}
                     value={pwForm.new_password}
                     onChange={(e) => setPwForm((p) => ({ ...p, new_password: e.target.value }))}
-                    placeholder={isAr ? "كلمة مرور جديدة (8 أحرف+)" : "New password (8+ chars)"}
+                    placeholder={isAr ? "كلمة مرور جديدة (8 أحرف+)" : (isDe ? "Neues Passwort (8+ Zeichen)" : "New password (8+ chars)")}
                     className={cn(
                       "w-full rounded-lg border border-[#E5E7EB] py-2.5 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]",
                       isAr ? "pr-9 pl-10" : "pl-9 pr-10"
@@ -410,7 +413,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
               {/* Confirm new password */}
               <div>
                 <label className="block text-sm font-semibold text-[#374151] mb-1.5">
-                  {isAr ? "تأكيد كلمة المرور الجديدة" : "Confirm New Password"}
+                  {isAr ? "تأكيد كلمة المرور الجديدة" : (isDe ? "Neues Passwort bestätigen" : "Confirm New Password")}
                 </label>
                 <div className="relative">
                   <Lock className={cn("absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none", isAr ? "right-3" : "left-3")} />
@@ -418,7 +421,7 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
                     type={showPw.confirm ? "text" : "password"}
                     value={pwForm.new_password_confirmation}
                     onChange={(e) => setPwForm((p) => ({ ...p, new_password_confirmation: e.target.value }))}
-                    placeholder={isAr ? "أعد إدخال كلمة المرور الجديدة" : "Re-enter new password"}
+                    placeholder={isAr ? "أعد إدخال كلمة المرور الجديدة" : (isDe ? "Neues Passwort erneut eingeben" : "Re-enter new password")}
                     className={cn(
                       "w-full rounded-lg border border-[#E5E7EB] py-2.5 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]",
                       isAr ? "pr-9 pl-10" : "pl-9 pr-10"
@@ -444,12 +447,12 @@ export default function AdminProfileClient({ locale, initialProfile }: Props) {
                 {savingPw ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin me-2" />
-                    {isAr ? "جاري التغيير..." : "Changing..."}
+                    {isAr ? "جاري التغيير..." : (isDe ? "Wird geändert..." : "Changing...")}
                   </>
                 ) : (
                   <>
                     <Lock className="h-4 w-4 me-2" />
-                    {isAr ? "تغيير كلمة المرور" : "Change Password"}
+                    {isAr ? "تغيير كلمة المرور" : (isDe ? "Passwort ändern" : "Change Password")}
                   </>
                 )}
               </PrimaryButton>

@@ -7,6 +7,7 @@ import { invalidateSessionCache, updateSessionUser } from "@/hooks/use-auth"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import { resolveImageUrl } from "@/lib/utils"
 import { User as UserIcon, Eye, EyeOff } from "lucide-react"
+import { toast } from "sonner"
 
 type Props = {
   locale: string
@@ -30,6 +31,7 @@ const formatDateForInput = (dobString: any) => {
 
 export default function UserProfileClient({ locale, initialProfile }: Props) {
   const isAr = locale === "ar"
+  const isDe = locale === "de"
 
   const getInitialPhoneDetails = (fullPhone: string) => {
     let parsedPhone = fullPhone || ""
@@ -78,7 +80,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialProfile?.avatar ?? null)
-  const [message, setMessage] = useState("")
+  const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -108,7 +110,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
       try {
         const res = await fetch("/api/auth/profile", { headers: { "x-locale": locale } })
         const data = await res.json().catch(() => ({}))
-        if (!res.ok) throw new Error(data.message || "فشل جلب البيانات")
+        if (!res.ok) throw new Error(data.message || (isAr ? "فشل جلب البيانات" : (isDe ? "Daten konnten nicht geladen werden" : "Failed to fetch profile data")))
         if (!mounted) return
         const p: any = data.data || {}
         const userProfile = p.Userprofile || {}
@@ -207,15 +209,15 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    setMessage("")
+    setStatus(null)
     try {
       // 1. Update password if present
       if (newPassword) {
         if (newPassword !== confirmPassword) {
-          throw new Error(isAr ? "كلمتا المرور غير متطابقتين" : "Passwords do not match")
+          throw new Error(isAr ? "كلمتا المرور غير متطابقتين" : (isDe ? "Passwörter stimmen nicht überein" : "Passwords do not match"))
         }
         if (!currentPassword) {
-          throw new Error(isAr ? "يجب إدخال كلمة المرور الحالية" : "Current password is required")
+          throw new Error(isAr ? "يجب إدخال كلمة المرور الحالية" : (isDe ? "Aktuelles Passwort ist erforderlich" : "Current password is required"))
         }
         const passRes = await fetch("/api/auth/profile/password", {
           method: "POST",
@@ -228,7 +230,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
         })
         const passData = await passRes.json()
         if (!passRes.ok) {
-          throw new Error(passData.message || (isAr ? "فشل تحديث كلمة المرور" : "Failed to update password"))
+          throw new Error(passData.message || (isAr ? "فشل تحديث كلمة المرور" : (isDe ? "Passwort konnte nicht aktualisiert werden" : "Failed to update password")))
         }
       }
 
@@ -240,11 +242,11 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
         const avatarRes = await fetch("/api/auth/profile/avatar", {
           method: "POST",
           body: avatarFd,
-          headers: { "x-locale": locale },
+          headers: { "Accept-Language": locale, "x-locale": locale },
         })
         const avatarData = await avatarRes.json()
         if (!avatarRes.ok) {
-          throw new Error(avatarData.message || (isAr ? "فشل حفظ الصورة الشخصية" : "Failed to save avatar image"))
+          throw new Error(avatarData.message || (isAr ? "فشل حفظ الصورة الشخصية" : (isDe ? "Profilbild konnte nicht gespeichert werden" : "Failed to save avatar image")))
         }
         const updatedObj = avatarData.data || avatarData
         uploadedAvatarUrl = updatedObj.avatar || updatedObj.avatar_url || ""
@@ -271,10 +273,10 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
       const res = await fetch("/api/auth/profile", {
         method: "POST",
         body: form,
-        headers: { "x-locale": locale },
+        headers: { "Accept-Language": locale, "x-locale": locale },
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.message || "فشل حفظ البيانات")
+      if (!res.ok) throw new Error(data.message || (isAr ? "فشل حفظ البيانات" : (isDe ? "Daten konnten nicht gespeichert werden" : "Failed to save data")))
 
       const updatedUser: Record<string, unknown> = {}
       const userProfileObj = data.data?.Userprofile || data.data?.user_profile || data.data?.profile || {}
@@ -286,14 +288,16 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
       if (Object.keys(updatedUser).length > 0) updateSessionUser(updatedUser)
       invalidateSessionCache()
 
-      setMessage(locale === "ar" ? "تم حفظ البيانات بنجاح" : "Saved successfully")
+      const msg = isAr ? "تم حفظ البيانات بنجاح" : (isDe ? "Erfolgreich gespeichert" : "Saved successfully")
+      toast.success(msg)
       if (latestAvatar) setAvatarPreview(latestAvatar)
 
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
     } catch (err: unknown) {
-      setMessage(err instanceof Error ? err.message : (locale === "ar" ? "فشل حفظ البيانات" : "Failed to save"))
+      const errMsg = err instanceof Error ? err.message : (isAr ? "فشل حفظ البيانات" : (isDe ? "Speichern fehlgeschlagen" : "Failed to save"))
+      toast.error(errMsg)
     } finally {
       setSaving(false)
     }
@@ -346,22 +350,12 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
         }
       `}} />
 
-      {message && (
-        <div className={`p-4 rounded-lg text-sm font-medium border text-center ${
-          message.includes("فشل") || message.includes("Failed") || message.includes("الرجاء") || message.includes("Please")
-            ? "bg-red-50 text-red-700 border-red-200"
-            : "bg-green-50 text-green-700 border-green-200"
-        }`}>
-          {message}
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ==================== CARD: BASIC INFO ==================== */}
         <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
           <div className="px-8 pt-8 pb-4">
             <h2 className="text-xl font-bold text-[#006EA8]">
-              {isAr ? "البيانات الأساسية" : "Basic Info"}
+              {isAr ? "البيانات الأساسية" : (isDe ? "Basisdaten" : "Basic Info")}
             </h2>
           </div>
 
@@ -393,7 +387,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
               {/* First Name */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "الاسم الأول" : "First Name"}
+                  {isAr ? "الاسم الأول" : (isDe ? "Vorname" : "First Name")}
                 </label>
                 <input
                   type="text"
@@ -401,14 +395,14 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                   value={profile.first_name || ""}
                   onChange={handleChange}
                   className={fieldBase}
-                  placeholder={isAr ? "الاسم الأول" : "First Name"}
+                  placeholder={isAr ? "الاسم الأول" : (isDe ? "Vorname" : "First Name")}
                 />
               </div>
 
               {/* Last Name */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "اسم العائلة" : "Last Name"}
+                  {isAr ? "اسم العائلة" : (isDe ? "Nachname" : "Last Name")}
                 </label>
                 <input
                   type="text"
@@ -416,14 +410,14 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                   value={profile.last_name || ""}
                   onChange={handleChange}
                   className={fieldBase}
-                  placeholder={isAr ? "اسم العائلة" : "Last Name"}
+                  placeholder={isAr ? "اسم العائلة" : (isDe ? "Nachname" : "Last Name")}
                 />
               </div>
 
               {/* Email */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "البريد الإلكتروني" : "Email"}
+                  {isAr ? "البريد الإلكتروني" : (isDe ? "E-Mail-Adresse" : "Email")}
                 </label>
                 <input
                   type="email"
@@ -437,14 +431,14 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
               {/* Gender */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "الجنس" : "Gender"}
+                  {isAr ? "الجنس" : (isDe ? "Geschlecht" : "Gender")}
                 </label>
                 <div className="relative w-full">
                   <select name="gender" value={profile.gender || ""} onChange={handleChange} className={selectBase}>
-                    <option value="">{isAr ? "اختر" : "Select"}</option>
-                    <option value="male">{isAr ? "ذكر" : "Male"}</option>
-                    <option value="female">{isAr ? "أنثى" : "Female"}</option>
-                    <option value="other">{isAr ? "أخرى" : "Other"}</option>
+                    <option value="">{isAr ? "اختر" : (isDe ? "Auswählen" : "Select")}</option>
+                    <option value="male">{isAr ? "ذكر" : (isDe ? "Männlich" : "Male")}</option>
+                    <option value="female">{isAr ? "أنثى" : (isDe ? "Weiblich" : "Female")}</option>
+                    <option value="other">{isAr ? "أخرى" : (isDe ? "Andere" : "Other")}</option>
                   </select>
                   <Image src="/portfolio/arrow-down.svg" alt="arrow" width={20} height={20} className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2" />
                 </div>
@@ -453,7 +447,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
               {/* Date of Birth */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "تاريخ الميلاد" : "Date Of Birth"}
+                  {isAr ? "تاريخ الميلاد" : (isDe ? "Geburtsdatum" : "Date Of Birth")}
                 </label>
                 {/* Wrapper: relative so our SVG overlays the input and the
                     webkit-calendar-picker-indicator (made fully transparent +
@@ -478,11 +472,11 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
               {/* Country */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "البلد" : "Country"}
+                  {isAr ? "البلد" : (isDe ? "Land" : "Country")}
                 </label>
                 <div className="relative w-full">
                   <select name="country" value={profile.country_id || ""} onChange={handleChange} className={selectBase}>
-                    <option value="">{isAr ? "اختر البلد" : "Select Country"}</option>
+                    <option value="">{isAr ? "اختر البلد" : (isDe ? "Land auswählen" : "Select Country")}</option>
                     {countries.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -494,7 +488,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
               {/* Phone — dial-code selector on the RIGHT in RTL, LEFT in LTR */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "رقم الهاتف" : "Phone"}
+                  {isAr ? "رقم الهاتف" : (isDe ? "Telefonnummer" : "Phone")}
                 </label>
                 <div
                   className="flex items-center border-b border-[#D4D4D4] py-2.5 focus-within:border-[#40A0CA] transition-colors"
@@ -534,7 +528,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
               {/* Current Password */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "كلمة المرور الحالية" : "Current password"}
+                  {isAr ? "كلمة المرور الحالية" : (isDe ? "Aktuelles Passwort" : "Current password")}
                 </label>
                 <div className="relative w-full">
                   <input
@@ -553,7 +547,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
               {/* New Password */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "كلمة المرور الجديدة" : "New password"}
+                  {isAr ? "كلمة المرور الجديدة" : (isDe ? "Neues Passwort" : "New password")}
                 </label>
                 <div className="relative w-full">
                   <input
@@ -572,7 +566,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
               {/* Confirm Password */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "تأكيد كلمة المرور" : "Confirm password"} <span className="text-red-500">*</span>
+                  {isAr ? "تأكيد كلمة المرور" : (isDe ? "Passwort bestätigen" : "Confirm password")} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative w-full">
                   <input
@@ -591,11 +585,11 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
               {/* Category */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "التخصص" : "Category"}
+                  {isAr ? "التخصص" : (isDe ? "Bereich" : "Category")}
                 </label>
                 <div className="relative w-full">
                   <select name="category" value={profile.category_id || ""} onChange={handleChange} className={selectBase}>
-                    <option value="">{isAr ? "اختر التخصص" : "Select Category"}</option>
+                    <option value="">{isAr ? "اختر التخصص" : (isDe ? "Bereich auswählen" : "Select Category")}</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -607,7 +601,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
               {/* Sub Category */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "التخصص الفرعي" : "Sub Category"}
+                  {isAr ? "التخصص الفرعي" : (isDe ? "Fachrichtung" : "Sub Category")}
                 </label>
                 <div className="relative w-full">
                   <select
@@ -616,8 +610,9 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                     onChange={handleChange}
                     className={selectBase}
                     disabled={subCategories.length === 0}
+                    suppressHydrationWarning
                   >
-                    <option value="">{isAr ? "اختر التخصص الفرعي" : "Select Sub Category"}</option>
+                    <option value="">{isAr ? "اختر التخصص الفرعي" : (isDe ? "Fachrichtung auswählen" : "Select Sub Category")}</option>
                     {subCategories.map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
@@ -634,7 +629,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
         <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
           <div className="px-8 pt-8 pb-4">
             <h2 className="text-xl font-bold text-[#006EA8]">
-              {isAr ? "الحسابات المرتبطة" : "Linked accounts"}
+              {isAr ? "الحسابات المرتبطة" : (isDe ? "Verknüpfte Konten" : "Linked accounts")}
             </h2>
           </div>
 
@@ -678,7 +673,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                     onClick={() => setActiveSocial(null)}
                     className="text-xs text-[#A3A3A3] hover:text-red-500 font-medium transition-colors"
                   >
-                    {isAr ? "إغلاق" : "Close"}
+                    {isAr ? "إغلاق" : (isDe ? "Schließen" : "Close")}
                   </button>
                 </div>
                 <input
@@ -702,7 +697,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
             disabled={saving || fetching}
             className="w-auto min-w-[160px] max-w-[220px] h-[44px] px-8 text-sm font-semibold bg-gradient-to-b from-[#006EA8] to-[#005685] shadow-[0_4px_14px_rgba(0,110,168,0.3)] hover:from-[#005685] hover:to-[#004268]"
           >
-            {saving ? (isAr ? "جاري التحديث..." : "Updating...") : (isAr ? "تحديث" : "Update")}
+            {saving ? (isAr ? "جاري التحديث..." : (isDe ? "Aktualisierung..." : "Updating...")) : (isAr ? "تحديث" : (isDe ? "Aktualisieren" : "Update"))}
           </PrimaryButton>
         </div>
       </form>

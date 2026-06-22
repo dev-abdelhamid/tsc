@@ -6,7 +6,7 @@ import { useState, useTransition } from "react"
 import { useRouter } from "@/i18n/navigation"
 import { useTranslations } from "next-intl"
 import type { User } from "@/lib/api/types"
-import { deleteUserAction } from "@/features/admin/actions/admin-actions"
+import { deleteUserAction, suspendUserAction } from "@/features/admin/actions/admin-actions"
 import { AdminTableCell, AdminTableRow, AdminTableShell } from "./admin-table-shell"
 import { cn } from "@/lib/utils"
 
@@ -15,24 +15,31 @@ export function AdminCompaniesPanel({ companies, locale }: { companies: User[]; 
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const isAr = locale === "ar"
 
-  // Data is pre-filtered from the server (role="company"), no need to filter again
-  const filteredCompanies = companies
+  // Sort companies descending (latest registered first)
+  const sortedCompanies = [...companies].sort((a, b) => {
+    const idA = Number(a.id) || 0
+    const idB = Number(b.id) || 0
+    if (idB !== idA) return idB - idA
+    const dateA = new Date((a as any).createdAt || 0).getTime()
+    const dateB = new Date((b as any).createdAt || 0).getTime()
+    return dateB - dateA
+  })
 
   // Calculate company-specific statistics
-  const totalCompanies = filteredCompanies.length
-  const verifiedCompanies = filteredCompanies.filter((c) => c.emailVerified).length
-  const activeCompanies = filteredCompanies.filter((c) => c.status === "active").length
-  const verificationRate = totalCompanies > 0 ? Math.round((verifiedCompanies / totalCompanies) * 100) : 0
-  const activityRate = totalCompanies > 0 ? Math.round((activeCompanies / totalCompanies) * 100) : 0
+  const totalCompanies = sortedCompanies.length
+  const verifiedCompanies = sortedCompanies.filter((c) => c.emailVerified).length
+  const unverifiedCompanies = totalCompanies - verifiedCompanies
 
   const columns = [
-    { key: "name", label: t("columns.name"), className: "w-[28%]" },
-    { key: "email", label: t("columns.email"), className: "w-[24%]" },
-    { key: "phone", label: t("columns.phone"), className: "w-[18%]" },
-    { key: "country", label: t("columns.country"), className: "w-[15%]" },
-    { key: "status", label: t("columns.status"), className: "w-[10%]" },
-    { key: "actions", label: t("columns.actions"), className: "w-[5%]" },
+    { key: "name", label: t("columns.name"), className: "w-[20%]" },
+    { key: "email", label: t("columns.email"), className: "w-[20%]" },
+    { key: "phone", label: t("columns.phone"), className: "w-[12%]" },
+    { key: "country", label: t("columns.country"), className: "w-[12%]" },
+    { key: "createdAt", label: isAr ? "تاريخ التسجيل" : "Registration Date", className: "w-[12%]" },
+    { key: "verification", label: isAr ? "التحقق" : "Verification", className: "w-[12%]" },
+    { key: "actions", label: t("columns.actions"), className: "w-[12%]" },
   ]
 
   function handleDelete(companyId: number | string) {
@@ -42,6 +49,24 @@ export function AdminCompaniesPanel({ companies, locale }: { companies: User[]; 
       const result = await deleteUserAction(companyId, locale)
       if (!result.ok) {
         setError(result.message ?? t("error"))
+        return
+      }
+      router.refresh()
+    })
+  }
+
+  function handleToggleSuspend(companyId: number | string, currentStatus: string) {
+    const isSuspended = currentStatus === "suspended"
+    const confirmMsg = isAr
+      ? (isSuspended ? "هل تريد تفعيل حساب هذه الشركة؟" : "هل تريد تعليق حساب هذه الشركة؟")
+      : (isSuspended ? "Do you want to activate this company account?" : "Do you want to suspend this company account?")
+      
+    if (!confirm(confirmMsg)) return
+    setError(null)
+    startTransition(async () => {
+      const result = await suspendUserAction(companyId, !isSuspended, locale)
+      if (!result.ok) {
+        setError(result.message ?? (isAr ? "فشل تغيير حالة الشركة" : "Failed to change company status"))
         return
       }
       router.refresh()
@@ -61,18 +86,22 @@ export function AdminCompaniesPanel({ companies, locale }: { companies: User[]; 
         
         <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-sm">
           <div className="text-xs font-medium text-[#6B7280] mb-2">
-            {locale === "ar" ? "التحقق المؤكد" : "Verified"}
+            {locale === "ar" ? "الحسابات المؤكدة" : "Verified Accounts"}
           </div>
-          <div className="text-2xl font-bold text-[#059669]">{verificationRate}%</div>
-          <div className="text-xs text-[#6B7280]">{verifiedCompanies}/{totalCompanies}</div>
+          <div className="text-2xl font-bold text-[#059669]">{verifiedCompanies}</div>
+          <div className="text-xs text-[#6B7280]">
+            {locale === "ar" ? "مؤكد" : "Verified"}
+          </div>
         </div>
         
         <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-sm">
           <div className="text-xs font-medium text-[#6B7280] mb-2">
-            {locale === "ar" ? "نشط" : "Active"}
+            {locale === "ar" ? "الحسابات غير المؤكدة" : "Unverified Accounts"}
           </div>
-          <div className="text-2xl font-bold text-[#0891B2]">{activityRate}%</div>
-          <div className="text-xs text-[#6B7280]">{activeCompanies}/{totalCompanies}</div>
+          <div className="text-2xl font-bold text-[#D97706]">{unverifiedCompanies}</div>
+          <div className="text-xs text-[#6B7280]">
+            {locale === "ar" ? "غير مؤكد" : "Not Verified"}
+          </div>
         </div>
       </div>
 
@@ -81,12 +110,26 @@ export function AdminCompaniesPanel({ companies, locale }: { companies: User[]; 
       )}
 
       {/* Companies Table */}
-      <AdminTableShell columns={columns} isEmpty={filteredCompanies.length === 0} emptyMessage={t("empty")}>
-        {filteredCompanies.map((company, index) => {
+      <AdminTableShell columns={columns} isEmpty={sortedCompanies.length === 0} emptyMessage={t("empty")} isRTL={locale === "ar"}>
+        {sortedCompanies.map((company, index) => {
           const companyProfile = company.companyProfile || {}
+          const formattedDate = (() => {
+            const dateVal = (company as any).createdAt || (company as any).created_at
+            if (!dateVal) return "—"
+            try {
+              return new Date(dateVal).toLocaleDateString(locale, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })
+            } catch {
+              return "—"
+            }
+          })()
+
           return (
             <AdminTableRow key={company.id} striped={index % 2 === 1}>
-              <AdminTableCell className="w-[28%]">
+              <AdminTableCell className="w-[20%]">
                 <div className="flex items-center gap-3">
                   {company.avatar ? (
                     <Image
@@ -98,38 +141,50 @@ export function AdminCompaniesPanel({ companies, locale }: { companies: User[]; 
                       unoptimized
                     />
                   ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EBF5FB] text-sm font-bold text-[#006EA8]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EBF5FB] text-sm font-bold text-[#006EA8] shrink-0">
                       {(companyProfile.companyName || company.name)?.charAt(0) ?? "C"}
                     </div>
                   )}
-                  <div>
+                  <div className="min-w-0">
                     <Link
                       locale={locale}
                       href={`/dashboard/admin/companies/${company.id}`}
-                      className="font-medium hover:underline text-[#006EA8] block"
+                      className="font-medium hover:underline text-[#006EA8] block truncate"
                     >
                       {companyProfile.companyName || company.name}
                     </Link>
                     {companyProfile.ceoName && (
-                      <div className="text-xs text-[#6B7280]">{companyProfile.ceoName}</div>
+                      <div className="text-xs text-[#6B7280] truncate">{companyProfile.ceoName}</div>
                     )}
                   </div>
                 </div>
               </AdminTableCell>
-              <AdminTableCell className="w-[24%] text-xs">{company.email}</AdminTableCell>
-              <AdminTableCell className="w-[18%] text-xs">{company.phone || "—"}</AdminTableCell>
-              <AdminTableCell className="w-[15%] text-xs">
+              <AdminTableCell className="w-[20%] text-xs truncate">{company.email}</AdminTableCell>
+              <AdminTableCell className="w-[12%] text-xs">{company.phone || "—"}</AdminTableCell>
+              <AdminTableCell className="w-[12%] text-xs">
                 {company.country?.name || "—"}
               </AdminTableCell>
-              <AdminTableCell className="w-[10%]">
+              <AdminTableCell className="w-[12%] text-xs">
+                {formattedDate}
+              </AdminTableCell>
+              <AdminTableCell className="w-[12%]">
                 <span className={cn(
                   "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize",
-                  company.status === "active" ? "bg-[#DCFCE7] text-[#166534]" : "bg-[#FEE2E2] text-[#991B1B]"
+                  company.emailVerified ? "bg-[#DCFCE7] text-[#166534]" : "bg-[#FEE2E2] text-[#991B1B]"
                 )}>
-                  {company.status}
+                  {company.emailVerified ? (isAr ? "مؤكد" : "Verified") : (isAr ? "غير مؤكد" : "Not Verified")}
                 </span>
               </AdminTableCell>
-              <AdminTableCell className="w-[5%]">
+              <AdminTableCell className="w-[12%] flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => handleToggleSuspend(company.id, company.status || "active")}
+                  className="text-xs font-semibold text-amber-600 hover:underline disabled:opacity-50"
+                >
+                  {company.status === "suspended" ? (isAr ? "تفعيل" : "Activate") : (isAr ? "تعليق" : "Suspend")}
+                </button>
+                <span className="text-[#E5E7EB]">|</span>
                 <button
                   type="button"
                   disabled={pending}

@@ -634,8 +634,9 @@
     },
     "menu": {
       "applications": "الطلبات",
-      "review": "معاينة",
+      "review": "عرض",
       "stop": "إيقاف",
+      "activate": "تفعيل",
       "delete": "حذف"
     },
     "review": {

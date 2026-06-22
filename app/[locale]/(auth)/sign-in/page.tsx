@@ -69,11 +69,6 @@ function SignInContent() {
           onTabChange={setAccountType}
         />
       }
-      asideSlot={
-        <Link locale={locale} href="/forgot-password" className="text-sm text-white/80 hover:text-white">
-          {t("forgotPassword")}
-        </Link>
-      }
     >
       {/* Email verified success banner */}
       {isVerified && (
@@ -84,11 +79,11 @@ function SignInContent() {
           {locale === "ar" ? "تم تأكيد بريدك الإلكتروني بنجاح! يمكنك الآن تسجيل الدخول." : "Your email has been verified! You can now sign in."}
         </div>
       )}
-      <form onSubmit={handleSubmit(onSubmit)} className="flex w-full flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex w-full max-w-[470px] mx-auto flex-col gap-6">
         <AuthFieldGroup>
           <div className="space-y-1">
             <label className="auth-field block">
-              <div className="auth-input-wrap">
+              <div className="auth-input-underline-wrap">
                 <Image src="/auth/email.svg" alt="" width={20} height={20} aria-hidden className="h-5 w-5 shrink-0 opacity-90" />
                 <input
                   {...register("email", {
@@ -111,7 +106,7 @@ function SignInContent() {
 
           <div className="space-y-1">
             <label className="auth-field block">
-              <div className="auth-input-wrap">
+              <div className="auth-input-underline-wrap">
                 <Image src="/auth/password.svg" alt="" width={20} height={20} aria-hidden className="h-5 w-5 shrink-0 opacity-90" />
                 <input
                   {...register("password", { required: true, minLength: 6 })}
@@ -126,7 +121,7 @@ function SignInContent() {
                   onClick={() => setShowPassword((p) => !p)}
                   aria-label={showPassword ? (locale === "ar" ? "إخفاء كلمة المرور" : "Hide password") : (locale === "ar" ? "عرض كلمة المرور" : "Show password")}
                 >
-                  <Image src="/auth/eye.svg" alt="" width={20} height={20} aria-hidden />
+                  <Image src={showPassword ? "/auth/eye.svg" : "/auth/eye-off.svg"} alt="" width={20} height={20} aria-hidden />
                 </button>
               </div>
             </label>
@@ -152,8 +147,15 @@ function SignInContent() {
           )}
         </PrimaryButton>
 
+        {/* Forgot password – centered below button */}
+        <div className="text-center">
+          <Link locale={locale} href="/forgot-password" className="text-sm text-white/60 hover:text-white transition-colors">
+            {t("forgotPassword")}
+          </Link>
+        </div>
+
         {(error || authError) && (
-          <div className="mt-2 text-sm text-red-300 bg-red-950/40 border border-red-400/40 rounded-lg px-3 py-2">
+          <div className="text-sm text-red-300 bg-red-950/40 border border-red-400/40 rounded-lg px-3 py-2">
             {error || authError}
           </div>
         )}

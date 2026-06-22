@@ -43,19 +43,25 @@ export async function getCompanyJob(
 ): Promise<Job | null> {
   try {
     const response = await api.get<ApiResponse<Job>>(`/jobs/${id}`, { token, locale, next: { revalidate: 60 } })
-    const rawJob = response.data ?? response
+    // API may return { data: { job: {...}, related: [...] } } or { data: { id, ... } }
+    const payload = (response as any)?.data ?? response
+    const rawJob =
+      payload && typeof payload === "object" && !Array.isArray(payload) && "job" in payload
+        ? (payload as any).job
+        : payload
     return normalizeJob(rawJob, locale)
   } catch {
     return null
   }
 }
 
+
 export async function getCompanyJobs(
   token: string,
   page = 1,
   locale = "ar"
 ): Promise<{ data: Job[]; meta: PaginationMeta }> {
-  const response = await api.get<unknown>(`/jobs?page=${page}`, { token, locale, next: { revalidate: 60 } })
+  const response = await api.get<unknown>(`/jobs?page=${page}`, { token, locale, cache: "no-store" })
   const typedResponse = response as
     | { data?: unknown[]; meta?: PaginationMeta }
     | unknown[]
@@ -168,6 +174,18 @@ export async function stopJob(
   locale = "ar"
 ): Promise<Job> {
   const response = await api.patch<ApiResponse<Job>>(`/jobs/${id}/stop`, undefined, {
+    token,
+    locale,
+  })
+  return response.data ?? (response as unknown as Job)
+}
+
+export async function activateJob(
+  id: number,
+  token: string,
+  locale = "ar"
+): Promise<Job> {
+  const response = await api.patch<ApiResponse<Job>>(`/jobs/${id}/activate`, undefined, {
     token,
     locale,
   })

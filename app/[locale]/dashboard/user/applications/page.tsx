@@ -34,28 +34,31 @@ export default async function UserApplicationsPage({
   setRequestLocale(locale)
   const session = await getSession()
   const isAr = locale === "ar"
+  const isDe = locale === "de"
 
   if (!session.isLoggedIn || !session.accessToken) {
     redirect(`/${locale}/sign-in`)
   }
 
   const labels = {
-    title: isAr ? "طلباتي للوظائف" : "My job applications",
+    title: isAr ? "طلباتي للوظائف" : isDe ? "Meine Bewerbungen" : "My job applications",
     description: isAr
       ? "تابع جميع الطلبات والنتائج في مكان واحد"
-      : "Track every application and its current status in one place",
-    empty: isAr ? "لم تقدم على أي وظائف بعد" : "You have not applied to any jobs yet",
-    total: isAr ? "إجمالي الطلبات" : "Total applications",
-    pending: isAr ? "طلبات معلقة" : "Pending",
-    accepted: isAr ? "طلبات مقبولة" : "Accepted",
-    rejected: isAr ? "طلبات مرفوضة" : "Rejected",
-    viewAll: isAr ? "عرض الكل" : "View all",
-    details: isAr ? "تفاصيل" : "Details",
-    company: isAr ? "اسم الشركة" : "Company Name",
-    jobTitle: isAr ? "عنوان الوظيفة" : "Job Title",
-    deadline: isAr ? "تاريخ التقديم" : "Applied On",
-    status: isAr ? "الحالة" : "Status",
-    actions: isAr ? "الإجراءات" : "Actions",
+      : isDe
+        ? "Verfolgen Sie jede Bewerbung und ihren aktuellen Status an einem Ort"
+        : "Track every application and its current status in one place",
+    empty: isAr ? "لم تقدم على أي وظائف بعد" : isDe ? "Sie haben sich noch auf keine Stellen beworben" : "You have not applied to any jobs yet",
+    total: isAr ? "إجمالي الطلبات" : isDe ? "Bewerbungen insgesamt" : "Total applications",
+    pending: isAr ? "طلبات معلقة" : isDe ? "Ausstehend" : "Pending",
+    accepted: isAr ? "طلبات مقبولة" : isDe ? "Akzeptiert" : "Accepted",
+    rejected: isAr ? "طلبات مرفوضة" : isDe ? "Abgelehnt" : "Rejected",
+    viewAll: isAr ? "عرض الكل" : isDe ? "Alle anzeigen" : "View all",
+    details: isAr ? "تفاصيل" : isDe ? "Details" : "Details",
+    company: isAr ? "اسم الشركة" : isDe ? "Name des Unternehmens" : "Company Name",
+    jobTitle: isAr ? "عنوان الوظيفة" : isDe ? "Stellentitel" : "Job Title",
+    deadline: isAr ? "تاريخ التقديم" : isDe ? "Beworben am" : "Applied On",
+    status: isAr ? "الحالة" : isDe ? "Status" : "Status",
+    actions: isAr ? "الإجراءات" : isDe ? "Aktionen" : "Actions",
   }
 
   const appsResult = await getMyApplications(session.accessToken, 1, locale as "ar" | "en" | "de")
@@ -80,9 +83,11 @@ export default async function UserApplicationsPage({
     deadline: formatApplicationDate(app.applied_at, locale),
     status: (app.status === "accepted"
       ? "accepted"
-      : app.status === "rejected"
-        ? "rejected"
-        : "pending") as any,
+      : app.status === "approved"
+        ? "approved"
+        : app.status === "rejected"
+          ? "rejected"
+          : "pending") as any,
     detailsHref: `/dashboard/user/applications/${app.id}`,
   }))
 

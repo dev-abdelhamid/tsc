@@ -148,32 +148,32 @@ export function VerifyEmailForm({ codePlaceholder, submitLabel, resendLabel }: P
         </div>
       )}
 
-      {/* OTP Boxes */}
-      <div className="flex justify-center gap-2 sm:gap-3" dir="ltr">
+      {/* OTP Boxes – underline style matching mockup */}
+      <div className="flex justify-center gap-3 sm:gap-4" dir="ltr">
         {digits.map((digit, index) => (
-          <input
-            key={index}
-            ref={(el) => { inputRefs.current[index] = el }}
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            value={digit}
-            onChange={(e) => handleChange(index, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(index, e)}
-            onPaste={handlePaste}
-            onFocus={(e) => e.target.select()}
-            aria-label={`${isRTL ? "الرقم" : "Digit"} ${index + 1}`}
-            className={`
-              h-12 w-10 sm:h-14 sm:w-12 rounded-xl border text-center text-xl font-bold text-white transition-all duration-200 outline-none
-              bg-[#02223b]/80 backdrop-blur-sm
-              ${digit
-                ? "border-[#40A0CA] shadow-[0_0_12px_rgba(64,160,202,0.4)]"
-                : "border-white/20 hover:border-white/40"
-              }
-              focus:border-[#40A0CA] focus:shadow-[0_0_16px_rgba(64,160,202,0.5)]
-              caret-[#40A0CA]
-            `}
-          />
+          <div key={index} className="relative flex flex-col items-center">
+            <input
+              ref={(el) => { inputRefs.current[index] = el }}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              value={digit}
+              onChange={(e) => handleChange(index, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(index, e)}
+              onPaste={handlePaste}
+              onFocus={(e) => e.target.select()}
+              aria-label={`${isRTL ? "الرقم" : "Digit"} ${index + 1}`}
+              className={`
+                w-10 sm:w-12 h-10 sm:h-12 bg-transparent border-0 border-b-2 text-center text-xl font-bold text-white
+                outline-none transition-all duration-200 caret-transparent
+                ${digit
+                  ? "border-[#006ea8]"
+                  : "border-white/30 hover:border-white/50"
+                }
+                focus:border-[#006ea8]
+              `}
+            />
+          </div>
         ))}
       </div>
 
@@ -209,7 +209,7 @@ export function VerifyEmailForm({ codePlaceholder, submitLabel, resendLabel }: P
       <button
         type="submit"
         disabled={loading || !isComplete || !email}
-        className="w-full rounded-xl bg-gradient-to-b from-[#006ea8] to-[#005685] py-3 font-semibold text-white shadow-[0_8px_24px_rgba(0,110,168,0.35)] transition-all hover:from-[#0080c2] hover:to-[#006699] active:translate-y-px disabled:opacity-50 flex items-center justify-center gap-2"
+        className="h-[52px] w-full rounded-xl bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] bg-[length:120px_120px,auto] bg-blend-[plus-lighter,normal] text-white shadow-[0px_42px_107px_rgba(123,190,255,0.34),0px_24.7206px_32.2574px_rgba(0,86,133,0.19),0px_10.2677px_13.3981px_rgba(0,86,133,0.22),0px_3.7136px_4.8458px_rgba(0,86,133,0.15),inset_0px_1px_18px_2px_#E8F2FF,inset_0px_1px_4px_2px_#C2DDFF] text-base font-semibold hover:brightness-105 transition-all active:translate-y-px disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {loading ? (
           <>

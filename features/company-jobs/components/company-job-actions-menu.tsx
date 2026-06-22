@@ -14,6 +14,7 @@ import {
 import {
   deleteCompanyJobAction,
   stopCompanyJobAction,
+  activateCompanyJobAction,
 } from "@/features/company-jobs/actions/job-actions"
 
 export function CompanyJobActionsMenu({
@@ -46,6 +47,14 @@ export function CompanyJobActionsMenu({
     })
   }
 
+  const runActivate = () => {
+    startTransition(async () => {
+      const result = await activateCompanyJobAction(jobId, locale)
+      if (result.ok) router.refresh()
+      else alert(result.message)
+    })
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -67,8 +76,10 @@ export function CompanyJobActionsMenu({
         <DropdownMenuItem onClick={() => router.push(`/dashboard/company/jobs/${jobId}`)}>
           {t("menu.review")}
         </DropdownMenuItem>
-        {status === "approved" ? (
+        {status === "approved" || status === "active" ? (
           <DropdownMenuItem onClick={runStop}>{t("menu.stop")}</DropdownMenuItem>
+        ) : status === "stopped" ? (
+          <DropdownMenuItem onClick={runActivate}>{t("menu.activate")}</DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={runDelete}>

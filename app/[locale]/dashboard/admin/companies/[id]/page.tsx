@@ -23,20 +23,8 @@ export default async function AdminCompanyDetailPage({
   let company: User | null = null
   try {
     // Fetch with large page size to get all companies without pagination
-    const result = await getAdminUsers(session.accessToken!, "company", 1, locale)
-    // Get all pages if needed
-    let allCompanies = result.data
-    let currentPage = 1
-    let hasMore = result.meta?.last_page && currentPage < result.meta.last_page
-    
-    while (hasMore) {
-      currentPage += 1
-      const nextResult = await getAdminUsers(session.accessToken!, "company", currentPage, locale)
-      allCompanies = [...allCompanies, ...nextResult.data]
-      hasMore = nextResult.meta?.last_page && currentPage < nextResult.meta.last_page
-    }
-    
-    company = allCompanies.find((c: User) => c.id === parseInt(id)) || null
+    const result = await getAdminUsers(session.accessToken!, "company", 1, locale, 250)
+    company = result.data.find((c: User) => c.id === parseInt(id)) || null
   } catch {
     // ignore
   }

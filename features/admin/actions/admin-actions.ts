@@ -352,3 +352,34 @@ export async function deleteContactMessageAction(id: number, locale: string) {
   }
 }
 
+export async function suspendUserAction(userId: number | string, suspend: boolean, locale: string) {
+  try {
+    const { token } = await requireAdmin(locale)
+    const { suspendUser } = await import("@/lib/api/services/admin.service")
+    await suspendUser(userId, suspend, token, locale)
+    revalidateAdmin(locale)
+    return { ok: true as const }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to change user status"
+    return { ok: false as const, message }
+  }
+}
+
+export async function updateAdminUserAction(
+  userId: number | string,
+  data: { name?: string; email?: string; password?: string; status?: string; email_verified?: boolean | number },
+  locale: string
+) {
+  try {
+    const { token } = await requireAdmin(locale)
+    const { updateAdminUser } = await import("@/lib/api/services/admin.service")
+    await updateAdminUser(userId, data, token, locale)
+    revalidateAdmin(locale)
+    return { ok: true as const }
+  } catch (err) {
+    const message = err instanceof ApiError ? err.message : "Failed to update user profile"
+    return { ok: false as const, message }
+  }
+}
+
+

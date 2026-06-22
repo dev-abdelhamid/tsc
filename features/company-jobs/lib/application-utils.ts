@@ -81,6 +81,14 @@ export function extractNameFromCv(cvUrl?: string): string | null {
   return null
 }
 
+export function maskName(name: string): string {
+  const clean = name.trim()
+  if (!clean) return ""
+  const parts = clean.split(/\s+/)
+  if (parts.length === 0 || !parts[0]) return ""
+  return parts[0] + " ****"
+}
+
 export function normalizeCompanyApplication(item: unknown): CompanyApplication {
   const row = (item && typeof item === "object" ? item : {}) as Record<string, unknown>
   const user = (row.user && typeof row.user === "object" ? row.user : {}) as Record<string, unknown>
@@ -148,17 +156,23 @@ export function normalizeCompanyApplication(item: unknown): CompanyApplication {
         ""
     ) || undefined
 
-  const resolvedName =
-    String(user.name ?? row.applicant_name ?? row.candidate_name ?? "").trim() ||
-    extractNameFromCv(cvUrl) ||
-    ""
+  let resolvedName =
+    String(user.name ?? row.applicant_name ?? row.candidate_name ?? "").trim()
+
+  if (!resolvedName && (user.first_name || profileRecord.firstName || profileRecord.first_name)) {
+    const f = String(user.first_name ?? profileRecord.firstName ?? profileRecord.first_name ?? "").trim()
+    const l = String(user.last_name ?? profileRecord.lastName ?? profileRecord.last_name ?? "").trim()
+    resolvedName = `${f} ${l}`.trim()
+  }
+
+  const maskedName = resolvedName ? maskName(resolvedName) : ""
 
   return {
     id: Number(row.id ?? row.applicationId ?? row.application_id ?? 0),
     job: row.job as JobApplication["job"],
     user: {
       id: Number(user.id ?? 0),
-      name: resolvedName,
+      name: maskedName,
       email: String(user.email ?? ""),
       avatar: user.avatar as string | undefined,
       phone: user.phone as string | undefined,

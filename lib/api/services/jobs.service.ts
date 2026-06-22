@@ -195,6 +195,16 @@ export function normalizeJob(item: unknown, locale: string): Job | null {
       if (company.city && typeof company.city === "object") {
         company.city = normalizeNestedValue(company.city, locale)
       }
+      // Extract profile name if available to avoid username showing
+      const profile = company.company_profile || company.companyProfile || company.profile
+      const compName =
+        (profile && typeof profile === "object" ? (profile.company_name || profile.companyName) : null) ||
+        company.company_name ||
+        company.companyName ||
+        company.name
+      if (compName && typeof compName === "string") {
+        company.name = compName
+      }
       // Resolve company logo/avatar URL if present
       const logoVal = company.logo || company.logoUrl || company.logo_url || company.avatar || company.avatar_url
       if (logoVal) {

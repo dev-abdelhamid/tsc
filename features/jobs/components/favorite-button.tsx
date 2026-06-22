@@ -57,9 +57,9 @@ export function FavoriteButton({
       toast.dismiss(toastId)
       
       if (result.is_favourite) {
-        toast.success(locale === "ar" ? "تمت الإضافة للمفضلة" : "Added to favorites")
+        toast.success(locale === "ar" ? "تم الحفظ للمفضلة بنجاح" : "Saved to favorites successfully")
       } else {
-        toast.success(locale === "ar" ? "تمت الإزالة من المفضلة" : "Removed from favorites")
+        toast.success(locale === "ar" ? "تمت الإزالة من المفضلة بنجاح" : "Removed from favorites successfully")
       }
     } catch (err: any) {
       setLoading(false)

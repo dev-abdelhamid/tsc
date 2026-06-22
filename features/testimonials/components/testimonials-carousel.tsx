@@ -138,7 +138,7 @@ function MobileCarouselNav({ isRtl }: { isRtl: boolean }) {
 export function TestimonialsCarousel({ stories, labels, isRtl }: TestimonialsCarouselProps) {
   const items = Array.isArray(stories) ? stories : []
   const autoplay = useMemo(
-    () => Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true }),
+    () => Autoplay({ delay: 3000, stopOnInteraction: true, stopOnMouseEnter: true }),
     []
   )
   const tilt = -5

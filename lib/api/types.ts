@@ -54,7 +54,7 @@ export interface User {
   email: string
   phone?: string
   avatar?: string
-  status?: "active" | "pending" | "inactive"
+  status?: "active" | "pending" | "inactive" | "suspended"
   emailVerified?: boolean
   lastLoginAt?: string | null
   locale?: "ar" | "en" | "de"

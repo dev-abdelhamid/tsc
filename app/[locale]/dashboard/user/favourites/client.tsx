@@ -7,6 +7,17 @@ import { cn } from "@/lib/utils";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { Trash2, Briefcase } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 type Props = {
   locale: string;
   initialJobs: any[];
@@ -15,7 +26,9 @@ type Props = {
 export default function FavouritesClient({ locale, initialJobs }: Props) {
   const [jobs, setJobs] = useState<any[]>(initialJobs);
   const [loading, setLoading] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const isAr = locale === "ar";
+  const isDe = locale === "de";
 
   const handleDelete = async (jobId: number) => {
     try {
@@ -34,13 +47,14 @@ export default function FavouritesClient({ locale, initialJobs }: Props) {
         throw new Error(resData.message || "Failed to remove from favorites");
       }
 
-      toast.success(isAr ? "تم إزالة الوظيفة من المفضلة" : "Job removed from favorites");
+      toast.success(isAr ? "تم إزالة الوظيفة من المفضلة" : isDe ? "Job aus den Favoriten entfernt" : "Job removed from favorites");
       setJobs((prev) => prev.filter((job) => job.id !== jobId));
     } catch (err: any) {
       console.error("[Delete favourite error]", err);
-      toast.error(err.message || (isAr ? "فشل إزالة الوظيفة" : "Failed to remove job"));
+      toast.error(err.message || (isAr ? "فشل إزالة الوظيفة" : isDe ? "Fehler beim Entfernen des Jobs" : "Failed to remove job"));
     } finally {
       setLoading(false);
+      setDeleteTargetId(null);
     }
   };
 
@@ -108,12 +122,12 @@ export default function FavouritesClient({ locale, initialJobs }: Props) {
                   <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 items-center">
                     {/* Delete button */}
                     <button
-                      onClick={() => handleDelete(job.id)}
+                      onClick={() => setDeleteTargetId(job.id)}
                       disabled={loading}
                       className="h-[42px] border border-[#FF5B5C] hover:bg-[#FFF5F5] text-[#FF5B5C] rounded-[10px] text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                     >
                       <Trash2 className="w-4 h-4" />
-                      <span>{isAr ? "حذف" : "Delete"}</span>
+                      <span>{isAr ? "حذف" : isDe ? "Löschen" : "Delete"}</span>
                     </button>
 
                     {/* Details button */}
@@ -123,7 +137,7 @@ export default function FavouritesClient({ locale, initialJobs }: Props) {
                         className="h-[42px] rounded-[10px] text-xs w-full flex items-center justify-center gap-2"
                       >
                         <Briefcase className="w-4 h-4 text-white inline-block" />
-                        <span>{isAr ? "التفاصيل" : "Details"}</span>
+                        <span>{isAr ? "التفاصيل" : isDe ? "Details" : "Details"}</span>
                       </PrimaryButton>
                     </Link>
                   </div>
@@ -135,17 +149,49 @@ export default function FavouritesClient({ locale, initialJobs }: Props) {
           <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-12 text-center shadow-sm">
             <img src="/portfolio/drop.svg" alt="Empty" className="w-16 h-16 mx-auto opacity-40 mb-4" />
             <p className="text-gray-500 font-medium">
-              {isAr ? "لا توجد وظائف مفضلة حالياً" : "No saved jobs at the moment"}
+              {isAr ? "لا توجد وظائف مفضلة حالياً" : isDe ? "Derzeit keine gespeicherten Jobs" : "No saved jobs at the moment"}
             </p>
             <Link
               href="/jobs"
               className="inline-block mt-4 text-xs font-bold text-[#006EA8] hover:underline"
             >
-              {isAr ? "تصفح الوظائف المتاحة" : "Browse available jobs"}
+              {isAr ? "تصفح الوظائف المتاحة" : isDe ? "Verfügbare Jobs durchsuchen" : "Browse available jobs"}
             </Link>
           </div>
         )}
       </div>
+
+      <AlertDialog open={deleteTargetId !== null} onOpenChange={(open) => { if (!open) setDeleteTargetId(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isAr ? "تأكيد الحذف" : isDe ? "Löschen bestätigen" : "Confirm Deletion"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isAr
+                ? "هل أنت متأكد أنك تريد حذف هذه الوظيفة من قائمة المفضلة؟"
+                : isDe ? "Sind Sie sicher, dass Sie diesen Job aus Ihren Favoriten löschen möchten?" : "Are you sure you want to delete this job from your favorites?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>
+              {isAr ? "إلغاء" : isDe ? "Abbrechen" : "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={loading}
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteTargetId !== null) {
+                  handleDelete(deleteTargetId);
+                }
+              }}
+              className="bg-[#FF5B5C] hover:bg-[#E04F50] text-white"
+            >
+              {loading ? (isAr ? "جاري الحذف..." : isDe ? "Wird gelöscht..." : "Deleting...") : (isAr ? "تأكيد" : isDe ? "Bestätigen" : "Confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

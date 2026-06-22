@@ -1,3 +1,4 @@
+import { useLocale } from "next-intl"
 import { cn } from "@/lib/utils"
 
 type Column = { key: string; label: string; className?: string }
@@ -7,14 +8,17 @@ export function AdminTableShell({
   children,
   emptyMessage,
   isEmpty,
-  isRTL = false, // إضافة prop جديدة
+  isRTL,
 }: {
   columns: Column[]
   children: React.ReactNode
   emptyMessage: string
   isEmpty: boolean
-  isRTL?: boolean // اختياري
+  isRTL?: boolean
 }) {
+  const locale = useLocale()
+  const resolvedIsRTL = isRTL !== undefined ? isRTL : (locale === "ar")
+
   return (
     <div className="overflow-hidden rounded-[8px] bg-white shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)]">
       <div className="overflow-x-auto">
@@ -22,7 +26,7 @@ export function AdminTableShell({
           <div className={cn(
             "flex items-center rounded-t-[8px] text-white",
             // Use RTL-aware gradient direction
-            isRTL ? "bg-gradient-to-r" : "bg-gradient-to-l",
+            resolvedIsRTL ? "bg-gradient-to-r" : "bg-gradient-to-l",
             "from-[#032C44] to-[#41A0CA]"
           )}>
             {columns.map((col) => (

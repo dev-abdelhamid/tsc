@@ -607,8 +607,9 @@
     },
     "menu": {
       "applications": "Applications",
-      "review": "Review",
+      "review": "Show",
       "stop": "Stop",
+      "activate": "Activate",
       "delete": "Delete"
     },
     "review": {

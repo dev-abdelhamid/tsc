@@ -55,11 +55,12 @@ export default async function AdminProfilePage({
   }
 
   const isAr = locale === "ar"
+  const isDe = locale === "de"
 
   return (
     <AdminPageLayout
-      title={isAr ? "الملف الشخصي" : "My Profile"}
-      description={isAr ? "إدارة بيانات حسابك الشخصي" : "Manage your personal account details"}
+      title={isAr ? "الملف الشخصي" : isDe ? "Mein Profil" : "My Profile"}
+      description={isAr ? "إدارة بيانات حسابك الشخصي" : isDe ? "Verwalten Sie Ihre persönlichen Kontodaten" : "Manage your personal account details"}
       needsClientPersist={needsClientPersist}
       initialAuthTokens={initialAuthTokens}
     >

@@ -16,34 +16,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   setRequestLocale(locale)
   const homeContent = await getHomePageContent(locale)
   
-  // Try to get hero_stats from settings
-  try {
-    const settings = await getSettings(locale)
-    const heroStatsSetting = settings.find((s) => s.key === "hero_stats")
-    if (heroStatsSetting?.value) {
-      const value = heroStatsSetting.value
-      if (typeof value === "object" && value !== null) {
-        const statsValue = value as Record<string, unknown>
-        const total = statsValue.total || statsValue[locale] || "13k+"
-        homeContent.sections.categories.heroStats = {
-          total: String(total),
-          unit: "",
-        }
-      } else if (typeof value === "string") {
-        homeContent.sections.categories.heroStats = {
-          total: value,
-          unit: "",
-        }
-      }
-    }
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      // Helpful only during local development
-      // eslint-disable-next-line no-console
-      console.log("[Home] Could not load hero_stats from settings:", error)
-    }
-    // Continue with default values
-  }
+
 
   return (
     <main className="flex-1">

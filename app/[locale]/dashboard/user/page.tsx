@@ -28,6 +28,7 @@ export default async function UserDashboardPage({
 
   const token = session.accessToken!
   const isAr = locale === "ar"
+  const isDe = locale === "de"
 
   let applications: any[] = []
   let totalApplications = 0
@@ -87,44 +88,44 @@ export default async function UserDashboardPage({
       <div className="flex flex-col gap-6 md:flex-row">
         <DashboardStatCard
           iconSrc="/dashboard/jobs.svg"
-          title={isAr ? "إجمالي طلبات الوظائف" : "Total Jobs Apply"}
+          title={isAr ? "إجمالي طلبات الوظائف" : isDe ? "Gesamte Bewerbungen" : "Total Jobs Apply"}
           value={totalApplications}
           unit={isAr ? "Job" : "Job"}
           viewAllHref="/dashboard/user/applications"
-          viewAllLabel={isAr ? "عرض الكل" : "View All"}
+          viewAllLabel={isAr ? "عرض الكل" : isDe ? "Alle anzeigen" : "View All"}
           isRTL={isAr}
         />
         <DashboardStatCard
           iconSrc="/dashboard/favourites.svg"
-          title={isAr ? "الوظائف المفضلة" : "Total Favourite Jobs"}
+          title={isAr ? "الوظائف المفضلة" : isDe ? "Lieblingsjobs" : "Total Favourite Jobs"}
           value={totalFavorites}
           unit={isAr ? "Job" : "Job"}
           viewAllHref="/dashboard/user/favourites"
-          viewAllLabel={isAr ? "عرض الكل" : "View All"}
+          viewAllLabel={isAr ? "عرض الكل" : isDe ? "Alle anzeigen" : "View All"}
           isRTL={isAr}
         />
         <DashboardStatCard
           iconSrc="/dashboard/tickets.svg"
-          title={isAr ? "إجمالي التذاكر" : "Total Ticket"}
+          title={isAr ? "إجمالي التذاكر" : isDe ? "Gesamte Tickets" : "Total Ticket"}
           value={totalTickets}
           unit={isAr ? "ticket" : "ticket"}
           viewAllHref="/dashboard/user/tickets"
-          viewAllLabel={isAr ? "عرض الكل" : "View All"}
+          viewAllLabel={isAr ? "عرض الكل" : isDe ? "Alle anzeigen" : "View All"}
           isRTL={isAr}
         />
       </div>
 
       <DashboardJobsTable
-        title={isAr ? "آخر طلبات التوظيف" : "Last Job Application"}
+        title={isAr ? "آخر طلبات التوظيف" : isDe ? "Letzte Bewerbungen" : "Last Job Application"}
         rows={tableRows}
         locale={locale}
-        col2Label={isAr ? "اسم الشركة" : "Company Name"}
-        jobTitleLabel={isAr ? "عنوان الوظيفة" : "Job Title"}
-        deadlineLabel={isAr ? "الموعد النهائي" : "Deadline"}
-        statusLabel={isAr ? "الحالة" : "Status"}
-        actionsLabel={isAr ? "الإجراءات" : "Actions"}
-        emptyMessage={isAr ? "لا توجد طلبات حتى الآن" : "No applications yet"}
-        detailsLabel={isAr ? "تفاصيل" : "Details"}
+        col2Label={isAr ? "اسم الشركة" : isDe ? "Firmenname" : "Company Name"}
+        jobTitleLabel={isAr ? "عنوان الوظيفة" : isDe ? "Jobtitel" : "Job Title"}
+        deadlineLabel={isAr ? "الموعد النهائي" : isDe ? "Frist" : "Deadline"}
+        statusLabel={isAr ? "الحالة" : isDe ? "Status" : "Status"}
+        actionsLabel={isAr ? "الإجراءات" : isDe ? "Aktionen" : "Actions"}
+        emptyMessage={isAr ? "لا توجد طلبات حتى الآن" : isDe ? "Noch keine Bewerbungen" : "No applications yet"}
+        detailsLabel={isAr ? "تفاصيل" : isDe ? "Details" : "Details"}
         isRTL={isAr}
       />
     </div>

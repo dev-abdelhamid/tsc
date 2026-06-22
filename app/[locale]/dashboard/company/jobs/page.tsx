@@ -13,9 +13,10 @@ import { DashboardPageShell } from "@/features/dashboard/components/dashboard-pa
 import { ApiError } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
 
-function mapJobStatus(status: string): "pending" | "approved" | "rejected" {
+function mapJobStatus(status: string): "pending" | "approved" | "rejected" | "stopped" {
   if (status === "approved" || status === "active") return "approved"
   if (status === "rejected") return "rejected"
+  if (status === "stopped") return "stopped"
   return "pending"
 }
 

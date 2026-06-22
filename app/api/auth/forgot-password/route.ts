@@ -5,11 +5,12 @@ import { ApiError } from "@/lib/api/client"
 export async function POST(request: NextRequest) {
   try {
     let body: Record<string, unknown> = {}
-    try { body = await request.json() } catch {}
-    if (!body || !body.email) {
+    const cloned = request.clone()
+    try {
+      body = await cloned.json()
+    } catch {
       try {
         const form = await request.formData()
-        body = {}
         form.forEach((v, k) => { body[k] = typeof v === "string" ? v : v })
       } catch {}
     }

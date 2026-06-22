@@ -81,6 +81,59 @@ const selectBase =
 const socialField =
   "w-full rounded-lg border border-[#E6EEF4] px-3 py-2 text-sm text-[#525252] bg-white outline-none transition-colors placeholder:text-[#A3A3A3]";
 
+function normalizeProfile(raw: any): InitialProfileData {
+  if (!raw) return {}
+
+  // If wrapped in { data }
+  if (raw && typeof raw === "object" && "data" in raw) raw = (raw as any).data
+
+  const out: InitialProfileData = {}
+
+  // Top-level fallbacks (snake_case) or camelCase nested companyProfile
+  const cp = raw.companyProfile || raw.company_profile || raw.company || null
+
+  // Basic fields
+  out.name = raw.name || (cp && (cp.companyName || cp.name)) || raw.company_name || ""
+  out.email = raw.email || raw.email_address || ""
+  out.phone = raw.phone || raw.mobile || ""
+
+  // Company name (may be localized object or string)
+  out.company_name = raw.company_name || (cp && (cp.companyName || cp.name)) || undefined
+
+  // CEO name
+  out.ceo_name = raw.ceo_name || (cp && (cp.ceoName || cp.ceo_name)) || undefined
+
+  // Description (localized or string)
+  out.description = raw.description || (cp && (cp.description || cp.desc)) || undefined
+
+  // Website / postal / num_of_employees
+  out.website = raw.website || (cp && (cp.website || cp.website_url)) || undefined
+  out.postal_code = raw.postal_code || (cp && (cp.postalCode || cp.postal_code)) || undefined
+  out.num_of_employees = (raw.num_of_employees as any) ?? (cp && (cp.numOfEmployees || cp.num_of_employees)) ?? undefined
+
+  // Company type id
+  out.company_type_id = raw.company_type_id ?? (raw.company_type && (raw.company_type.id ?? raw.company_type_id)) ?? (cp && (cp.company_type_id || cp.companyType?.id)) ?? undefined
+
+  // Country / city
+  out.country_id = raw.country_id ?? (raw.country && (raw.country.id ?? undefined)) ?? (cp && (cp.country?.id ?? undefined))
+  out.city = raw.city ?? (cp && (cp.city ?? undefined)) ?? undefined
+
+  // Avatar / cover
+  // For companies, prefer the company logo (cp.logoUrl) over the generic user avatar.
+  // raw.avatar is the user's personal avatar which stays unchanged when a company
+  // logo is uploaded — always read the company logo first.
+  out.avatar = (cp && (cp.logoUrl || cp.logo || cp.logo_url)) || raw.logoUrl || raw.logo || raw.logo_url || raw.avatar || raw.avatar_url || null
+  out.cover_image = raw.cover_image || raw.coverImage || (cp && (cp.coverImageUrl || cp.cover_image)) || null
+
+  // Socials
+  out.facebook = raw.facebook || (cp && (cp.socialMedia?.facebook || cp.facebook)) || undefined
+  out.linkedin = raw.linkedin || (cp && (cp.socialMedia?.linkedin || cp.linkedin)) || undefined
+  out.twitter_x = raw.twitter_x || (cp && (cp.socialMedia?.twitterX || cp.twitter_x)) || undefined
+  out.pinterest = raw.pinterest || (cp && (cp.socialMedia?.pinterest || cp.pinterest)) || undefined
+
+  return out
+}
+
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -95,6 +148,7 @@ export default function CompanyProfileForm({
 }) {
   const locale = useLocale();
   const isAr = locale === "ar";
+  const isDe = locale === "de";
   const DIALING_CODES = React.useMemo(() => {
     try {
       return [...COUNTRIES]
@@ -199,9 +253,17 @@ export default function CompanyProfileForm({
   const [companyTypes, setCompanyTypes] = useState<CompanyTypeData[]>([]);
 
   // Images
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => {
+    if (!initialProfile) return null;
+    const raw = normalizeProfile(initialProfile as any);
+    return raw.avatar ? resolveImageUrl(raw.avatar) : null;
+  });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(() => {
+    if (!initialProfile) return null;
+    const raw = normalizeProfile(initialProfile as any);
+    return raw.cover_image ? resolveImageUrl(raw.cover_image) : null;
+  });
   const [coverFile, setCoverFile] = useState<File | null>(null);
 
   const [message, setMessage] = useState<string | null>(null);
@@ -258,8 +320,6 @@ export default function CompanyProfileForm({
   useEffect(() => {
     let active = true;
 
-    
-
     const loadMetadata = async () => {
       try {
         // If server provided countries, use them; otherwise fetch.
@@ -277,8 +337,10 @@ export default function CompanyProfileForm({
 
     loadMetadata();
 
-    if (initialProfile) {
-      const raw = normalizeProfile(initialProfile as any)
+    // Client-side fallback: if the server did not provide initialProfile (SSR fetch
+    // failed), fetch it here so the form is never shown empty after a refresh.
+    const hydrate = async (profileData: any) => {
+      const raw = normalizeProfile(profileData);
 
       const companyName = String(
         typeof raw.company_name === "string"
@@ -306,9 +368,11 @@ export default function CompanyProfileForm({
               (raw.description && (raw.description as Record<string, unknown>).en) ||
               ""
       );
-      const rawCompanyTypeId = (raw as { company_type_id?: number | string }).company_type_id
-      const companyTypeId = (raw.company_type && (raw.company_type as { id?: number }).id) ?? rawCompanyTypeId
 
+      const rawCompanyTypeId = (raw as { company_type_id?: number | string }).company_type_id;
+      const companyTypeId = (raw.company_type && (raw.company_type as { id?: number }).id) ?? rawCompanyTypeId;
+
+      if (!active) return;
       setValue("name", companyName);
       setValue("ceo_name", ceoName);
       setValue("email", raw.email || "");
@@ -325,7 +389,6 @@ export default function CompanyProfileForm({
       if (countryId) {
         lastFetchedCountryIdRef.current = String(countryId);
         setCitiesLoading(true);
-        // If server provided cities for this country, use them. Otherwise fetch.
         if (serverCities && serverCities.length > 0) {
           setCities(serverCities);
           setValue("city_id", String(cityId));
@@ -346,7 +409,6 @@ export default function CompanyProfileForm({
         }
       }
 
-      // Phone & dial code
       const rawPhone = raw.phone || "";
       let parsedPhone = rawPhone;
       let parsedDial = "+20";
@@ -360,7 +422,6 @@ export default function CompanyProfileForm({
       setValue("dial_code", parsedDial);
       setValue("phone", parsedPhone);
 
-      // Socials
       setValue("facebook", raw.facebook || "");
       setValue("linkedin", raw.linkedin || "");
       setValue("twitter_x", raw.twitter_x || "");
@@ -368,12 +429,27 @@ export default function CompanyProfileForm({
 
       setAvatarUrl(raw.avatar ? resolveImageUrl(raw.avatar) : null);
       setCoverUrl(raw.cover_image ? resolveImageUrl(raw.cover_image) : null);
+    };
+
+    if (initialProfile) {
+      hydrate(initialProfile);
+    } else {
+      // SSR fetch failed — try to load from API on the client
+      fetch("/api/auth/profile", { cache: "no-store", credentials: "include" })
+        .then((r) => r.json())
+        .then((data) => {
+          if (!active) return;
+          const profileData = data?.data || data;
+          if (profileData) hydrate(profileData);
+        })
+        .catch(() => {});
     }
 
     return () => {
       active = false;
     };
   }, [setValue, locale, initialProfile]);
+
 
   // Re-populate company_type_id once companyTypes options have loaded (they load
   // asynchronously so setValue runs before <option> elements exist in the DOM).
@@ -547,127 +623,66 @@ export default function CompanyProfileForm({
         const payload = await res.json();
         if (!res.ok) throw new Error(payload?.message || "Failed to update profile");
 
-        // Update session locally from POST payload first (avoid triggering
-        // a global invalidate which causes other components to refetch
-        // before we have an authoritative state). We'll still attempt a
-        // no-store fetch to confirm how the backend persisted fields.
-        try {
-          const updated = payload?.data || payload;
-          const norm = normalizeProfile(updated);
-          const sessionUpdate: Record<string, unknown> = {};
-          if (norm.avatar) sessionUpdate.avatar = resolveImageUrl(norm.avatar) || norm.avatar;
-          if (norm.name) sessionUpdate.name = norm.name;
-          if (Object.keys(sessionUpdate).length > 0) updateSessionUser(sessionUpdate);
-        } catch {}
-
-        // Re-fetch authoritative profile quietly (no global invalidate) to
-        // ensure persisted fields like `company_type` are accurate.
+        // Try to retrieve fresh profile, falling back to POST response if needed
+        let norm: InitialProfileData;
         try {
           const fresh = await fetch("/api/auth/profile", { cache: "no-store" });
           if (fresh.ok) {
             const freshPayload = await fresh.json();
-            const updated = freshPayload?.data || freshPayload;
-            const norm = normalizeProfile(updated);
-
-            // Apply to session and form
-            const sessionUpdate: Record<string, unknown> = {};
-            if (norm.avatar) sessionUpdate.avatar = resolveImageUrl(norm.avatar) || norm.avatar;
-            if (norm.name) sessionUpdate.name = norm.name;
-            if (Object.keys(sessionUpdate).length > 0) updateSessionUser(sessionUpdate);
-
-            // Update local form fields from authoritative profile
-            setValue("name", norm.name || "");
-            setValue("ceo_name", (typeof norm.ceo_name === "string" ? norm.ceo_name : "") || "");
-            setValue("email", norm.email || "");
-            setValue("website", norm.website || "");
-            setValue("postal_code", norm.postal_code || "");
-            setValue("num_of_employees", String(norm.num_of_employees || ""));
-            setValue("company_type_id", String((norm.company_type_id as any) ?? ""));
-            setValue("description", typeof norm.description === "string" ? norm.description : "");
-            setValue("facebook", norm.facebook || "");
-            setValue("linkedin", norm.linkedin || "");
-            setValue("twitter_x", norm.twitter_x || "");
-            setValue("pinterest", norm.pinterest || "");
-
-            if (norm.country_id) {
-              setValue("country_id", String(norm.country_id));
-              lastFetchedCountryIdRef.current = String(norm.country_id);
-              try {
-                const cRes = await fetch(`/api/cities?countryId=${norm.country_id}&locale=${locale}`, { cache: "no-store" });
-                if (cRes.ok) {
-                  const cData = await cRes.json();
-                  if (cData.data) {
-                    setCities(cData.data);
-                    const cityId = norm.city ? (typeof norm.city === "object" ? (norm.city as any).id : norm.city) : "";
-                    setValue("city_id", String(cityId));
-                  }
-                }
-              } catch {}
-            }
-
-            setAvatarUrl(norm.avatar ? resolveImageUrl(norm.avatar) : null);
-            setCoverUrl(norm.cover_image ? resolveImageUrl(norm.cover_image) : null);
+            norm = normalizeProfile(freshPayload?.data || freshPayload);
           } else {
-            // If profile fetch failed, fallback to payload returned from POST
-            const updated = payload?.data || payload;
-            const norm = normalizeProfile(updated);
-            const sessionUpdate: Record<string, unknown> = {};
-            if (norm.avatar) sessionUpdate.avatar = resolveImageUrl(norm.avatar) || norm.avatar;
-            if (norm.name) sessionUpdate.name = norm.name;
-            if (Object.keys(sessionUpdate).length > 0) updateSessionUser(sessionUpdate);
+            norm = normalizeProfile(payload?.data || payload);
           }
-        } catch (e) {
-          // Non-critical: try optimistic fallback to POST payload
+        } catch {
+          norm = normalizeProfile(payload?.data || payload);
+        }
+
+        // Apply session update
+        const sessionUpdate: Record<string, unknown> = {};
+        if (norm.avatar) {
+          const logoUrl = resolveImageUrl(norm.avatar) || norm.avatar;
+          sessionUpdate.avatar = logoUrl;
+          sessionUpdate.company = { logoUrl, logo: logoUrl, logo_url: logoUrl, avatar: logoUrl, avatar_url: logoUrl };
+          sessionUpdate.company_profile = { logoUrl, logo: logoUrl, logo_url: logoUrl, avatar: logoUrl, avatar_url: logoUrl };
+          sessionUpdate.companyProfile = { logoUrl, logo: logoUrl, logo_url: logoUrl, avatar: logoUrl, avatar_url: logoUrl };
+        }
+        if (norm.name) sessionUpdate.name = norm.name;
+        if (Object.keys(sessionUpdate).length > 0) {
+          updateSessionUser(sessionUpdate);
+        }
+
+        // Update local form fields from final profile data
+        setValue("name", norm.name || "");
+        setValue("ceo_name", (typeof norm.ceo_name === "string" ? norm.ceo_name : "") || "");
+        setValue("email", norm.email || "");
+        setValue("website", norm.website || "");
+        setValue("postal_code", norm.postal_code || "");
+        setValue("num_of_employees", String(norm.num_of_employees || ""));
+        setValue("company_type_id", String((norm.company_type_id as any) ?? ""));
+        setValue("description", typeof norm.description === "string" ? norm.description : "");
+        setValue("facebook", norm.facebook || "");
+        setValue("linkedin", norm.linkedin || "");
+        setValue("twitter_x", norm.twitter_x || "");
+        setValue("pinterest", norm.pinterest || "");
+
+        if (norm.country_id) {
+          setValue("country_id", String(norm.country_id));
+          lastFetchedCountryIdRef.current = String(norm.country_id);
           try {
-            const updated = payload?.data || payload;
-            const norm = normalizeProfile(updated);
-            const sessionUpdate: Record<string, unknown> = {};
-            if (norm.avatar) sessionUpdate.avatar = resolveImageUrl(norm.avatar) || norm.avatar;
-            if (norm.name) sessionUpdate.name = norm.name;
-            if (Object.keys(sessionUpdate).length > 0) updateSessionUser(sessionUpdate);
+            const cRes = await fetch(`/api/cities?countryId=${norm.country_id}&locale=${locale}`, { cache: "no-store" });
+            if (cRes.ok) {
+              const cData = await cRes.json();
+              if (cData.data) {
+                setCities(cData.data);
+                const cityId = norm.city ? (typeof norm.city === "object" ? (norm.city as any).id : norm.city) : "";
+                setValue("city_id", String(cityId));
+              }
+            }
           } catch {}
         }
 
-
-        // Update local form state from server response so saved values appear immediately
-        try {
-          const updated = payload?.data || payload
-          const norm = normalizeProfile(updated)
-
-          setValue("name", norm.name || "")
-          setValue("ceo_name", (typeof norm.ceo_name === "string" ? norm.ceo_name : "") || "")
-          setValue("email", norm.email || "")
-          setValue("website", norm.website || "")
-          setValue("postal_code", norm.postal_code || "")
-          setValue("num_of_employees", String(norm.num_of_employees || ""))
-          setValue("company_type_id", String((norm.company_type_id as any) ?? ""))
-          setValue("description", typeof norm.description === "string" ? norm.description : "")
-          setValue("facebook", norm.facebook || "")
-          setValue("linkedin", norm.linkedin || "")
-          setValue("twitter_x", norm.twitter_x || "")
-          setValue("pinterest", norm.pinterest || "")
-
-          if (norm.country_id) {
-            setValue("country_id", String(norm.country_id))
-            lastFetchedCountryIdRef.current = String(norm.country_id)
-            // reload cities for the country
-            fetch(`/api/cities?countryId=${norm.country_id}&locale=${locale}`)
-              .then((r) => r.json())
-              .then((cData) => {
-                if (cData.data) {
-                  setCities(cData.data)
-                  const cityId = norm.city ? (typeof norm.city === "object" ? (norm.city as any).id : norm.city) : ""
-                  setValue("city_id", String(cityId))
-                }
-              })
-              .catch(() => {})
-          }
-
-          setAvatarUrl(norm.avatar ? resolveImageUrl(norm.avatar) : null)
-          setCoverUrl(norm.cover_image ? resolveImageUrl(norm.cover_image) : null)
-        } catch (e) {
-          // ignore update-state errors
-        }
+        setAvatarUrl(norm.avatar ? resolveImageUrl(norm.avatar) : null);
+        setCoverUrl(norm.cover_image ? resolveImageUrl(norm.cover_image) : null);
 
         if (data.new_password) {
           const pwRes = await fetch("/api/auth/profile/password", {
@@ -683,12 +698,12 @@ export default function CompanyProfileForm({
           if (!pwRes.ok) throw new Error(pwPayload?.message || "Failed to update password");
         }
 
-        const successMsg = isAr ? "تم حفظ التعديلات بنجاح" : "Profile changes saved successfully";
+        const successMsg = isAr ? "تم حفظ التعديلات بنجاح" : isDe ? "Profiländerungen erfolgreich gespeichert" : "Profile changes saved successfully";
         setMessage(successMsg);
         toast.success(successMsg);
       } catch (err: unknown) {
         console.error(err);
-        const errorMessage = err instanceof Error ? err.message : (isAr ? "حدث خطأ غير متوقع" : "An unexpected error occurred");
+        const errorMessage = err instanceof Error ? err.message : (isAr ? "حدث خطأ غير متوقع" : isDe ? "Ein unerwarteter Fehler ist aufgetreten" : "An unexpected error occurred");
         setErrorMsg(errorMessage);
         toast.error(errorMessage);
       } finally {
@@ -715,60 +730,7 @@ export default function CompanyProfileForm({
     }
   };
 
-  const activeDialObj = DIALING_CODES.find((d) => d.code === selectedDialCode) || DIALING_CODES[0];
-
-  const normalizeProfile = (raw: any): InitialProfileData => {
-    if (!raw) return {}
-
-    // If wrapped in { data }
-    if (raw && typeof raw === "object" && "data" in raw) raw = (raw as any).data
-
-    const out: InitialProfileData = {}
-
-    // Top-level fallbacks (snake_case) or camelCase nested companyProfile
-    const cp = raw.companyProfile || raw.company_profile || raw.company || null
-
-    // Basic fields
-    out.name = raw.name || (cp && (cp.companyName || cp.name)) || raw.company_name || ""
-    out.email = raw.email || raw.email_address || ""
-    out.phone = raw.phone || raw.mobile || ""
-
-    // Company name (may be localized object or string)
-    out.company_name = raw.company_name || (cp && (cp.companyName || cp.name)) || undefined
-
-    // CEO name
-    out.ceo_name = raw.ceo_name || (cp && (cp.ceoName || cp.ceo_name)) || undefined
-
-    // Description (localized or string)
-    out.description = raw.description || (cp && (cp.description || cp.desc)) || undefined
-
-    // Website / postal / num_of_employees
-    out.website = raw.website || (cp && (cp.website || cp.website_url)) || undefined
-    out.postal_code = raw.postal_code || (cp && (cp.postalCode || cp.postal_code)) || undefined
-    out.num_of_employees = (raw.num_of_employees as any) ?? (cp && (cp.numOfEmployees || cp.num_of_employees)) ?? undefined
-
-    // Company type id
-    out.company_type_id = raw.company_type_id ?? (raw.company_type && (raw.company_type.id ?? raw.company_type_id)) ?? (cp && (cp.company_type_id || cp.companyType?.id)) ?? undefined
-
-    // Country / city
-    out.country_id = raw.country_id ?? (raw.country && (raw.country.id ?? undefined)) ?? (cp && (cp.country?.id ?? undefined))
-    out.city = raw.city ?? (cp && (cp.city ?? undefined)) ?? undefined
-
-    // Avatar / cover
-    // For companies, prefer the company logo (cp.logoUrl) over the generic user avatar.
-    // raw.avatar is the user's personal avatar which stays unchanged when a company
-    // logo is uploaded — always read the company logo first.
-    out.avatar = (cp && (cp.logoUrl || cp.logo || cp.logo_url)) || raw.logoUrl || raw.logo || raw.logo_url || raw.avatar || raw.avatar_url || null
-    out.cover_image = raw.cover_image || raw.coverImage || (cp && (cp.coverImageUrl || cp.cover_image)) || null
-
-    // Socials
-    out.facebook = raw.facebook || (cp && (cp.socialMedia?.facebook || cp.facebook)) || undefined
-    out.linkedin = raw.linkedin || (cp && (cp.socialMedia?.linkedin || cp.linkedin)) || undefined
-    out.twitter_x = raw.twitter_x || (cp && (cp.socialMedia?.twitterX || cp.twitter_x)) || undefined
-    out.pinterest = raw.pinterest || (cp && (cp.socialMedia?.pinterest || cp.pinterest)) || undefined
-
-    return out
-  }
+  const activeDialObj = DIALING_CODES.find((d) => d.code === selectedDialCode) || DIALING_CODES[0] || { flag: "🌍", code: "+20" };
 
   // --------------------------------------------------------------------------
   // Render
@@ -780,7 +742,7 @@ export default function CompanyProfileForm({
         <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
           <div className="px-8 pt-8 pb-2">
             <h2 className="text-xl font-bold text-start text-[#006EA8]">
-              {isAr ? "بيانات الشركة الأساسية" : "Company Basic Info"}
+              {isAr ? "بيانات الشركة الأساسية" : isDe ? "Basisinformationen des Unternehmens" : "Company Basic Info"}
             </h2>
           </div>
           {/* Cover + Avatar */}
@@ -825,9 +787,9 @@ export default function CompanyProfileForm({
                   className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(0,110,168,0.3),_inset_0_1px_2px_rgba(255,255,255,0.2)] bg-gradient-to-b from-[#006EA8] to-[#005685] transition-all hover:scale-105 active:scale-95"
                 >
                   <img src="/update.svg" alt="update" className="h-4 w-4" />
-                  {isAr ? "تغيير الغلاف" : "Replace Cover"}
+                  {isAr ? "تغيير الغلاف" : isDe ? "Titelbild ändern" : "Replace Cover"}
                 </span>
-                <input type="file" accept="image/*" aria-label={isAr ? "تحميل صورة الغلاف" : "Upload cover image"} className="hidden" onChange={handleCoverChange} />
+                <input type="file" accept="image/*" aria-label={isAr ? "تحميل صورة الغلاف" : isDe ? "Titelbild hochladen" : "Upload cover image"} className="hidden" onChange={handleCoverChange} />
               </label>
 
               <div className="absolute left-1/2 top-full z-30 -translate-x-1/2 -translate-y-10 md:-translate-y-16">
@@ -845,7 +807,7 @@ export default function CompanyProfileForm({
                   </div>
                   {/* Edit button sits over the avatar (floating) */}
                   <label
-                    aria-label={isAr ? "تحميل صورة الشعار" : "Upload avatar image"}
+                    aria-label={isAr ? "تحميل صورة الشعار" : isDe ? "Logo hochladen" : "Upload avatar image"}
                     className="absolute bottom-2 right-2 h-10 w-10 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 bg-gradient-to-b from-[#006EA8] to-[#005685] z-50 shadow-[0_10px_30px_rgba(0,110,168,0.28)]"
                   >
                     <img src="/update.svg" alt="update" className="h-4 w-4 text-white" />
@@ -864,7 +826,7 @@ export default function CompanyProfileForm({
               {/* Company Name */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "اسم الشركة *" : "Company Name *"}
+                  {isAr ? "اسم الشركة *" : isDe ? "Firmenname *" : "Company Name *"}
                 </label>
                 <input type="text" className={fieldBase} {...register("name")} />
               </div>
@@ -872,7 +834,7 @@ export default function CompanyProfileForm({
               {/* CEO Name */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "اسم الرئيس التنفيذي *" : "Company ceo name *"}
+                  {isAr ? "اسم الرئيس التنفيذي *" : isDe ? "Name des CEO *" : "Company ceo name *"}
                 </label>
                 <input type="text" className={fieldBase} {...register("ceo_name")} />
               </div>
@@ -880,7 +842,7 @@ export default function CompanyProfileForm({
               {/* Email (disabled) */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "البريد الإلكتروني *" : "Email *"}
+                  {isAr ? "البريد الإلكتروني *" : isDe ? "E-Mail *" : "Email *"}
                 </label>
                 <input
                   type="email"
@@ -893,14 +855,14 @@ export default function CompanyProfileForm({
               {/* Website */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "الموقع الإلكتروني *" : "Website *"}
+                  {isAr ? "الموقع الإلكتروني *" : isDe ? "Website *" : "Website *"}
                 </label>
                 <input type="url" placeholder="https://example.com" className={fieldBase} {...register("website")} />
               </div>
 
               {/* New Password */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
-                <label className="text-sm font-medium text-[#262626]">{isAr ? "كلمة المرور الجديدة" : "New password"}</label>
+                <label className="text-sm font-medium text-[#262626]">{isAr ? "كلمة المرور الجديدة" : isDe ? "Neues Passwort" : "New password"}</label>
                 <div className="relative">
                   <input
                     type={showNewPw ? "text" : "password"}
@@ -923,7 +885,7 @@ export default function CompanyProfileForm({
               {/* Confirm Password */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "تأكيد كلمة المرور الجديدة *" : "Confirm password *"}
+                  {isAr ? "تأكيد كلمة المرور الجديدة *" : isDe ? "Neues Passwort bestätigen *" : "Confirm password *"}
                 </label>
                 <div className="relative">
                   <input
@@ -947,11 +909,11 @@ export default function CompanyProfileForm({
               {/* Country */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "البلد *" : "Country *"}
+                  {isAr ? "البلد *" : isDe ? "Land *" : "Country *"}
                 </label>
                 <div className="relative w-full">
                   <select className={selectBase} {...register("country_id")}>
-                    <option value="" disabled>{isAr ? "اختر البلد" : "Select Country"}</option>
+                    <option value="" disabled>{isAr ? "اختر البلد" : isDe ? "Land auswählen" : "Select Country"}</option>
                     {countries.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -969,16 +931,16 @@ export default function CompanyProfileForm({
               {/* City */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "المدينة *" : "City *"}
+                  {isAr ? "المدينة *" : isDe ? "Stadt *" : "City *"}
                 </label>
                 <div className="relative w-full">
                   <select className={selectBase} {...register("city_id")} disabled={cityDisabled} suppressHydrationWarning>
                     {cities.length === 0 ? (
                       <option value="" disabled>
-                        {computedSelectedCountryId ? (isAr ? "لا توجد مدن" : "No cities found") : isAr ? "اختر البلد أولاً" : "Select a country first"}
+                        {computedSelectedCountryId ? (isAr ? "لا توجد مدن" : isDe ? "Keine Städte gefunden" : "No cities found") : isAr ? "اختر البلد أولاً" : isDe ? "Wählen Sie zuerst ein Land" : "Select a country first"}
                       </option>
                     ) : (
-                      <option value="" disabled>{isAr ? "اختر المدينة" : "Select City"}</option>
+                      <option value="" disabled>{isAr ? "اختر المدينة" : isDe ? "Stadt auswählen" : "Select City"}</option>
                     )}
                     {cities.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
@@ -997,7 +959,7 @@ export default function CompanyProfileForm({
               {/* Phone with dial code */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "رقم الهاتف *" : "Phone *"}
+                  {isAr ? "رقم الهاتف *" : isDe ? "Telefonnummer *" : "Phone *"}
                 </label>
                 <div className="flex items-center border-b border-[#D4D4D4] py-2 focus-within:border-[#40A0CA] transition-colors">
                   <div className="relative flex items-center shrink-0 pe-2 me-2 border-e border-[#D4D4D4]">
@@ -1024,22 +986,22 @@ export default function CompanyProfileForm({
 
               {/* Postal Code */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
-                <label className="text-sm font-medium text-[#262626]">{isAr ? "الرمز البريدي" : "Postal Code"}</label>
+                <label className="text-sm font-medium text-[#262626]">{isAr ? "الرمز البريدي" : isDe ? "Postleitzahl" : "Postal Code"}</label>
                 <input type="text" className={fieldBase} {...register("postal_code")} />
               </div>
 
               {/* Number of Employees */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
-                <label className="text-sm font-medium text-[#262626]">{isAr ? "عدد الموظفين" : "Number Of Employees"}</label>
+                <label className="text-sm font-medium text-[#262626]">{isAr ? "عدد الموظفين" : isDe ? "Mitarbeiteranzahl" : "Number Of Employees"}</label>
                 <input type="number" min={0} className={fieldBase} {...register("num_of_employees")} />
               </div>
 
               {/* Company Type */}
               <div className={`flex flex-col gap-1.5 ${labelAlignClass}`}>
-                <label className="text-sm font-medium text-[#262626]">{isAr ? "تصنيف الشركة (القطاع)" : "Type Of Company"}</label>
+                <label className="text-sm font-medium text-[#262626]">{isAr ? "تصنيف الشركة (القطاع)" : isDe ? "Unternehmenstyp (Branche)" : "Type Of Company"}</label>
                 <div className="relative w-full">
                   <select className={selectBase} {...register("company_type_id")}>
-                    <option value="">{isAr ? "اختر القطاع" : "Select Sector"}</option>
+                    <option value="">{isAr ? "اختر القطاع" : isDe ? "Branche auswählen" : "Select Sector"}</option>
                     {companyTypes.map((t) => (
                       <option key={`${t.id}-${t.name}`} value={String(t.id)}>{t.name}</option>
                     ))}
@@ -1057,12 +1019,12 @@ export default function CompanyProfileForm({
               {/* Description (full width) */}
               <div className={`flex flex-col gap-1.5 md:col-span-2 ${labelAlignClass}`}>
                 <label className="text-sm font-medium text-[#262626]">
-                  {isAr ? "وصف الشركة *" : "Company Description *"}
+                  {isAr ? "وصف الشركة *" : isDe ? "Unternehmensbeschreibung *" : "Company Description *"}
                 </label>
                 <textarea
                   rows={4}
                   className="w-full rounded-lg border border-[#E5E7EB] p-3 text-sm text-[#525252] bg-[#FAFAFA] outline-none transition-colors focus:border-[#40A0CA] focus:bg-white resize-y min-h-[100px] placeholder:text-[#A3A3A3]"
-                  placeholder={isAr ? "أدخل وصف الشركة..." : "Enter company description..."}
+                  placeholder={isAr ? "أدخل وصف الشركة..." : isDe ? "Unternehmensbeschreibung eingeben..." : "Enter company description..."}
                   {...register("description")}
                 />
               </div>
@@ -1074,7 +1036,7 @@ export default function CompanyProfileForm({
         <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
           <div className="px-8 pt-8 pb-4">
             <h2 className="text-xl font-bold text-start text-[#006EA8]">
-              {isAr ? "روابط التواصل الاجتماعي" : "Company Social Links"}
+              {isAr ? "روابط التواصل الاجتماعي" : isDe ? "Social-Media-Links des Unternehmens" : "Company Social Links"}
             </h2>
           </div>
 
@@ -1170,17 +1132,17 @@ export default function CompanyProfileForm({
               <div className="mt-6 p-4 rounded-lg border border-[#E5E7EB] bg-[#FAFAFA] transition-all">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-semibold text-[#006EA8] uppercase">
-                    {activeSocial === "facebook" && (isAr ? "رابط حساب فيسبوك للشركة" : "Company Facebook URL")}
-                    {activeSocial === "linkedin" && (isAr ? "رابط حساب LinkedIn للشركة" : "Company LinkedIn URL")}
-                    {activeSocial === "twitter" && (isAr ? "رابط حساب X (Twitter) للشركة" : "Company X (Twitter) URL")}
-                    {activeSocial === "pinterest" && (isAr ? "رابط حساب Pinterest للشركة" : "Company Pinterest URL")}
+                    {activeSocial === "facebook" && (isAr ? "رابط حساب فيسبوك للشركة" : isDe ? "Facebook-URL des Unternehmens" : "Company Facebook URL")}
+                    {activeSocial === "linkedin" && (isAr ? "رابط حساب LinkedIn للشركة" : isDe ? "LinkedIn-URL des Unternehmens" : "Company LinkedIn URL")}
+                    {activeSocial === "twitter" && (isAr ? "رابط حساب X (Twitter) للشركة" : isDe ? "X (Twitter)-URL des Unternehmens" : "Company X (Twitter) URL")}
+                    {activeSocial === "pinterest" && (isAr ? "رابط حساب Pinterest للشركة" : isDe ? "Pinterest-URL des Unternehmens" : "Company Pinterest URL")}
                   </span>
                   <button
                     type="button"
                     onClick={() => setActiveSocial(null)}
                     className="text-xs text-red-500 hover:text-red-600 font-semibold"
                   >
-                    {isAr ? "إغلاق" : "Close"}
+                    {isAr ? "إغلاق" : isDe ? "Schließen" : "Close"}
                   </button>
                 </div>
                 <input
@@ -1210,9 +1172,13 @@ export default function CompanyProfileForm({
             {loading || isSubmitting
               ? isAr
                 ? "جاري الحفظ..."
+                : isDe
+                ? "Wird gespeichert..."
                 : "Saving..."
               : isAr
               ? "تحديث"
+              : isDe
+              ? "Aktualisieren"
               : "Update"}
           </PrimaryButton>
         </div>

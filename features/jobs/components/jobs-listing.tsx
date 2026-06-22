@@ -8,7 +8,7 @@ import { JobsFilterTrigger } from "@/features/jobs/components/jobs-filter-trigge
 import { JobCard } from "@/features/jobs/components/job-card"
 import { StaggerInView, StaggerItem } from "@/features/shared-home"
 import type { Category, Job } from "@/lib/api/types"
-import { getJobTitle, salaryFromSliderPercent, getLocalizedName } from "@/features/jobs/lib/job-display"
+import { getJobTitle, salaryFromSliderPercent, getLocalizedName, getLocalizedStateName } from "@/features/jobs/lib/job-display"
 import { cn } from "@/lib/utils"
 
 type JobsListingProps = {
@@ -175,6 +175,10 @@ export function JobsListing({
       : total || filteredJobs.length
   )
 
+  const localizedStateOptions = useMemo(() => {
+    return stateOptions.map((state) => getLocalizedStateName(state, locale))
+  }, [stateOptions, locale])
+
   const filterPanelProps: FilterPanelProps = {
     filterPanelTitle: labels.filterPanelTitle,
     clearAllLabel: labels.clearAll,
@@ -185,7 +189,7 @@ export function JobsListing({
     salaryMaxLabel: labels.salaryMax,
     salaryFromLabel: labels.from,
     salaryToLabel: labels.to,
-    stateOptions,
+    stateOptions: localizedStateOptions,
     categoryOptions,
     activeStates,
     activeCategories,

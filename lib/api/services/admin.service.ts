@@ -82,22 +82,32 @@ export async function getAdminJobById(
   token: string,
   locale = "ar"
 ): Promise<Job | null> {
-  try {
-    const response = await api.get<ApiResponse<Job>>(`/jobs/${jobId}`, { token, locale })
-    const rawJob = response.data ?? response
-    if (rawJob) {
-      return normalizeJob(rawJob, locale)
+  const endpoints = [`/admin/jobs/${jobId}`, `/jobs/${jobId}`]
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await api.get<ApiResponse<Job>>(endpoint, { token, locale })
+      // API may return { data: { job: {...}, related: [...] } } or { data: { id, ... } }
+      const payload = (response as any)?.data ?? response
+      const rawJob =
+        payload && typeof payload === "object" && !Array.isArray(payload) && "job" in payload
+          ? (payload as any).job
+          : payload
+      if (rawJob) {
+        return normalizeJob(rawJob, locale)
+      }
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 403 || err.status === 401)) {
+        // If it's a forbidden/auth error, we can still try other endpoints or fallback search
+      }
+      // eslint-disable-next-line no-console
+      console.warn(`[getAdminJobById] Fetch from ${endpoint} failed:`, err)
     }
-  } catch (err) {
-    if (err instanceof ApiError && (err.status === 403 || err.status === 401)) {
-      return null
-    }
-    // eslint-disable-next-line no-console
-    console.warn(`[getAdminJobById] Direct fetch failed, trying fallback search loop:`, err)
   }
 
   try {
-    for (const status of ADMIN_JOB_STATUSES) {
+    const statuses = [...ADMIN_JOB_STATUSES, "stopped"]
+    for (const status of statuses) {
       let page = 1
       let hasMore = true
 
@@ -360,3 +370,42 @@ export async function getAdminStats(
     return { total_users: 0, total_companies: 0, total_jobs: 0, pending_jobs: 0 }
   }
 }
+
+export async function suspendUser(
+  userId: number | string,
+  suspend: boolean,
+  token: string,
+  locale = "ar"
+): Promise<void> {
+  // Call backend to update status to "suspended" (or "inactive") or "active"
+  const formData = new FormData()
+  formData.append("status", suspend ? "suspended" : "active")
+  try {
+    await api.post(`/admin/users/${userId}`, formData, { token, locale })
+  } catch (err) {
+    await api.post(`/users/${userId}`, formData, { token, locale })
+  }
+}
+
+export async function updateAdminUser(
+  userId: number | string,
+  data: { name?: string; email?: string; password?: string; status?: string; email_verified?: number | boolean },
+  token: string,
+  locale = "ar"
+): Promise<void> {
+  const formData = new FormData()
+  if (data.name) formData.append("name", data.name)
+  if (data.email) formData.append("email", data.email)
+  if (data.password) formData.append("password", data.password)
+  if (data.status) formData.append("status", data.status)
+  if (data.email_verified !== undefined) {
+    formData.append("email_verified", data.email_verified ? "1" : "0")
+  }
+  
+  try {
+    await api.post(`/admin/users/${userId}`, formData, { token, locale })
+  } catch (err) {
+    await api.post(`/users/${userId}`, formData, { token, locale })
+  }
+}
+

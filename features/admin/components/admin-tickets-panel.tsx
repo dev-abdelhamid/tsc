@@ -20,6 +20,7 @@ export function AdminTicketsPanel({ tickets: initialTickets = [], locale }: Prop
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
 
   const isAr = locale === "ar"
+  const isDe = locale === "de"
 
   const fetchTickets = async () => {
     try {
@@ -76,9 +77,9 @@ export function AdminTicketsPanel({ tickets: initialTickets = [], locale }: Prop
 
   const getPriorityLabel = (pri: string) => {
     const map: Record<string, string> = {
-      high: isAr ? "عالي" : "High",
-      medium: isAr ? "متوسط" : "Medium",
-      low: isAr ? "منخفض" : "Low",
+      high: isAr ? "عالي" : isDe ? "Hoch" : "High",
+      medium: isAr ? "متوسط" : isDe ? "Mittel" : "Medium",
+      low: isAr ? "منخفض" : isDe ? "Niedrig" : "Low",
     }
     return map[pri] || pri
   }
@@ -91,17 +92,17 @@ export function AdminTicketsPanel({ tickets: initialTickets = [], locale }: Prop
 
   const getStatusLabel = (status: string) => {
     const map: Record<string, string> = {
-      pending: isAr ? "معلق" : "Pending",
-      open: isAr ? "مفتوح" : "Open",
-      answered: isAr ? "تم الرد" : "Answered",
-      closed: isAr ? "مغلق" : "Closed",
-      rejected: isAr ? "مرفوض" : "Rejected",
+      pending: isAr ? "معلق" : isDe ? "Ausstehend" : "Pending",
+      open: isAr ? "مفتوح" : isDe ? "Offen" : "Open",
+      answered: isAr ? "تم الرد" : isDe ? "Beantwortet" : "Answered",
+      closed: isAr ? "مغلق" : isDe ? "Geschlossen" : "Closed",
+      rejected: isAr ? "مرفوض" : isDe ? "Abgelehnt" : "Rejected",
     }
     return map[status] || status
   }
 
   const formatLastReply = (dateStr?: string) => {
-    if (!dateStr) return isAr ? "منذ فترة" : "some time ago"
+    if (!dateStr) return isAr ? "منذ فترة" : isDe ? "vor einiger Zeit" : "some time ago"
     try {
       const diffMs = Date.now() - new Date(dateStr).getTime()
       const diffMins = Math.floor(diffMs / (1000 * 60))
@@ -109,17 +110,17 @@ export function AdminTicketsPanel({ tickets: initialTickets = [], locale }: Prop
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
       if (diffMins < 60) {
-        return isAr ? `منذ ${diffMins} دقيقة` : `${diffMins} minutes ago`
+        return isAr ? `منذ ${diffMins} دقيقة` : isDe ? `vor ${diffMins} Minuten` : `${diffMins} minutes ago`
       }
       if (diffHours < 24) {
-        return isAr ? `منذ ${diffHours} ساعة` : `${diffHours} hours ago`
+        return isAr ? `منذ ${diffHours} ساعة` : isDe ? `vor ${diffHours} Stunden` : `${diffHours} hours ago`
       }
       if (diffDays < 30) {
-        return isAr ? `منذ ${diffDays} يوم` : `${diffDays} days ago`
+        return isAr ? `منذ ${diffDays} يوم` : isDe ? `vor ${diffDays} Tagen` : `${diffDays} days ago`
       }
-      return isAr ? "منذ شهر" : "1 month ago"
+      return isAr ? "منذ شهر" : isDe ? "vor 1 Monat" : "1 month ago"
     } catch {
-      return isAr ? "منذ شهر" : "1 month ago"
+      return isAr ? "منذ شهر" : isDe ? "vor 1 Monat" : "1 month ago"
     }
   }
 
@@ -139,28 +140,28 @@ export function AdminTicketsPanel({ tickets: initialTickets = [], locale }: Prop
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-sm text-start">
           <div className="text-xs font-semibold text-[#6B7280] mb-1">
-            {isAr ? "إجمالي التذاكر" : "Total Tickets"}
+            {isAr ? "إجمالي التذاكر" : isDe ? "Tickets insgesamt" : "Total Tickets"}
           </div>
           <div className="text-2xl font-bold text-[#032C44]">{totalTickets}</div>
         </div>
 
         <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-sm text-start">
           <div className="text-xs font-semibold text-[#FFB64D] mb-1">
-            {isAr ? "تذاكر معلقة" : "Pending Tickets"}
+            {isAr ? "تذاكر معلقة" : isDe ? "Ausstehende Tickets" : "Pending Tickets"}
           </div>
           <div className="text-2xl font-bold text-[#FFB64D]">{pendingCount}</div>
         </div>
 
         <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-sm text-start">
           <div className="text-xs font-semibold text-[#39DA8A] mb-1">
-            {isAr ? "تذاكر مفتوحة" : "Open Tickets"}
+            {isAr ? "تذاكر مفتوحة" : isDe ? "Offene Tickets" : "Open Tickets"}
           </div>
           <div className="text-2xl font-bold text-[#39DA8A]">{openCount}</div>
         </div>
 
         <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-sm text-start">
           <div className="text-xs font-semibold text-[#FF5B5C] mb-1">
-            {isAr ? "تذاكر مغلقة" : "Closed Tickets"}
+            {isAr ? "تذاكر مغلقة" : isDe ? "Geschlossene Tickets" : "Closed Tickets"}
           </div>
           <div className="text-2xl font-bold text-[#FF5B5C]">{closedCount}</div>
         </div>
@@ -172,10 +173,10 @@ export function AdminTicketsPanel({ tickets: initialTickets = [], locale }: Prop
         <div className="flex flex-wrap gap-2">
           {(["all", "pending", "open", "closed"] as const).map((status) => {
             const labels: Record<string, string> = {
-              all: isAr ? "الكل" : "All",
-              pending: isAr ? "معلق" : "Pending",
-              open: isAr ? "مفتوح" : "Open",
-              closed: isAr ? "مغلق" : "Closed",
+              all: isAr ? "الكل" : isDe ? "Alle" : "All",
+              pending: isAr ? "معلق" : isDe ? "Ausstehend" : "Pending",
+              open: isAr ? "مفتوح" : isDe ? "Offen" : "Open",
+              closed: isAr ? "مغلق" : isDe ? "Geschlossen" : "Closed",
             }
             const count =
               status === "all"
@@ -208,7 +209,7 @@ export function AdminTicketsPanel({ tickets: initialTickets = [], locale }: Prop
         <div className="relative w-full md:w-72">
           <Input
             type="text"
-            placeholder={isAr ? "البحث عن تذكرة..." : "Search tickets..."}
+            placeholder={isAr ? "البحث عن تذكرة..." : isDe ? "Tickets suchen..." : "Search tickets..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-2 border border-[#E5E7EB] focus:border-[#40A0CA] rounded-lg text-sm bg-white outline-none"
@@ -259,14 +260,14 @@ export function AdminTicketsPanel({ tickets: initialTickets = [], locale }: Prop
                       {/* Sender info */}
                       {ticket.user && (
                         <p className="text-xs text-gray-500 font-semibold">
-                          {isAr ? "المرسل:" : "From:"}{" "}
+                          {isAr ? "المرسل:" : isDe ? "Absender:" : "From:"}{" "}
                           <span className="text-[#006EA8]">{ticket.user.name}</span>{" "}
                           ({ticket.user.email})
                         </p>
                       )}
 
                       <p className="text-[11px] text-gray-400 font-medium">
-                        {isAr ? "آخر تحديث:" : "Last Update:"} {formatLastReply(lastUpdated)}
+                        {isAr ? "آخر تحديث:" : isDe ? "Letzte Aktualisierung:" : "Last Update:"} {formatLastReply(lastUpdated)}
                       </p>
                     </div>
 
@@ -295,7 +296,7 @@ export function AdminTicketsPanel({ tickets: initialTickets = [], locale }: Prop
                       onClick={(e) => toggleExpand(ticket.id, e)}
                       className="w-full flex items-center justify-between px-6 py-2.5 text-xs font-semibold text-[#006EA8] hover:bg-[#F0F9FF] transition-colors"
                     >
-                      <span>{isAr ? "نص الرسالة" : "Message Body"}</span>
+                      <span>{isAr ? "نص الرسالة" : isDe ? "Nachrichtentext" : "Message Body"}</span>
                       {isExpanded
                         ? <ChevronUp className="h-3.5 w-3.5 shrink-0" />
                         : <ChevronDown className="h-3.5 w-3.5 shrink-0" />
@@ -334,7 +335,7 @@ export function AdminTicketsPanel({ tickets: initialTickets = [], locale }: Prop
                     <span />
                   )}
                   <span className="text-xs text-[#40A0CA] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                    {isAr ? "مراجعة والتفاصيل ←" : "Review & Details →"}
+                    {isAr ? "مراجعة والتفاصيل ←" : isDe ? "Überprüfen & Details →" : "Review & Details →"}
                   </span>
                 </div>
               </div>
@@ -344,7 +345,7 @@ export function AdminTicketsPanel({ tickets: initialTickets = [], locale }: Prop
           <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-12 text-center shadow-sm">
             <img src="/portfolio/drop.svg" alt="Empty" className="w-16 h-16 mx-auto opacity-40 mb-4" />
             <p className="text-gray-500 font-medium">
-              {isAr ? "لا توجد تذاكر دعم فني تطابق البحث حالياً" : "No support tickets match the current filters"}
+              {isAr ? "لا توجد تذاكر دعم فني تطابق البحث حالياً" : isDe ? "Derzeit entsprechen keine Support-Tickets den Filtern" : "No support tickets match the current filters"}
             </p>
           </div>
         )}

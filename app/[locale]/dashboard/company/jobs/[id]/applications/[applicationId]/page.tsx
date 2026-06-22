@@ -62,10 +62,12 @@ export default async function CompanyApplicationDetailPage({ params }: PageProps
 
   const token = session.accessToken as string | undefined
   if (!token) redirect(`/${locale}/sign-in`)
-  const job = await getCompanyJob(jobId, token, locale)
+  const [job, application] = await Promise.all([
+    getCompanyJob(jobId, token, locale),
+    getCompanyApplication(jobId, appId, token, locale),
+  ])
   if (!job) notFound()
 
-  const application = await getCompanyApplication(jobId, appId, token, locale)
   if (!application) {
     // development fallback when impersonating
     if (process.env.NODE_ENV !== "production") {

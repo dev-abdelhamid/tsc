@@ -128,44 +128,24 @@ export async function getMyApplicationDetail(
   applicationId: number,
   locale = "ar"
 ): Promise<JobApplication | null> {
-  try {
-    const response = await api.get<unknown>(`/my-applications/${applicationId}`, {
-      token,
-      locale,
-    })
-
-    if (response && typeof response === "object") {
-      const root = response as Record<string, unknown>
-      const data = root.data ?? response
-
-      if (data && typeof data === "object") {
-        const appData = data as Record<string, unknown>
-        // Check if we got a valid object
-        if (appData.id || appData.job) {
-          return {
-            id: Number(appData.id) || applicationId,
-            job: appData.job as Job,
-            user: appData.user as User,
-            status: (appData.status as "pending" | "accepted" | "rejected") || "pending",
-            applied_at: String(appData.applied_at || appData.appliedAt || ""),
-            cv_url: (appData.cv_url || appData.cvUrl) as string | undefined,
-          } satisfies JobApplication
-        }
-      }
-    }
-  } catch (err) {
-    // Direct detail fetch not supported by upstream API. Fall back to searching in the application list.
-  }
-
-  // Fallback: Fetch all applications and find the matching one
+  // Directly search in list since `/my-applications/${id}` is not supported on the backend (returns 404)
   try {
     const listResult = await getMyApplications(token, 1, locale)
     const found = listResult.data.find((app) => app.id === applicationId)
     if (found) {
       return found
     }
+    // If not found on page 1, search subsequent pages if they exist
+    const totalPages = listResult.meta?.last_page ?? 1
+    for (let p = 2; p <= totalPages; p++) {
+      const nextResult = await getMyApplications(token, p, locale)
+      const nextFound = nextResult.data.find((app) => app.id === applicationId)
+      if (nextFound) {
+        return nextFound
+      }
+    }
   } catch (err) {
-    console.error("[getMyApplicationDetail] list fallback failed:", err)
+    console.error("[getMyApplicationDetail] search failed:", err)
   }
 
   return null

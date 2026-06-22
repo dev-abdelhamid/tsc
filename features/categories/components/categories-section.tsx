@@ -31,9 +31,8 @@ export async function CategoriesSection({ override }: CategoriesSectionProps) {
   const title = override?.title ?? t("title")
   const description = override?.description ?? t("description")
   
-  // Use hero stats from override (settings), fallback to default
-  const heroStats = override?.heroStats ?? { total: "13k+", unit: "" }
-  const metricDisplay = heroStats.unit ? `${heroStats.total} ${heroStats.unit}` : heroStats.total
+  // Static metric display as requested
+  const metricDisplay = "27k+"
 
   return (
     <SectionShell id="categories" stagger={false} className="overflow-hidden bg-white py-12 sm:py-16 lg:py-[82px]">
@@ -80,11 +79,11 @@ export async function CategoriesSection({ override }: CategoriesSectionProps) {
                   <Link locale={locale} href={`/jobs?category=${cat.id}`} className="block">
                     <Card
                       className={cn(
-                        "group relative min-h-[236px] cursor-pointer overflow-hidden rounded-lg border border-[#d4d4d4] bg-white transition-all duration-300",
+                        "group relative min-h-[140px] cursor-pointer overflow-hidden rounded-lg border border-[#d4d4d4] bg-white transition-all duration-300",
                         CARD_HOVER_SHADOW
                       )}
                     >
-                      <CardContent className="flex h-full min-h-[236px] flex-col items-start gap-6 overflow-hidden px-6 py-8">
+                      <CardContent className="flex h-full min-h-[140px] flex-col items-start gap-2 overflow-hidden px-5 py-5">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#40A0CA] bg-white transition-colors group-hover:border-white group-hover:bg-white">
                           {cat.icon && resolveImageUrl(cat.icon) ? (
                             <Image
@@ -102,7 +101,7 @@ export async function CategoriesSection({ override }: CategoriesSectionProps) {
                             />
                           )}
                         </div>
-                        <div className="mt-auto space-y-2 text-start">
+                        <div className="space-y-1 text-start">
                           <p className="text-[20px] font-bold leading-[1.16] text-[#262626] transition-colors group-hover:text-white">
                             {cat.name || t(`items.${slug}.label`)}
                           </p>
@@ -125,8 +124,8 @@ export async function CategoriesSection({ override }: CategoriesSectionProps) {
 
             {/* Stats card - always visible */}
             <StaggerItem className="overflow-hidden p-1 sm:col-span-2 lg:col-span-1">
-              <Card className="min-h-[236px] overflow-hidden rounded-lg border border-[#4BB7E7] bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#398DB3_0%,#2D7494_100%)] bg-size-[150px_150px,auto] bg-blend-[plus-lighter,normal] text-white shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19)]">
-                <CardContent className="flex h-full min-h-[236px] flex-col justify-between gap-4 overflow-hidden px-6 py-6">
+              <Card className="min-h-[160px] overflow-hidden rounded-lg border border-[#4BB7E7] bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#398DB3_0%,#2D7494_100%)] bg-size-[150px_150px,auto] bg-blend-[plus-lighter,normal] text-white shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19)]">
+                <CardContent className="flex h-full min-h-[160px] flex-col justify-between gap-3 overflow-hidden px-5 py-5">
                   <div className="space-y-4 text-start">
                     <p className="text-[48px] font-medium leading-[1.16] sm:text-[64px]">{metricDisplay}</p>
                     <p className="text-[16px] font-normal capitalize leading-[1.16]">{t("metricLabel")}</p>

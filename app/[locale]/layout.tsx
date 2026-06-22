@@ -11,6 +11,7 @@ import { SiteChrome } from "@/features/shared-home"
 import { SiteFooter } from "@/features/shared-home/components/site-footer"
 import { getSession } from "@/lib/auth-token"
 import { normalizeRole } from "@/lib/auth-token"
+import { Toaster } from "@/components/ui/sonner"
 import "../globals.css"
 
 const cairo = Cairo({
@@ -81,6 +82,9 @@ export default async function LocaleLayout({ children, params }: Props) {
         email: session.user.email,
         role: normalizeRole(session.user),
         avatar: session.user.avatar,
+        company: (session.user as any).company || undefined,
+        company_profile: (session.user as any).company_profile || undefined,
+        companyProfile: (session.user as any).companyProfile || undefined,
       }
       : null,
   }
@@ -106,6 +110,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             <SiteChrome session={canonicalSessionData} footer={<SiteFooter />}>
               {children}
             </SiteChrome>
+            <Toaster position="top-center" richColors />
           </DirectionProvider>
         </NextIntlClientProvider>
       </body>

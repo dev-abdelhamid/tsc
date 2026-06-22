@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Link, stripLocalePrefix, usePathname } from "@/i18n/navigation"
-import { useSession, useAuth, updateSessionUser } from "@/hooks/use-auth"
+import { useSession, useAuth, updateSessionUser, seedSessionCache } from "@/hooks/use-auth"
 import LogoutButton from "@/components/ui/logout-button"
 import { useDashboardMobileMenu } from "@/features/shared-home/components/dashboard-mobile-menu-context"
 import { cn, resolveImageUrl } from "@/lib/utils"
@@ -155,6 +155,9 @@ export function SiteHeader({
           email: initialUser.email,
           avatar: (initialUser as any).avatar || (initialUser as any).avatar_url || undefined,
           role: (initialUser as any).role || undefined,
+          company: (initialUser as any).company || undefined,
+          company_profile: (initialUser as any).company_profile || undefined,
+          companyProfile: (initialUser as any).companyProfile || undefined,
         })
       } catch {
         // non-fatal
@@ -178,11 +181,16 @@ export function SiteHeader({
   const currentLocaleOption = LOCALE_OPTIONS.find((opt) => opt.locale === currentLocale) ?? LOCALE_OPTIONS[0]
   const { isLoggedIn, user } = authState
 
-  // Resolve correct display avatar prioritizing company logo for companies
-  const userRole = user ? normalizeRole(user) : "user"
-  const cp = user?.companyProfile || (user as any)?.company_profile || (user as any)?.company
+  // Resolve correct display avatar prioritizing company logo for companies.
+  // Use session.user as the freshest source for avatar (it updates after re-fetch);
+  // fall back to authState.user if session hasn't loaded yet.
+  const effectiveUser = session.user ?? user
+  const userRole = effectiveUser ? normalizeRole(effectiveUser) : (user ? normalizeRole(user) : "user")
+  const cp = effectiveUser?.companyProfile || (effectiveUser as any)?.company_profile || (effectiveUser as any)?.company
   const companyLogo = cp?.logoUrl || cp?.logo || cp?.logo_url || cp?.avatar || cp?.avatar_url
-  const displayAvatar = (userRole === "company" && companyLogo) ? companyLogo : (user?.avatar || (user as any)?.avatar_url)
+  const displayAvatar = (userRole === "company" && companyLogo)
+    ? companyLogo
+    : ((effectiveUser as any)?.avatar || (effectiveUser as any)?.avatar_url || user?.avatar || (user as any)?.avatar_url)
 
   const effectiveIsDashboard = Boolean(isDashboard)
 
@@ -192,13 +200,19 @@ export function SiteHeader({
   )
 
   // Sync auth state from useSession after mount.
+  // IMPORTANT: Do NOT overwrite a logged-in authState with logged-out session
+  // data while the profile fetch is still in-flight. This prevents the brief
+  // flash of sign-in buttons that occurs when the page refreshes and the SSR
+  // provides isLoggedIn=true but the client hook hasn't completed its fetch.
   React.useEffect(() => {
     if (!session.checked) return
+    // If session says not logged in but we are still loading, wait.
+    if (!session.isLoggedIn && session.isLoading && authState.isLoggedIn) return
     const next = { isLoggedIn: session.isLoggedIn, user: session.user as User | null, checked: true }
     if (next.isLoggedIn !== authState.isLoggedIn || next.user !== authState.user || !authState.checked) {
       setAuthState(next)
     }
-  }, [session.checked, session.isLoggedIn, session.user, authState.isLoggedIn, authState.user, authState.checked])
+  }, [session.checked, session.isLoggedIn, session.isLoading, session.user, authState.isLoggedIn, authState.user, authState.checked])
 
   // Close notification panel on outside click
   React.useEffect(() => {
@@ -450,11 +464,11 @@ export function SiteHeader({
 
             {showNotifications && (
               <div
-                className="absolute top-full mt-2 z-[200] max-h-[min(60vh,450px)] w-[min(96vw,360px)] overflow-hidden rounded-[16px] border border-gray-100 bg-white shadow-2xl pointer-events-auto ltr:right-0 rtl:left-0"
+                className="absolute top-full mt-2 z-[200] max-h-[min(75vh,500px)] w-[min(96vw,380px)] flex flex-col overflow-hidden rounded-[16px] border border-gray-100 bg-white shadow-2xl pointer-events-auto ltr:right-0 rtl:left-0"
               >
-                  <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gradient-to-r from-[#006EA8]/5 to-[#005685]/5 flex-row">
+                  <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gradient-to-r from-[#006EA8]/5 to-[#005685]/5 flex-row shrink-0">
                     <h3 className="font-bold text-gray-900 text-[15px] sm:text-base">
-                      {isRTL ? `الإشعارات (${unreadCount})` : `Notifications (${unreadCount})`}
+                      {currentLocale === "ar" ? `الإشعارات (${unreadCount})` : currentLocale === "de" ? `Benachrichtigungen (${unreadCount})` : `Notifications (${unreadCount})`}
                     </h3>
                     <div className="flex items-center gap-2">
                       {unreadCount > 0 && (
@@ -469,7 +483,7 @@ export function SiteHeader({
                           }}
                           className="text-xs text-[#006EA8] hover:underline font-semibold cursor-pointer shrink-0"
                         >
-                          {isRTL ? "تحديد الكل كمقروء" : "Mark all read"}
+                          {currentLocale === "ar" ? "تحديد الكل كمقروء" : currentLocale === "de" ? "Alle als gelesen markieren" : "Mark all read"}
                         </button>
                       )}
                       <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 hover:bg-gray-100" onClick={() => setShowNotifications(false)}>
@@ -477,12 +491,12 @@ export function SiteHeader({
                       </Button>
                     </div>
                   </div>
-                  <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
+                  <div className="divide-y divide-gray-50 flex-1 min-h-0 overflow-y-auto">
                     {notificationsLoading && (
-                      <div className="p-6 text-center text-sm text-gray-500">{isRTL ? "جاري التحميل..." : "Loading..."}</div>
+                      <div className="p-6 text-center text-sm text-gray-500">{currentLocale === "ar" ? "جاري التحميل..." : currentLocale === "de" ? "Wird geladen..." : "Loading..."}</div>
                     )}
                     {!notificationsLoading && notifications.length === 0 && (
-                      <div className="p-6 text-center text-sm text-gray-500">{isRTL ? "لا توجد إشعارات" : "No notifications"}</div>
+                      <div className="p-6 text-center text-sm text-gray-500">{currentLocale === "ar" ? "لا توجد إشعارات" : currentLocale === "de" ? "Keine Benachrichtigungen" : "No notifications"}</div>
                     )}
                     {notifications.map((notification) => (
                       <div
@@ -636,7 +650,7 @@ export function SiteHeader({
                         )}
                       >
                         <LayoutDashboard className="h-4 w-4 stroke-[1.5] text-gray-400 group-hover:text-[#006EA8]" />
-                        <span>{isRTL ? "لوحة التحكم" : "Dashboard"}</span>
+                        <span>{currentLocale === "ar" ? "لوحة التحكم" : currentLocale === "de" ? "Dashboard" : "Dashboard"}</span>
                       </Link>
 
                       <Link
@@ -649,7 +663,7 @@ export function SiteHeader({
                         )}
                       >
                         <Settings className="h-4 w-4 stroke-[1.5] text-gray-400 group-hover:text-[#006EA8]" />
-                        <span>{isRTL ? "الملف الشخصي" : "Profile Settings"}</span>
+                        <span>{currentLocale === "ar" ? "الملف الشخصي" : currentLocale === "de" ? "Profileinstellungen" : "Profile Settings"}</span>
                       </Link>
                     </div>
 
@@ -662,7 +676,7 @@ export function SiteHeader({
                         "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-100 cursor-pointer",
                         isRTL ? "text-right" : "text-left"
                       )}
-                      label={isRTL ? "تسجيل الخروج" : "Logout"}
+                      label={currentLocale === "ar" ? "تسجيل الخروج" : currentLocale === "de" ? "Abmelden" : "Logout"}
                       isRTL={isRTL}
                     />
                   </div>

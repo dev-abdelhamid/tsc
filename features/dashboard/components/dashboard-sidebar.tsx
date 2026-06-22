@@ -245,23 +245,24 @@ function getAdminGroups(locale: string): SidebarGroup[] {
 
 function getUserItems(locale: string, userRole: "user" | "company") {
   const isRTL = locale === "ar"
+  const isDE = locale === "de"
 
   if (userRole === "user") {
     return [
-      { icon: "/dashboard/dashboard.svg", label: isRTL ? "لوحة التحكم" : "Dashboard", href: "/dashboard/user" },
-      { icon: "/dashboard/profile.svg", label: isRTL ? "تحديث الملف الشخصي" : "Update Profile", href: "/dashboard/user/profile" },
-      { icon: "/dashboard/education_Info.svg", label: isRTL ? "المؤهلات والتعليم" : "Education Info", href: "/dashboard/user/education" },
-      { icon: "/dashboard/jobs.svg", label: isRTL ? "طلبات الوظائف" : "Job Application", href: "/dashboard/user/applications" },
-      { icon: "/dashboard/favourites.svg", label: isRTL ? "الوظائف المفضلة" : "Favourite Job", href: "/dashboard/user/favourites" },
-      { icon: "/dashboard/tickets.svg", label: isRTL ? "التذاكر" : "Tickets", href: "/dashboard/user/tickets" },
+      { icon: "/dashboard/dashboard.svg", label: isRTL ? "لوحة التحكم" : isDE ? "Dashboard" : "Dashboard", href: "/dashboard/user" },
+      { icon: "/dashboard/profile.svg", label: isRTL ? "تحديث الملف الشخصي" : isDE ? "Profil aktualisieren" : "Update Profile", href: "/dashboard/user/profile" },
+      { icon: "/dashboard/education_Info.svg", label: isRTL ? "المؤهلات والتعليم" : isDE ? "Bildungsinfo" : "Education Info", href: "/dashboard/user/education" },
+      { icon: "/dashboard/jobs.svg", label: isRTL ? "طلبات الوظائف" : isDE ? "Bewerbungen" : "Job Application", href: "/dashboard/user/applications" },
+      { icon: "/dashboard/favourites.svg", label: isRTL ? "الوظائف المفضلة" : isDE ? "Favoriten" : "Favourite Job", href: "/dashboard/user/favourites" },
+      { icon: "/dashboard/tickets.svg", label: isRTL ? "التذاكر" : isDE ? "Tickets" : "Tickets", href: "/dashboard/user/tickets" },
     ]
   }
 
   return [
-    { icon: "/dashboard/dashboard.svg", label: isRTL ? "لوحة التحكم" : "Dashboard", href: "/dashboard/company" },
-    { icon: "/dashboard/profile.svg", label: isRTL ? "تحديث الملف الشخصي" : "Update Profile", href: "/dashboard/company/profile" },
-    { icon: "/dashboard/jobs.svg", label: isRTL ? "كل الوظائف" : "All Jobs", href: "/dashboard/company/jobs" },
-    { icon: "/dashboard/tickets.svg", label: isRTL ? "التذاكر" : "Tickets", href: "/dashboard/company/tickets" },
+    { icon: "/dashboard/dashboard.svg", label: isRTL ? "لوحة التحكم" : isDE ? "Dashboard" : "Dashboard", href: "/dashboard/company" },
+    { icon: "/dashboard/profile.svg", label: isRTL ? "تحديث الملف الشخصي" : isDE ? "Profil aktualisieren" : "Update Profile", href: "/dashboard/company/profile" },
+    { icon: "/dashboard/jobs.svg", label: isRTL ? "كل الوظائف" : isDE ? "Alle Jobs" : "All Jobs", href: "/dashboard/company/jobs" },
+    { icon: "/dashboard/tickets.svg", label: isRTL ? "التذاكر" : isDE ? "Tickets" : "Tickets", href: "/dashboard/company/tickets" },
   ]
 }
 
@@ -350,7 +351,7 @@ function SidebarNav({
           <ExternalLink className="h-[16px] w-[16px] flex-none opacity-70" />
           <span className="text-[13px] font-semibold">{viewSiteLabel}</span>
         </Link>
-        <SidebarLogout label={isRTL ? "تسجيل الخروج" : "Logout"} flipIcon={flipIcon} initialUser={initialUser} />
+        <SidebarLogout label={isRTL ? "تسجيل الخروج" : locale === "de" ? "Abmelden" : "Logout"} flipIcon={flipIcon} initialUser={initialUser} />
       </div>
     </div>
   )

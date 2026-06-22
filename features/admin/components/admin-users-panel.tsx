@@ -5,7 +5,7 @@ import { useState, useTransition } from "react"
 import { useRouter } from "@/i18n/navigation"
 import { useTranslations } from "next-intl"
 import type { User } from "@/lib/api/types"
-import { deleteUserAction } from "@/features/admin/actions/admin-actions"
+import { deleteUserAction, suspendUserAction } from "@/features/admin/actions/admin-actions"
 import { AdminTableCell, AdminTableRow, AdminTableShell } from "./admin-table-shell"
 import { cn } from "@/lib/utils"
 
@@ -14,24 +14,31 @@ export function AdminUsersPanel({ users, locale }: { users: User[]; locale: stri
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const isAr = locale === "ar"
 
-  // Data is pre-filtered from the server (role="user"), no need to filter again
-  const filteredUsers = users
+  // Sort users so that the latest registered user (highest ID or newest createdAt) appears first
+  const sortedUsers = [...users].sort((a, b) => {
+    const idA = Number(a.id) || 0
+    const idB = Number(b.id) || 0
+    if (idB !== idA) return idB - idA
+    const dateA = new Date((a as any).createdAt || 0).getTime()
+    const dateB = new Date((b as any).createdAt || 0).getTime()
+    return dateB - dateA
+  })
 
   // Calculate user-specific statistics
-  const totalUsers = filteredUsers.length
-  const verifiedUsers = filteredUsers.filter((u) => u.emailVerified).length
-  const activeUsers = filteredUsers.filter((u) => u.status === "active").length
-  const verificationRate = totalUsers > 0 ? Math.round((verifiedUsers / totalUsers) * 100) : 0
-  const activityRate = totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0
+  const totalUsers = sortedUsers.length
+  const verifiedUsers = sortedUsers.filter((u) => u.emailVerified).length
+  const unverifiedUsers = totalUsers - verifiedUsers
 
   const columns = [
-    { key: "name", label: t("columns.name"), className: "w-[20%]" },
-    { key: "email", label: t("columns.email"), className: "w-[24%]" },
-    { key: "phone", label: t("columns.phone"), className: "w-[16%]" },
-    { key: "country", label: t("columns.country"), className: "w-[16%]" },
-    { key: "status", label: t("columns.status"), className: "w-[12%]" },
-    { key: "actions", label: t("columns.actions"), className: "w-[12%]" },
+    { key: "name", label: t("columns.name"), className: "w-[15%]" },
+    { key: "email", label: t("columns.email"), className: "w-[20%]" },
+    { key: "phone", label: t("columns.phone"), className: "w-[12%]" },
+    { key: "country", label: t("columns.country"), className: "w-[12%]" },
+    { key: "createdAt", label: isAr ? "تاريخ التسجيل" : "Registration Date", className: "w-[15%]" },
+    { key: "verification", label: isAr ? "التحقق" : "Verification", className: "w-[10%]" },
+    { key: "actions", label: t("columns.actions"), className: "w-[16%]" },
   ]
 
   function handleDelete(userId: number | string) {
@@ -41,6 +48,24 @@ export function AdminUsersPanel({ users, locale }: { users: User[]; locale: stri
       const result = await deleteUserAction(userId, locale)
       if (!result.ok) {
         setError(result.message ?? t("error"))
+        return
+      }
+      router.refresh()
+    })
+  }
+
+  function handleToggleSuspend(userId: number | string, currentStatus: string) {
+    const isSuspended = currentStatus === "suspended"
+    const confirmMsg = isAr
+      ? (isSuspended ? "هل تريد تفعيل هذا الحساب؟" : "هل تريد تعليق هذا الحساب؟")
+      : (isSuspended ? "Do you want to activate this account?" : "Do you want to suspend this account?")
+      
+    if (!confirm(confirmMsg)) return
+    setError(null)
+    startTransition(async () => {
+      const result = await suspendUserAction(userId, !isSuspended, locale)
+      if (!result.ok) {
+        setError(result.message ?? (isAr ? "فشل تغيير حالة الحساب" : "Failed to change user status"))
         return
       }
       router.refresh()
@@ -60,18 +85,22 @@ export function AdminUsersPanel({ users, locale }: { users: User[]; locale: stri
         
         <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-sm">
           <div className="text-xs font-medium text-[#6B7280] mb-2">
-            {locale === "ar" ? "التحقق المؤكد" : "Verified"}
+            {locale === "ar" ? "الحسابات المؤكدة" : "Verified Accounts"}
           </div>
-          <div className="text-2xl font-bold text-[#059669]">{verificationRate}%</div>
-          <div className="text-xs text-[#6B7280]">{verifiedUsers}/{totalUsers}</div>
+          <div className="text-2xl font-bold text-[#059669]">{verifiedUsers}</div>
+          <div className="text-xs text-[#6B7280]">
+            {locale === "ar" ? "مؤكد" : "Verified"}
+          </div>
         </div>
         
         <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-sm">
           <div className="text-xs font-medium text-[#6B7280] mb-2">
-            {locale === "ar" ? "نشط" : "Active"}
+            {locale === "ar" ? "الحسابات غير المؤكدة" : "Unverified Accounts"}
           </div>
-          <div className="text-2xl font-bold text-[#0891B2]">{activityRate}%</div>
-          <div className="text-xs text-[#6B7280]">{activeUsers}/{totalUsers}</div>
+          <div className="text-2xl font-bold text-[#D97706]">{unverifiedUsers}</div>
+          <div className="text-xs text-[#6B7280]">
+            {locale === "ar" ? "غير مؤكد" : "Not Verified"}
+          </div>
         </div>
       </div>
 
@@ -80,39 +109,67 @@ export function AdminUsersPanel({ users, locale }: { users: User[]; locale: stri
       )}
 
       {/* Users Table */}
-      <AdminTableShell columns={columns} isEmpty={filteredUsers.length === 0} emptyMessage={t("empty")}>
-        {filteredUsers.map((user, index) => (
-          <AdminTableRow key={user.id} striped={index % 2 === 1}>
-            <AdminTableCell className="w-[20%]">
-              <Link locale={locale} href={`/dashboard/admin/users/${user.id}`} className="font-medium hover:underline text-[#006EA8]">
-                {user.name}
-              </Link>
-            </AdminTableCell>
-            <AdminTableCell className="w-[24%] text-xs">{user.email}</AdminTableCell>
-            <AdminTableCell className="w-[16%] text-xs">{user.phone || "—"}</AdminTableCell>
-            <AdminTableCell className="w-[16%] text-xs">
-              {user.country?.name || "—"}
-            </AdminTableCell>
-            <AdminTableCell className="w-[12%]">
-              <span className={cn(
-                "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize",
-                user.status === "active" ? "bg-[#DCFCE7] text-[#166534]" : "bg-[#FEE2E2] text-[#991B1B]"
-              )}>
-                {user.status}
-              </span>
-            </AdminTableCell>
-            <AdminTableCell className="w-[12%]">
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => handleDelete(user.id)}
-                className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-50"
-              >
-                {t("delete")}
-              </button>
-            </AdminTableCell>
-          </AdminTableRow>
-        ))}
+      <AdminTableShell columns={columns} isEmpty={sortedUsers.length === 0} emptyMessage={t("empty")} isRTL={locale === "ar"}>
+        {sortedUsers.map((user, index) => {
+          const formattedDate = (() => {
+            const dateVal = (user as any).createdAt || (user as any).created_at
+            if (!dateVal) return "—"
+            try {
+              return new Date(dateVal).toLocaleDateString(locale, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })
+            } catch {
+              return "—"
+            }
+          })()
+
+          return (
+            <AdminTableRow key={user.id} striped={index % 2 === 1}>
+              <AdminTableCell className="w-[15%]">
+                <Link locale={locale} href={`/dashboard/admin/users/${user.id}`} className="font-medium hover:underline text-[#006EA8] block truncate">
+                  {user.name}
+                </Link>
+              </AdminTableCell>
+              <AdminTableCell className="w-[20%] text-xs truncate">{user.email}</AdminTableCell>
+              <AdminTableCell className="w-[12%] text-xs">{user.phone || "—"}</AdminTableCell>
+              <AdminTableCell className="w-[12%] text-xs">
+                {user.country?.name || "—"}
+              </AdminTableCell>
+              <AdminTableCell className="w-[15%] text-xs">
+                {formattedDate}
+              </AdminTableCell>
+              <AdminTableCell className="w-[10%]">
+                <span className={cn(
+                  "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize",
+                  user.emailVerified ? "bg-[#DCFCE7] text-[#166534]" : "bg-[#FEE2E2] text-[#991B1B]"
+                )}>
+                  {user.emailVerified ? (isAr ? "مؤكد" : "Verified") : (isAr ? "غير مؤكد" : "Not Verified")}
+                </span>
+              </AdminTableCell>
+              <AdminTableCell className="w-[16%] flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => handleToggleSuspend(user.id, user.status || "active")}
+                  className="text-xs font-semibold text-amber-600 hover:underline disabled:opacity-50"
+                >
+                  {user.status === "suspended" ? (isAr ? "تفعيل" : "Activate") : (isAr ? "تعليق" : "Suspend")}
+                </button>
+                <span className="text-[#E5E7EB]">|</span>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => handleDelete(user.id)}
+                  className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-50"
+                >
+                  {t("delete")}
+                </button>
+              </AdminTableCell>
+            </AdminTableRow>
+          )
+        })}
       </AdminTableShell>
     </div>
   )

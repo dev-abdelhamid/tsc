@@ -130,10 +130,11 @@ export default async function CompanyProfilePage({
   }
 
   const isAr = locale === "ar"
+  const isDe = locale === "de"
   return (
     <DashboardPageShell
-      title={isAr ? "ملف الشركة" : "Company Profile"}
-      description={isAr ? "تعديل بيانات الشركة" : "Edit company profile"}
+      title={isAr ? "ملف الشركة" : isDe ? "Unternehmensprofil" : "Company Profile"}
+      description={isAr ? "تعديل بيانات الشركة" : isDe ? "Unternehmensprofil bearbeiten" : "Edit company profile"}
       isRTL={isAr}
     >
       <CompanyProfileForm

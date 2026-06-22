@@ -28,20 +28,21 @@ export default async function CompanyApplicantsPage({
   }
 
   const isAr = locale === "ar"
+  const isDe = locale === "de"
   const token = session.accessToken as string | undefined
   if (!token) redirect(`/${locale}/sign-in`)
   const applications = await getAllCompanyApplications(token, locale)
 
   const statusLabels: Record<string, string> = {
-    pending: isAr ? "قيد الانتظار" : "Pending",
-    approved: isAr ? "مقبول" : "Approved",
-    rejected: isAr ? "مرفوض" : "Rejected",
+    pending: isAr ? "قيد الانتظار" : isDe ? "Ausstehend" : "Pending",
+    approved: isAr ? "مقبول" : isDe ? "Akzeptiert" : "Approved",
+    rejected: isAr ? "مرفوض" : isDe ? "Abgelehnt" : "Rejected",
   }
 
   return (
     <DashboardPageShell
-      title={isAr ? "المتقدمون" : "Applicants"}
-      description={isAr ? "جميع طلبات التقديم على وظائف الشركة" : "All applications submitted to your jobs"}
+      title={isAr ? "المتقدمون" : isDe ? "Bewerber" : "Applicants"}
+      description={isAr ? "جميع طلبات التقيق على وظائف الشركة" : isDe ? "Alle eingegangenen Bewerbungen für Ihre Stellen" : "All applications submitted to your jobs"}
       isRTL={isAr}
     >
       <div className="overflow-hidden rounded-[8px] bg-white p-4 shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)] sm:p-6">
@@ -53,16 +54,16 @@ export default async function CompanyApplicantsPage({
               "from-[#032C44] to-[#41A0CA]"
             )}
           >
-            <div className="w-[25%] shrink-0 px-2">{isAr ? "المتقدم" : "Candidate"}</div>
-            <div className="w-[25%] shrink-0 px-2">{isAr ? "الوظيفة" : "Job"}</div>
-            <div className="flex w-[15%] justify-center px-2">{isAr ? "الحالة" : "Status"}</div>
-            <div className="flex flex-1 justify-end px-2">{isAr ? "الإجراءات" : "Actions"}</div>
+            <div className="w-[25%] shrink-0 px-2">{isAr ? "المتقدم" : isDe ? "Bewerber" : "Candidate"}</div>
+            <div className="w-[25%] shrink-0 px-2">{isAr ? "الوظيفة" : isDe ? "Stelle" : "Job"}</div>
+            <div className="flex w-[15%] justify-center px-2">{isAr ? "الحالة" : isDe ? "Status" : "Status"}</div>
+            <div className="flex flex-1 justify-end px-2">{isAr ? "الإجراءات" : isDe ? "Aktionen" : "Actions"}</div>
           </div>
 
           <div className="min-w-[900px] rounded-b-[8px] border border-t-0 border-[#E8F2FF]">
             {applications.length === 0 ? (
               <p className="bg-white px-4 py-12 text-center text-sm text-[#525252]">
-                {isAr ? "لا توجد طلبات حتى الآن" : "No applications yet"}
+                {isAr ? "لا توجد طلبات حتى الآن" : isDe ? "Noch keine Bewerbungen" : "No applications yet"}
               </p>
             ) : (
               applications.map((application, index) => {
@@ -76,7 +77,7 @@ export default async function CompanyApplicantsPage({
                     )}
                   >
                     <div className="w-[25%] shrink-0 px-4 py-4 text-base font-medium text-[#262626]">
-                      {application.user?.name || (isAr ? "متقدم" : "Applicant")}
+                      {application.user?.name || (isAr ? "متقدم" : isDe ? "Bewerber" : "Applicant")}
                     </div>
                     <div className="w-[25%] shrink-0 px-4 py-4 text-sm text-[#525252]">
                       {application.job ? getJobTitle(application.job, locale) : "—"}
@@ -89,7 +90,7 @@ export default async function CompanyApplicantsPage({
                         href={`/dashboard/company/jobs/${application.jobId}/applications/${application.id}`}
                         className="inline-flex h-9 items-center rounded-lg border border-[#78A3BE] bg-white px-4 text-sm font-medium text-[#006EA8] hover:bg-[#F5F9FC]"
                       >
-                        {isAr ? "التفاصيل" : "Details"}
+                        {isAr ? "التفاصيل" : isDe ? "Details" : "Details"}
                       </Link>
                     </div>
                   </div>

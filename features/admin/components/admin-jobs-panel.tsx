@@ -15,9 +15,16 @@ import { cn } from "@/lib/utils"
 
 type Tab = "pending" | "approved" | "rejected" | "all"
 
-function mapStatus(status: string): "pending" | "approved" | "rejected" {
+function mapStatusForTab(status: string): "pending" | "approved" | "rejected" {
+  if (status === "approved" || status === "active" || status === "stopped") return "approved"
+  if (status === "rejected") return "rejected"
+  return "pending"
+}
+
+function mapStatusForBadge(status: string): "pending" | "approved" | "rejected" | "stopped" {
   if (status === "approved" || status === "active") return "approved"
   if (status === "rejected") return "rejected"
+  if (status === "stopped") return "stopped"
   return "pending"
 }
 
@@ -42,7 +49,7 @@ export function AdminJobsPanel({
 
   const filtered = useMemo(() => {
     if (tab === "all") return jobs
-    return jobs.filter((j) => mapStatus(j.status) === tab)
+    return jobs.filter((j) => mapStatusForTab(j.status) === tab)
   }, [jobs, tab])
 
   const statusCounts = useMemo(() => {
@@ -52,9 +59,9 @@ export function AdminJobsPanel({
 
     return {
       total: jobs.length,
-      pending: jobs.filter((job) => mapStatus(job.status) === "pending").length,
-      approved: jobs.filter((job) => mapStatus(job.status) === "approved").length,
-      rejected: jobs.filter((job) => mapStatus(job.status) === "rejected").length,
+      pending: jobs.filter((job) => mapStatusForTab(job.status) === "pending").length,
+      approved: jobs.filter((job) => mapStatusForTab(job.status) === "approved").length,
+      rejected: jobs.filter((job) => mapStatusForTab(job.status) === "rejected").length,
     }
   }, [jobs, serverCounts])
 
@@ -67,18 +74,20 @@ export function AdminJobsPanel({
   ]
 
   const columns = [
-    { key: "title", label: t("columns.title"), className: "w-[24%]" },
-    { key: "company", label: t("columns.company"), className: "w-[18%]" },
-    { key: "category", label: t("columns.category"), className: "w-[14%]" },
-    { key: "salary", label: t("columns.salary"), className: "w-[14%]" },
-    { key: "status", label: t("columns.status"), className: "w-[12%]" },
-    { key: "actions", label: t("columns.actions"), className: "w-[18%]" },
+    { key: "title", label: t("columns.title"), className: "w-[20%]" },
+    { key: "company", label: t("columns.company"), className: "w-[16%]" },
+    { key: "category", label: t("columns.category"), className: "w-[12%]" },
+    { key: "createdAt", label: isRTL ? "تاريخ الطلب" : "Request Date", className: "w-[14%]" },
+    { key: "salary", label: t("columns.salary"), className: "w-[12%]" },
+    { key: "status", label: t("columns.status"), className: "w-[10%]" },
+    { key: "actions", label: t("columns.actions"), className: "w-[16%]" },
   ]
 
   const statusLabels: Record<string, string> = {
     pending: t("status.pending"),
     approved: t("status.approved"),
     rejected: t("status.rejected"),
+    stopped: isRTL ? "موقوفة" : "Stopped",
   }
 
   const summaryCards = [
@@ -159,31 +168,49 @@ export function AdminJobsPanel({
         isRTL={isRTL}
       >
         {filtered.map((job, index) => {
-          const status = mapStatus(job.status)
+          const status = mapStatusForBadge(job.status)
           const salary = formatJobSalaryRange(job)
+          const formattedDate = (() => {
+            const dateVal = job.created_at || (job as any).createdAt
+            if (!dateVal) return "—"
+            try {
+              return new Date(dateVal).toLocaleDateString(locale, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })
+            } catch {
+              return "—"
+            }
+          })()
+
           return (
             <AdminTableRow 
               key={job.id} 
               striped={index % 2 === 1}
               onClick={() => router.push(`/dashboard/admin/jobs/${job.id}`)}
             >
-              <AdminTableCell className="w-[24%] font-medium">
+              <AdminTableCell className="w-[20%] font-medium">
                 {getJobTitle(job, locale)}
               </AdminTableCell>
-              <AdminTableCell className="w-[18%]">
+              <AdminTableCell className="w-[16%]">
                 {job.company?.name ?? "—"}
               </AdminTableCell>
-              <AdminTableCell className="w-[14%]">
+              <AdminTableCell className="w-[12%]">
                 {pickLocalizedName(job.category?.name, locale)}
               </AdminTableCell>
-              <AdminTableCell className="w-[14%]">{salary}</AdminTableCell>
-              <AdminTableCell className="w-[12%]">
+              <AdminTableCell className="w-[14%] text-xs">
+                {formattedDate}
+              </AdminTableCell>
+              <AdminTableCell className="w-[12%]">{salary}</AdminTableCell>
+              <AdminTableCell className="w-[10%]">
                 <DashboardStatusBadge 
                   status={status} 
                   label={statusLabels[status]} 
+                  locale={locale}
                 />
               </AdminTableCell>
-              <AdminTableCell className="w-[18%]">
+              <AdminTableCell className="w-[16%]">
                 <div 
                   className={cn("flex flex-wrap gap-2", isRTL && "flex-row-reverse")}
                   onClick={(e) => e.stopPropagation()}

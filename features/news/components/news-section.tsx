@@ -140,15 +140,7 @@ export async function NewsSection({ override }: NewsSectionProps) {
         </StaggerItem>
       </StaggerInView>
 
-      <StaggerInView className="mt-8 flex justify-center lg:justify-start">
-        <StaggerItem>
-          <PrimaryButton asChild className="h-[44px] w-auto px-6">
-            <Link locale={locale} href="/news">
-              {t("viewAll")}
-            </Link>
-          </PrimaryButton>
-        </StaggerItem>
-      </StaggerInView>
+
     </SectionShell>
   )
 }

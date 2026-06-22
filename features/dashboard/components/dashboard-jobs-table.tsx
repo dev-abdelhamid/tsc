@@ -114,7 +114,6 @@ export function DashboardJobsTable({
                 </div>
                 <div className={"flex flex-1 px-2 py-3 justify-center "}>
                   <div
-                    onClick={(e) => e.preventDefault()}
                     className="inline-flex items-center gap-2 rounded-[8px] bg-gradient-to-b from-[#006EA8] to-[#005685] px-4 py-2 text-xs font-normal text-white shadow-[inset_0_1px_18px_2px_#E8F2FF,inset_0_1px_4px_2px_#C2DDFF] hover:opacity-95"
                   >
                     <Image src="/dashboard/jobs.svg" alt="" width={16} height={16} className="h-4 w-4 brightness-0 invert" />

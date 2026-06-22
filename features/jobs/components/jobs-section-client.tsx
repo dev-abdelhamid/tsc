@@ -97,7 +97,7 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
       {/* Header Section - بدون تغيير */}
       <StaggerInView className="mx-auto flex max-w-[1312px] flex-col items-center gap-6 text-center sm:gap-8">
         <StaggerItem>
-          <p className="inline-flex items-center justify-center gap-2 rounded-lg bg-[rgba(64,160,202,0.25)] px-4 py-2 text-[12px] leading-[1.16] font-normal text-[#40A0CA]">
+          <p className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[rgba(64,160,202,0.25)] px-4 py-2 text-[12px] leading-[1.16] font-normal text-[#40A0CA]">
             <Image src="/footer/icon-link.svg" alt="" width={16} height={16} className="text-[#40A0CA]" />
             {t("eyebrow")}
           </p>
@@ -115,7 +115,7 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
       </StaggerInView>
 
       {/* Filters Section - نفس التصميم الأصلي */}
-      <StaggerInView className="mx-auto mt-8 flex w-full max-w-[715px] flex-wrap items-center justify-center gap-0">
+      <StaggerInView className="mx-auto mt-8 flex w-full max-w-[715px] flex-wrap items-center justify-center gap-x-4 gap-y-3">
         {filters.map((filter) => (
           <StaggerItem key={String(filter.id)}>
             <button

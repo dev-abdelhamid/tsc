@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react"
 import { cn } from "@/lib/utils"
 import { ChevronDown } from "lucide-react"
 import { NewsCalendarIcon } from "@/features/news/components/news-icons"
@@ -122,16 +123,31 @@ export function JobUnderlineDate({
   onChange: (v: string) => void
   className?: string
 }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleContainerClick = () => {
+    try {
+      inputRef.current?.showPicker()
+    } catch (err) {
+      console.warn("showPicker failed:", err)
+    }
+  }
+
   return (
-    <div className={cn("relative w-full", className)}>
+    <div 
+      className={cn("relative w-full cursor-pointer", className)}
+      onClick={handleContainerClick}
+    >
       <input
+        ref={inputRef}
         aria-label="date"
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onClick={(e) => e.stopPropagation()} // Prevent double trigger
         className={cn(
           underlineClass,
-          "bg-transparent pe-10 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:opacity-0"
+          "bg-transparent pe-10 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
         )}
       />
       <NewsCalendarIcon className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2 text-[#006EA8]" />

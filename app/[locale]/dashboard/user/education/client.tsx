@@ -129,6 +129,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
 
   const isAr = locale === "ar";
+  const isDe = locale === "de";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Helper arrays
@@ -153,7 +154,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
     const edus = (data.education || data.educations || []).map((e: any) => {
       const university = e.university || e.institution || "";
       const levelOfEducation = e.levelOfEducation || e.level_of_education || e.degree || "bachelor";
-      
+
       let graduationYear = String(e.graduationYear || e.graduation_year || "");
       if (!graduationYear && e.end_date) {
         graduationYear = String(new Date(e.end_date).getFullYear());
@@ -161,12 +162,12 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       if (graduationYear === "NaN") graduationYear = "";
 
       const specialization = e.specialization || e.field_of_study || "";
-      
+
       let finalGrade = e.finalGrade || e.final_grade || "good";
       if (typeof e.grade === "number") {
         finalGrade = e.grade >= 85 ? "excellent" :
-                     e.grade >= 75 ? "very_good" :
-                     e.grade >= 65 ? "good" : "pass";
+          e.grade >= 75 ? "very_good" :
+            e.grade >= 65 ? "good" : "pass";
       }
 
       return {
@@ -222,7 +223,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       mapDataFromBackend(resData.data || resData);
     } catch (err: any) {
       console.error("[Load error]", err);
-      toast.error(isAr ? "فشل تحميل البيانات" : "Failed to load data");
+      toast.error(isAr ? "فشل تحميل البيانات" : isDe ? "Fehler beim Laden der Daten" : "Failed to load data");
     } finally {
       setLoading(false);
     }
@@ -248,19 +249,19 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
   ) => {
     // ── Pre-save validation: backend requires ALL 4 sections to be non-empty arrays ──
     if (updatedLangs.length === 0) {
-      toast.error(isAr ? "يجب إضافة لغة واحدة على الأقل قبل الحفظ" : "Please add at least one language before saving");
+      toast.error(isAr ? "يجب إضافة لغة واحدة على الأقل قبل الحفظ" : isDe ? "Bitte fügen Sie mindestens eine Sprache hinzu, bevor Sie speichern" : "Please add at least one language before saving");
       return;
     }
     if (updatedEdus.length === 0) {
-      toast.error(isAr ? "يجب إضافة مؤهل تعليمي واحد على الأقل قبل الحفظ" : "Please add at least one education entry before saving");
+      toast.error(isAr ? "يجب إضافة مؤهل تعليمي واحد على الأقل قبل الحفظ" : isDe ? "Bitte fügen Sie mindestens einen Bildungseintrag hinzu, bevor Sie speichern" : "Please add at least one education entry before saving");
       return;
     }
     if (updatedExps.length === 0) {
-      toast.error(isAr ? "يجب إضافة خبرة عملية واحدة على الأقل قبل الحفظ" : "Please add at least one work experience before saving");
+      toast.error(isAr ? "يجب إضافة خبرة عملية واحدة على الأقل قبل الحفظ" : isDe ? "Bitte fügen Sie mindestens eine Berufserfahrung hinzu, bevor Sie speichern" : "Please add at least one work experience before saving");
       return;
     }
     if (updatedSkills.length === 0) {
-      toast.error(isAr ? "يجب إضافة مهارة واحدة على الأقل قبل الحفظ" : "Please add at least one skill before saving");
+      toast.error(isAr ? "يجب إضافة مهارة واحدة على الأقل قبل الحفظ" : isDe ? "Bitte fügen Sie mindestens eine Fähigkeit hinzu, bevor Sie speichern" : "Please add at least one skill before saving");
       return;
     }
 
@@ -295,7 +296,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       // Work Experience
       if (updatedExps.length === 0) {
         // should never reach here due to validation above
-        toast.error(isAr ? "يجب إضافة خبرة عملية" : "Work experience is required");
+        toast.error(isAr ? "يجب إضافة خبرة عملية" : isDe ? "Berufserfahrung ist erforderlich" : "Work experience is required");
         return;
       } else {
         updatedExps.forEach((exp, idx) => {
@@ -338,12 +339,12 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
         throw new Error(errorMsg || "Failed to save portfolio");
       }
 
-      toast.success(isAr ? "تم حفظ البيانات بنجاح" : "Portfolio saved successfully");
+      toast.success(isAr ? "تم حفظ البيانات بنجاح" : isDe ? "Portfolio erfolgreich gespeichert" : "Portfolio saved successfully");
       setCvFile(null);
       await loadPortfolio();
     } catch (err: any) {
       console.error("[Save error]", err);
-      toast.error(err.message || (isAr ? "فشل حفظ البيانات" : "Failed to save data"));
+      toast.error(err.message || (isAr ? "فشل حفظ البيانات" : isDe ? "Fehler beim Speichern der Daten" : "Failed to save data"));
     } finally {
       setSaving(false);
     }
@@ -358,7 +359,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.type !== "application/pdf") {
-      toast.error(isAr ? "يجب رفع ملف بصيغة PDF فقط" : "Only PDF files are allowed");
+      toast.error(isAr ? "يجب رفع ملف بصيغة PDF فقط" : isDe ? "Es sind nur PDF-Dateien erlaubt" : "Only PDF files are allowed");
       return;
     }
     setCvFile(file);
@@ -374,7 +375,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
     if (file.type !== "application/pdf") {
-      toast.error(isAr ? "يجب رفع ملف بصيغة PDF فقط" : "Only PDF files are allowed");
+      toast.error(isAr ? "يجب رفع ملف بصيغة PDF فقط" : isDe ? "Es sind nur PDF-Dateien erlaubt" : "Only PDF files are allowed");
       return;
     }
     setCvFile(file);
@@ -635,27 +636,27 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
   // Get display helpers
   const getLevelLabel = (lvl: string) => {
     const map: Record<string, string> = {
-      beginner: isAr ? "مبتدئ" : "Beginner",
-      intermediate: isAr ? "متوسط" : "Intermediate",
-      fluent: isAr ? "محادثة" : "Conversational",
-      native: isAr ? "اللغة الأم" : "Native or Bilingual",
+      beginner: isAr ? "مبتدئ" : isDe ? "Anfänger" : "Beginner",
+      intermediate: isAr ? "متوسط" : isDe ? "Mittelstufe" : "Intermediate",
+      fluent: isAr ? "محادثة" : isDe ? "Konversationssicher" : "Conversational",
+      native: isAr ? "اللغة الأم" : isDe ? "Muttersprache" : "Native or Bilingual",
     };
     return map[lvl] || lvl;
   };
 
   const getEduLevelLabel = (lvl: string) => {
     const map: Record<string, string> = {
-      high_school: isAr ? "ثانوية عامة" : "High School",
-      bachelor: isAr ? "بكالوريوس" : "Bachelor",
-      master: isAr ? "ماجستير" : "Master",
-      phd: isAr ? "دكتوراه" : "PhD",
+      high_school: isAr ? "ثانوية عامة" : isDe ? "Abitur / Oberschule" : "High School",
+      bachelor: isAr ? "بكالوريوس" : isDe ? "Bachelor-Abschluss" : "Bachelor",
+      master: isAr ? "ماجستير" : isDe ? "Master-Abschluss" : "Master",
+      phd: isAr ? "دكتوراه" : isDe ? "Promotion / PhD" : "PhD",
     };
     return map[lvl] || lvl;
   };
 
   const addSuggestedSkill = (name: string) => {
     if (modalSkills.some((s) => s.skillName.toLowerCase() === name.toLowerCase())) {
-      toast.error(isAr ? "المهارة مضافة بالفعل" : "Skill already added");
+      toast.error(isAr ? "المهارة مضافة بالفعل" : isDe ? "Fähigkeit bereits hinzugefügt" : "Skill already added");
       return;
     }
     setModalSkills((prev) => [...prev, { tempId: `skill-${Date.now()}`, skillName: name }]);
@@ -670,6 +671,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
         very_good: <span>جيد جداً <span dir="ltr">(B = 80-89%)</span></span>,
         good: <span>جيد <span dir="ltr">(C = 70-79%)</span></span>,
         pass: <span>مقبول <span dir="ltr">(D = 50-69%)</span></span>,
+      };
+      return map[grd] || grd;
+    } else if (isDe) {
+      const map: Record<string, string> = {
+        excellent: "Sehr gut / Ausgezeichnet (A = 90-100%)",
+        very_good: "Gut (B = 80-89%)",
+        good: "Befriedigend (C = 70-79%)",
+        pass: "Ausreichend (D = 50-69%)",
       };
       return map[grd] || grd;
     } else {
@@ -700,7 +709,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006EA8] mx-auto"></div>
-          <p className="mt-4 text-gray-600 font-medium">{isAr ? "جاري التحميل..." : "Loading..."}</p>
+          <p className="mt-4 text-gray-600 font-medium">{isAr ? "جاري التحميل..." : isDe ? "Wird geladen..." : "Loading..."}</p>
         </div>
       </div>
     );
@@ -729,12 +738,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
           <p className="text-[#032C44] text-[15px] font-medium">
             {isAr ? (
               <>قم بسحب سيرتك الذاتية هنا، أو <span className="text-[#006EA8] underline">تصفح</span></>
+            ) : isDe ? (
+              <>Ziehen Sie Ihren Lebenslauf hierher oder <span className="text-[#006EA8] underline">durchsuchen Sie</span></>
             ) : (
               <>Drop your CV here, or <span className="text-[#006EA8] underline">browse</span></>
             )}
           </p>
           <p className="text-[#6B7280] text-[12px] mt-1">
-            {isAr ? "يدعم بصيغة PDF" : "Supports PDF"}
+            {isAr ? "يدعم بصيغة PDF" : isDe ? "Unterstützt PDF" : "Supports PDF"}
           </p>
         </div>
 
@@ -753,7 +764,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               rel="noopener noreferrer"
               className="text-xs font-semibold text-[#006EA8] hover:underline"
             >
-              {isAr ? "عرض الملف" : "View File"}
+              {isAr ? "عرض الملف" : isDe ? "Datei anzeigen" : "View File"}
             </a>
           </div>
         )}
@@ -763,7 +774,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       <div className="rounded-[16px] bg-white p-6 border border-[#E5E7EB] shadow-sm">
         <div className="flex items-center justify-between mb-5">
           <h2 className={cn("text-[20px] font-bold", gradientTitleClasses)}>
-            {isAr ? "اللغات" : "Language"}
+            {isAr ? "اللغات" : isDe ? "Sprachen" : "Language"}
           </h2>
           <div className="flex gap-2">
             <button
@@ -771,14 +782,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               className="flex items-center gap-1.5 px-4 py-2 border border-[#E5E7EB] hover:bg-gray-50 rounded-[8px] text-[14px] font-semibold text-[#032C44] transition"
             >
               <img src="/portfolio/edit.svg" alt="Edit" className="w-[16px] h-[16px]" />
-              <span>{isAr ? "تعديل" : "Edit"}</span>
+              <span>{isAr ? "تعديل" : isDe ? "Bearbeiten" : "Edit"}</span>
             </button>
             <PrimaryButton
               onClick={openLanguagesEdit}
               className="w-auto h-[40px] px-4 rounded-[8px] flex items-center justify-center gap-1 text-[14px] font-semibold cursor-pointer"
             >
               <span className="text-[16px] font-bold">+</span>
-              <span>{isAr ? "إضافة جديد" : "Add New"}</span>
+              <span>{isAr ? "إضافة جديد" : isDe ? "Neu hinzufügen" : "Add New"}</span>
             </PrimaryButton>
           </div>
         </div>
@@ -793,7 +804,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             ))
           ) : (
             <p className="text-sm text-gray-400 italic">
-              {isAr ? "لم يتم إضافة لغات بعد" : "No languages added yet"}
+              {isAr ? "لم يتم إضافة لغات بعد" : isDe ? "Bisher keine Sprachen hinzugefügt" : "No languages added yet"}
             </p>
           )}
         </div>
@@ -803,14 +814,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       <div className="rounded-[16px] bg-white p-6 border border-[#E5E7EB] shadow-sm">
         <div className="flex items-center justify-between mb-5">
           <h2 className={cn("text-[20px] font-bold", gradientTitleClasses)}>
-            {isAr ? "المؤهلات العلمية" : "Education"}
+            {isAr ? "المؤهلات العلمية" : isDe ? "Ausbildung" : "Education"}
           </h2>
           <PrimaryButton
             onClick={openAddEducation}
             className="w-auto h-[40px] px-4 rounded-[8px] flex items-center justify-center gap-1 text-[14px] font-semibold cursor-pointer"
           >
             <span className="text-[16px] font-bold">+</span>
-            <span>{isAr ? "إضافة جديد" : "Add New"}</span>
+            <span>{isAr ? "إضافة جديد" : isDe ? "Neu hinzufügen" : "Add New"}</span>
           </PrimaryButton>
         </div>
 
@@ -826,14 +837,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                   <button
                     onClick={() => openEditEducation(edu)}
                     className="p-1 hover:bg-gray-100 rounded-full transition"
-                    title={isAr ? "تعديل" : "Edit"}
+                    title={isAr ? "تعديل" : isDe ? "Bearbeiten" : "Edit"}
                   >
                     <img src="/portfolio/edit.svg" alt="Edit" className="w-[16px] h-[16px]" />
                   </button>
                   <button
                     onClick={() => deleteEducationItem(idx)}
                     className="p-1 hover:bg-red-50 rounded-full transition"
-                    title={isAr ? "حذف" : "Delete"}
+                    title={isAr ? "حذف" : isDe ? "Löschen" : "Delete"}
                   >
                     <img src="/portfolio/remove.svg" alt="Remove" className="w-[16px] h-[16px]" />
                   </button>
@@ -857,20 +868,29 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                 {/* PDF File Indicator at bottom */}
                 <div className="mt-3 pt-2 border-t border-gray-100 flex items-center gap-1.5 text-xs text-[#006EA8] truncate">
                   <img src="/portfolio/pdf.svg" alt="PDF Icon" className="w-5 h-5 flex-shrink-0" />
-                  <span className="truncate font-semibold text-[11px] max-w-[130px]">
-                    {edu.attachmentFile
-                      ? edu.attachmentFile.name
-                      : edu.attachment
-                        ? getFilenameFromUrl(edu.attachment)
-                        : isAr ? "لا توجد شهادة مرفقة" : "No attachment"}
-                  </span>
+                  {edu.attachment ? (
+                    <a
+                      href={edu.attachment}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline truncate font-semibold text-[11px] max-w-[130px] text-[#006EA8]"
+                    >
+                      {getFilenameFromUrl(edu.attachment)}
+                    </a>
+                  ) : (
+                    <span className="truncate text-gray-400 text-[11px] max-w-[130px]">
+                      {edu.attachmentFile
+                        ? edu.attachmentFile.name
+                        : isAr ? "لا توجد شهادة مرفقة" : isDe ? "Kein Anhang" : "No attachment"}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <p className="text-sm text-gray-400 italic">
-            {isAr ? "لم يتم إضافة مؤهلات تعليمية بعد" : "No education added yet"}
+            {isAr ? "لم يتم إضافة مؤهلات تعليمية بعد" : isDe ? "Bisher keine Ausbildung hinzugefügt" : "No education added yet"}
           </p>
         )}
       </div>
@@ -879,14 +899,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       <div className="rounded-[16px] bg-white p-6 border border-[#E5E7EB] shadow-sm">
         <div className="flex items-center justify-between mb-5">
           <h2 className={cn("text-[20px] font-bold", gradientTitleClasses)}>
-            {isAr ? "الخبرات العملية" : "Work Experience"}
+            {isAr ? "الخبرات العملية" : isDe ? "Berufserfahrung" : "Work Experience"}
           </h2>
           <PrimaryButton
             onClick={openAddExperience}
             className="w-auto h-[40px] px-4 rounded-[8px] flex items-center justify-center gap-1 text-[14px] font-semibold cursor-pointer"
           >
             <span className="text-[16px] font-bold">+</span>
-            <span>{isAr ? "إضافة جديد" : "Add New"}</span>
+            <span>{isAr ? "إضافة جديد" : isDe ? "Neu hinzufügen" : "Add New"}</span>
           </PrimaryButton>
         </div>
 
@@ -902,14 +922,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                   <button
                     onClick={() => openEditExperience(exp)}
                     className="p-1 hover:bg-gray-100 rounded-full transition"
-                    title={isAr ? "تعديل" : "Edit"}
+                    title={isAr ? "تعديل" : isDe ? "Bearbeiten" : "Edit"}
                   >
                     <img src="/portfolio/edit.svg" alt="Edit" className="w-[16px] h-[16px]" />
                   </button>
                   <button
                     onClick={() => deleteExperienceItem(idx)}
                     className="p-1 hover:bg-red-50 rounded-full transition"
-                    title={isAr ? "حذف" : "Delete"}
+                    title={isAr ? "حذف" : isDe ? "Löschen" : "Delete"}
                   >
                     <img src="/portfolio/remove.svg" alt="Remove" className="w-[16px] h-[16px]" />
                   </button>
@@ -923,27 +943,36 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                     {exp.department}
                   </p>
                   <p className="text-[11px] text-[#6B7280] mt-1 font-semibold">
-                    <span dir="ltr">{exp.startDate}</span> - {exp.currentlyWorking ? (isAr ? "حالياً" : "Present") : <span dir="ltr">{exp.endDate || ""}</span>}
+                    <span dir="ltr">{exp.startDate}</span> - {exp.currentlyWorking ? (isAr ? "حالياً" : isDe ? "Gegenwart" : "Present") : <span dir="ltr">{exp.endDate || ""}</span>}
                   </p>
                 </div>
 
                 {/* PDF File Indicator at bottom */}
                 <div className="mt-3 pt-2 border-t border-gray-100 flex items-center gap-1.5 text-xs text-[#006EA8] truncate">
                   <img src="/portfolio/pdf.svg" alt="PDF Icon" className="w-5 h-5 flex-shrink-0" />
-                  <span className="truncate font-semibold text-[11px] max-w-[130px]">
-                    {exp.attachmentFile
-                      ? exp.attachmentFile.name
-                      : exp.attachment
-                        ? getFilenameFromUrl(exp.attachment)
-                        : isAr ? "لا توجد مرفقات" : "No attachment"}
-                  </span>
+                  {exp.attachment ? (
+                    <a
+                      href={exp.attachment}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline truncate font-semibold text-[11px] max-w-[130px] text-[#006EA8]"
+                    >
+                      {getFilenameFromUrl(exp.attachment)}
+                    </a>
+                  ) : (
+                    <span className="truncate text-gray-400 text-[11px] max-w-[130px]">
+                      {exp.attachmentFile
+                        ? exp.attachmentFile.name
+                        : isAr ? "لا توجد مرفقات" : isDe ? "Kein Anhang" : "No attachment"}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <p className="text-sm text-gray-400 italic">
-            {isAr ? "لم يتم إضافة خبرات عملية بعد" : "No work experience added yet"}
+            {isAr ? "لم يتم إضافة خبرات عملية بعد" : isDe ? "Bisher keine Berufserfahrung hinzugefügt" : "No work experience added yet"}
           </p>
         )}
       </div>
@@ -952,14 +981,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       <div className="rounded-[16px] bg-white p-6 border border-[#E5E7EB] shadow-sm">
         <div className="flex items-center justify-between mb-5">
           <h2 className={cn("text-[20px] font-bold", gradientTitleClasses)}>
-            {isAr ? "المهارات" : "Skills"}
+            {isAr ? "المهارات" : isDe ? "Fähigkeiten" : "Skills"}
           </h2>
           <button
             onClick={openSkillsEdit}
             className="flex items-center gap-1.5 px-4 py-2 border border-[#E5E7EB] hover:bg-gray-50 rounded-[8px] text-[14px] font-semibold text-[#032C44] transition"
           >
             <img src="/portfolio/edit.svg" alt="Edit" className="w-[16px] h-[16px]" />
-            <span>{isAr ? "تعديل" : "Edit"}</span>
+            <span>{isAr ? "تعديل" : isDe ? "Bearbeiten" : "Edit"}</span>
           </button>
         </div>
 
@@ -975,7 +1004,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             ))
           ) : (
             <p className="text-sm text-gray-400 italic">
-              {isAr ? "لم يتم إضافة مهارات بعد" : "No skills added yet"}
+              {isAr ? "لم يتم إضافة مهارات بعد" : isDe ? "Bisher keine Fähigkeiten hinzugefügt" : "No skills added yet"}
             </p>
           )}
         </div>
@@ -987,11 +1016,11 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       <Dialog open={showLanguageModal} onOpenChange={setShowLanguageModal}>
         <DialogContent className="max-w-[550px] p-6 rounded-[20px] bg-white border-0 shadow-lg">
           <DialogDescription className="sr-only">
-            {isAr ? "إضافة وتعديل اللغات في سيرتك الذاتية" : "Add and edit languages in your portfolio"}
+            {isAr ? "إضافة وتعديل اللغات في سيرتك الذاتية" : isDe ? "Sprachen in Ihrem Portfolio hinzufügen und bearbeiten" : "Add and edit languages in your portfolio"}
           </DialogDescription>
           <div className="flex items-center justify-between mb-6">
             <DialogTitle className={gradientTitleClasses}>
-              {isAr ? "اللغات" : "Language"}
+              {isAr ? "اللغات" : isDe ? "Sprachen" : "Language"}
             </DialogTitle>
             <button
               onClick={() => setShowLanguageModal(false)}
@@ -1007,13 +1036,13 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                 {/* Language name input */}
                 <div className="flex-1 space-y-1">
                   <label className={labelClass}>
-                    {isAr ? "اللغة *" : "Language *"}
+                    {isAr ? "اللغة *" : isDe ? "Sprache *" : "Language *"}
                   </label>
                   <input
                     type="text"
                     value={row.language}
                     onChange={(e) => updateLanguageRow(idx, "language", e.target.value)}
-                    placeholder={isAr ? "مثال: الإنجليزية" : "e.g. English"}
+                    placeholder={isAr ? "مثال: الإنجليزية" : isDe ? "z.B. Englisch" : "e.g. English"}
                     className={inputClass}
                   />
                 </div>
@@ -1021,7 +1050,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                 {/* Level select */}
                 <div className="w-[180px] space-y-1">
                   <label className={labelClass}>
-                    {isAr ? "المستوى *" : "level *"}
+                    {isAr ? "المستوى *" : isDe ? "Stufe *" : "level *"}
                   </label>
                   <div className="relative w-full">
                     <select
@@ -1029,10 +1058,10 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                       onChange={(e) => updateLanguageRow(idx, "level", e.target.value as any)}
                       className={selectClass}
                     >
-                      <option value="beginner">{isAr ? "مبتدئ" : "Beginner"}</option>
-                      <option value="intermediate">{isAr ? "متوسط" : "Intermediate"}</option>
-                      <option value="fluent">{isAr ? "محادثة" : "Conversational"}</option>
-                      <option value="native">{isAr ? "اللغة الأم" : "Native or Bilingual"}</option>
+                      <option value="beginner">{isAr ? "مبتدئ" : isDe ? "Anfänger" : "Beginner"}</option>
+                      <option value="intermediate">{isAr ? "متوسط" : isDe ? "Mittelstufe" : "Intermediate"}</option>
+                      <option value="fluent">{isAr ? "محادثة" : isDe ? "Konversationssicher" : "Conversational"}</option>
+                      <option value="native">{isAr ? "اللغة الأم" : isDe ? "Muttersprache" : "Native or Bilingual"}</option>
                     </select>
                     <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none pr-1">
                       <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5 opacity-70" />
@@ -1044,7 +1073,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                 <button
                   onClick={() => removeLanguageRow(idx)}
                   className="p-2 border border-[#FF5B5C] bg-[#FFF5F5] hover:bg-[#FFE5E5] rounded-[8px] transition flex-shrink-0 mb-[1px]"
-                  title={isAr ? "حذف الصف" : "Delete Row"}
+                  title={isAr ? "حذف الصف" : isDe ? "Zeile löschen" : "Delete Row"}
                 >
                   <img src="/portfolio/remove.svg" alt="Delete" className="w-[16px] h-[16px]" />
                 </button>
@@ -1053,7 +1082,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
 
             {modalLanguages.length === 0 && (
               <p className="text-sm text-gray-400 text-center py-4">
-                {isAr ? "لم تقم بإضافة لغة بعد. انقر على إضافة صف أدناه." : "No languages added yet. Click Add Row below."}
+                {isAr ? "لم تقم بإضافة لغة بعد. انقر على إضافة صف أدناه." : isDe ? "Bisher keine Sprachen hinzugefügt. Klicken Sie unten auf Zeile hinzufügen." : "No languages added yet. Click Add Row below."}
               </p>
             )}
           </div>
@@ -1063,7 +1092,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               onClick={addLanguageRow}
               className="text-sm font-bold text-[#006EA8] hover:underline flex items-center gap-1"
             >
-              <span>+</span> <span>{isAr ? "إضافة لغة جديدة" : "Add New Language"}</span>
+              <span>+</span> <span>{isAr ? "إضافة لغة جديدة" : isDe ? "Neue Sprache hinzufügen" : "Add New Language"}</span>
             </button>
           </div>
 
@@ -1073,14 +1102,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               onClick={() => setShowLanguageModal(false)}
               className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition shadow-sm cursor-pointer"
             >
-              {isAr ? "إلغاء" : "Cancel"}
+              {isAr ? "إلغاء" : isDe ? "Abbrechen" : "Cancel"}
             </button>
             <button
               onClick={saveLanguagesModal}
               disabled={saving}
               className="px-10 h-[44px] text-white font-bold rounded-[12px] text-[15px] transition bg-[#006EA8] hover:bg-[#005685] shadow-[0_4px_14px_rgba(0,110,168,0.3)] hover:shadow-[0_6px_20px_rgba(0,110,168,0.45)] cursor-pointer"
             >
-              {isAr ? "تأكيد" : "Submit"}
+              {isAr ? "تأكيد" : isDe ? "Bestätigen" : "Submit"}
             </button>
           </div>
         </DialogContent>
@@ -1092,11 +1121,11 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       <Dialog open={showEducationModal} onOpenChange={setShowEducationModal}>
         <DialogContent className="max-w-[550px] p-6 rounded-[20px] bg-white border-0 shadow-lg max-h-[90vh] overflow-y-auto">
           <DialogDescription className="sr-only">
-            {isAr ? "إضافة أو تعديل المؤهل التعليمي" : "Add or edit an education qualification"}
+            {isAr ? "إضافة أو تعديل المؤهل التعليمي" : isDe ? "Ausbildungsqualifikation hinzufügen oder bearbeiten" : "Add or edit an education qualification"}
           </DialogDescription>
           <div className="flex items-center justify-between mb-5">
             <DialogTitle className={gradientTitleClasses}>
-              {isAr ? "المؤهلات العلمية" : "Education"}
+              {isAr ? "المؤهلات العلمية" : isDe ? "Ausbildung" : "Education"}
             </DialogTitle>
             <button
               onClick={() => setShowEducationModal(false)}
@@ -1110,13 +1139,13 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             {/* University input */}
             <div className="space-y-1">
               <label className={labelClass}>
-                {isAr ? "الجامعة *" : "University *"}
+                {isAr ? "الجامعة *" : isDe ? "Universität/Schule *" : "University *"}
               </label>
               <input
                 type="text"
                 value={educationForm.university}
                 onChange={(e) => setEducationForm((prev) => ({ ...prev, university: e.target.value }))}
-                placeholder={isAr ? "أدخل اسم الجامعة" : "Enter university name"}
+                placeholder={isAr ? "أدخل اسم الجامعة" : isDe ? "Name der Universität eingeben" : "Enter university name"}
                 className={inputClass}
               />
             </div>
@@ -1125,7 +1154,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className={labelClass}>
-                  {isAr ? "المستوى التعليمي *" : "Level Of Education *"}
+                  {isAr ? "المستوى التعليمي *" : isDe ? "Bildungsgrad *" : "Level Of Education *"}
                 </label>
                 <div className="relative w-full">
                   <select
@@ -1138,10 +1167,10 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                     }
                     className={selectClass}
                   >
-                    <option value="high_school">{isAr ? "ثانوية عامة" : "High School"}</option>
-                    <option value="bachelor">{isAr ? "بكالوريوس" : "Bachelor"}</option>
-                    <option value="master">{isAr ? "ماجستير" : "Master"}</option>
-                    <option value="phd">{isAr ? "دكتوراه" : "PhD"}</option>
+                    <option value="high_school">{isAr ? "ثانوية عامة" : isDe ? "Abitur / Oberschule" : "High School"}</option>
+                    <option value="bachelor">{isAr ? "بكالوريوس" : isDe ? "Bachelor" : "Bachelor"}</option>
+                    <option value="master">{isAr ? "ماجستير" : isDe ? "Master" : "Master"}</option>
+                    <option value="phd">{isAr ? "دكتوراه" : isDe ? "Promotion / PhD" : "PhD"}</option>
                   </select>
                   <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none pr-1">
                     <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5 opacity-70" />
@@ -1151,7 +1180,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
 
               <div className="space-y-1">
                 <label className={labelClass}>
-                  {isAr ? "سنة التخرج *" : "Graduation Year *"}
+                  {isAr ? "سنة التخرج *" : isDe ? "Abschlussjahr *" : "Graduation Year *"}
                 </label>
                 <div className="relative w-full">
                   <select
@@ -1178,7 +1207,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className={labelClass}>
-                  {isAr ? "التخصص *" : "Specialization *"}
+                  {isAr ? "التخصص *" : isDe ? "Fachrichtung *" : "Specialization *"}
                 </label>
                 <input
                   type="text"
@@ -1186,14 +1215,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                   onChange={(e) =>
                     setEducationForm((prev) => ({ ...prev, specialization: e.target.value }))
                   }
-                  placeholder={isAr ? "مثال: هندسة برمجيات" : "e.g. Software Engineering"}
+                  placeholder={isAr ? "مثال: هندسة برمجيات" : isDe ? "z.B. Softwareentwicklung" : "e.g. Software Engineering"}
                   className={inputClass}
                 />
               </div>
 
               <div className="space-y-1">
                 <label className={labelClass}>
-                  {isAr ? "التقدير النهائي *" : "Final Grade *"}
+                  {isAr ? "التقدير النهائي *" : isDe ? "Abschlussnote *" : "Final Grade *"}
                 </label>
                 <div className="relative w-full">
                   <select
@@ -1206,10 +1235,10 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                     }
                     className={selectClass}
                   >
-                    <option value="excellent">{isAr ? "ممتاز \u200E(A = 90-100%)" : "A = 90-100%"}</option>
-                    <option value="very_good">{isAr ? "جيد جداً \u200E(B = 80-89%)" : "B = 80-89%"}</option>
-                    <option value="good">{isAr ? "جيد \u200E(C = 70-79%)" : "C = 70-79%"}</option>
-                    <option value="pass">{isAr ? "مقبول \u200E(D = 50-69%)" : "D = 50-69%"}</option>
+                    <option value="excellent">{isAr ? "ممتاز \u200E(A = 90-100%)" : isDe ? "Sehr gut / Ausgezeichnet (A = 90-100%)" : "A = 90-100%"}</option>
+                    <option value="very_good">{isAr ? "جيد جداً \u200E(B = 80-89%)" : isDe ? "Gut (B = 80-89%)" : "B = 80-89%"}</option>
+                    <option value="good">{isAr ? "جيد \u200E(C = 70-79%)" : isDe ? "Befriedigend (C = 70-79%)" : "C = 70-79%"}</option>
+                    <option value="pass">{isAr ? "مقبول \u200E(D = 50-69%)" : isDe ? "Ausreichend (D = 50-69%)" : "D = 50-69%"}</option>
                   </select>
                   <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none pr-1">
                     <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5 opacity-70" />
@@ -1221,7 +1250,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             {/* Certificate Dropzone */}
             <div className="space-y-1">
               <label className={labelClass}>
-                {isAr ? "المرفقات" : "Attachments"}
+                {isAr ? "المرفقات" : isDe ? "Anhänge" : "Attachments"}
               </label>
               <div
                 onClick={() => document.getElementById("eduFile")?.click()}
@@ -1247,12 +1276,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                     <span className="text-gray-600">{getFilenameFromUrl(educationForm.attachment)}</span>
                   ) : isAr ? (
                     <>قم بسحب الملف هنا، أو <span className="text-[#006EA8] underline">تصفح</span></>
+                  ) : isDe ? (
+                    <>Datei hierher ziehen oder <span className="text-[#006EA8] underline">durchsuchen</span></>
                   ) : (
                     <>Drop a file, or <span className="text-[#006EA8] underline">browse</span></>
                   )}
                 </p>
                 <p className="text-[#006EA8] text-[10px] mt-1 font-medium">
-                  {isAr ? "حجم الملف أقل من 10MB والصيغة PDF فقط" : "File size should be less than 10MB and file type should be pdf"}
+                  {isAr ? "حجم الملف أقل من 10MB والصيغة PDF فقط" : isDe ? "Dateigröße unter 10MB und nur als PDF" : "File size should be less than 10MB and file type should be pdf"}
                 </p>
               </div>
             </div>
@@ -1264,14 +1295,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               onClick={() => setShowEducationModal(false)}
               className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition shadow-sm cursor-pointer"
             >
-              {isAr ? "إلغاء" : "Cancel"}
+              {isAr ? "إلغاء" : isDe ? "Abbrechen" : "Cancel"}
             </button>
             <button
               onClick={submitEducation}
               disabled={saving}
               className="px-10 h-[44px] text-white font-bold rounded-[12px] text-[15px] transition bg-[#006EA8] hover:bg-[#005685] shadow-[0_4px_14px_rgba(0,110,168,0.3)] hover:shadow-[0_6px_20px_rgba(0,110,168,0.45)] cursor-pointer"
             >
-              {isAr ? "تأكيد" : "Submit"}
+              {isAr ? "تأكيد" : isDe ? "Bestätigen" : "Submit"}
             </button>
           </div>
         </DialogContent>
@@ -1283,11 +1314,11 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       <Dialog open={showExperienceModal} onOpenChange={setShowExperienceModal}>
         <DialogContent className="max-w-[550px] p-6 rounded-[20px] bg-white border-0 shadow-lg max-h-[90vh] overflow-y-auto">
           <DialogDescription className="sr-only">
-            {isAr ? "إضافة أو تعديل خبرة عملية في سيرتك الذاتية" : "Add or edit a work experience entry"}
+            {isAr ? "إضافة أو تعديل خبرة عملية في سيرتك الذاتية" : isDe ? "Berufserfahrung hinzufügen oder bearbeiten" : "Add or edit a work experience entry"}
           </DialogDescription>
           <div className="flex items-center justify-between mb-5">
             <DialogTitle className={gradientTitleClasses}>
-              {isAr ? "الخبرات العملية" : "Work Experience"}
+              {isAr ? "الخبرات العملية" : isDe ? "Berufserfahrung" : "Work Experience"}
             </DialogTitle>
             <button
               onClick={() => setShowExperienceModal(false)}
@@ -1302,7 +1333,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className={labelClass}>
-                  {isAr ? "اسم الشركة *" : "Company Name *"}
+                  {isAr ? "اسم الشركة *" : isDe ? "Name des Unternehmens *" : "Company Name *"}
                 </label>
                 <input
                   type="text"
@@ -1310,14 +1341,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                   onChange={(e) =>
                     setExperienceForm((prev) => ({ ...prev, companyName: e.target.value }))
                   }
-                  placeholder={isAr ? "أدخل اسم الشركة" : "Enter company name"}
+                  placeholder={isAr ? "أدخل اسم الشركة" : isDe ? "Name des Unternehmens eingeben" : "Enter company name"}
                   className={inputClass}
                 />
               </div>
 
               <div className="space-y-1">
                 <label className={labelClass}>
-                  {isAr ? "القسم *" : "Department *"}
+                  {isAr ? "القسم *" : isDe ? "Abteilung/Position *" : "Department *"}
                 </label>
                 <input
                   type="text"
@@ -1325,7 +1356,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                   onChange={(e) =>
                     setExperienceForm((prev) => ({ ...prev, department: e.target.value }))
                   }
-                  placeholder={isAr ? "مثال: قسم البرمجة" : "e.g. IT Department"}
+                  placeholder={isAr ? "مثال: قسم البرمجة" : isDe ? "z.B. IT-Abteilung" : "e.g. IT Department"}
                   className={inputClass}
                 />
               </div>
@@ -1334,7 +1365,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             {/* Dates (Employment Period) */}
             <div className="space-y-1">
               <label className={labelClass}>
-                {isAr ? "فترة العمل *" : "Employment Period *"}
+                {isAr ? "فترة العمل *" : isDe ? "Beschäftigungszeitraum *" : "Employment Period *"}
               </label>
               <div className="grid grid-cols-2 gap-4">
                 {/* From Date */}
@@ -1346,7 +1377,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                       setExperienceForm((prev) => ({ ...prev, startDate: e.target.value }))
                     }
                     className="custom-date-input w-full border-b border-[#D4D4D4] py-2.5 pr-8 pl-0 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] rounded-none border-t-0 border-l-0 border-r-0 shadow-none"
-                    placeholder={isAr ? "من" : "from"}
+                    placeholder={isAr ? "من" : isDe ? "von" : "from"}
                   />
                   <img src="/portfolio/calender.svg" alt="Calendar" className="pointer-events-none absolute end-0 top-1/2 w-[18px] h-[18px] -translate-y-1/2 opacity-70" />
                 </div>
@@ -1361,7 +1392,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                     }
                     disabled={experienceForm.currentlyWorking}
                     className="custom-date-input w-full border-b border-[#D4D4D4] py-2.5 pr-8 pl-0 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] rounded-none border-t-0 border-l-0 border-r-0 shadow-none disabled:opacity-50"
-                    placeholder={isAr ? "إلى" : "to"}
+                    placeholder={isAr ? "إلى" : isDe ? "bis" : "to"}
                   />
                   <img src="/portfolio/calender.svg" alt="Calendar" className="pointer-events-none absolute end-0 top-1/2 w-[18px] h-[18px] -translate-y-1/2 opacity-70" />
                 </div>
@@ -1383,7 +1414,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                   className="w-4 h-4 text-[#006EA8] border-gray-300 rounded focus:ring-[#006EA8] cursor-pointer"
                 />
                 <label htmlFor="currWork" className="text-xs font-semibold text-gray-600 cursor-pointer">
-                  {isAr ? "أعمل هنا حالياً" : "Currently Work Here"}
+                  {isAr ? "أعمل هنا حالياً" : isDe ? "Ich arbeite derzeit hier" : "Currently Work Here"}
                 </label>
               </div>
             </div>
@@ -1391,7 +1422,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             {/* Responsibilities */}
             <div className="space-y-1">
               <label className={labelClass}>
-                {isAr ? "المسؤوليات *" : "Responsibilities *"}
+                {isAr ? "المسؤوليات *" : isDe ? "Verantwortlichkeiten *" : "Responsibilities *"}
               </label>
               <textarea
                 rows={3}
@@ -1399,7 +1430,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                 onChange={(e) =>
                   setExperienceForm((prev) => ({ ...prev, responsibilities: e.target.value }))
                 }
-                placeholder={isAr ? "اكتب تفاصيل مهامك ومسؤولياتك" : "Write details about your roles and tasks"}
+                placeholder={isAr ? "اكتب تفاصيل مهامك ومسؤولياتك" : isDe ? "Beschreiben Sie Ihre Aufgaben und Verantwortlichkeiten" : "Write details about your roles and tasks"}
                 className={textareaClass}
               />
             </div>
@@ -1407,7 +1438,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
             {/* Attachment */}
             <div className="space-y-1">
               <label className={labelClass}>
-                {isAr ? "المرفقات" : "Attachments"}
+                {isAr ? "المرفقات" : isDe ? "Anhänge" : "Attachments"}
               </label>
               <div
                 onClick={() => document.getElementById("expFile")?.click()}
@@ -1433,12 +1464,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                     <span className="text-gray-600">{getFilenameFromUrl(experienceForm.attachment)}</span>
                   ) : isAr ? (
                     <>قم بسحب الملف هنا، أو <span className="text-[#006EA8] underline">تصفح</span></>
+                  ) : isDe ? (
+                    <>Datei hierher ziehen oder <span className="text-[#006EA8] underline">durchsuchen</span></>
                   ) : (
                     <>Drop a file, or <span className="text-[#006EA8] underline">browse</span></>
                   )}
                 </p>
                 <p className="text-[#006EA8] text-[10px] mt-1 font-medium">
-                  {isAr ? "صيغ الملفات المدعومة: pdf, jpg, jpeg, png وحجم أقل من 10MB" : "File size should be less than 10MB and file type should be jpg, jpeg, png, pdf"}
+                  {isAr ? "صيغ الملفات المدعومة: pdf, jpg, jpeg, png وحجم أقل من 10MB" : isDe ? "Unterstützte Formate: pdf, jpg, jpeg, png unter 10MB" : "File size should be less than 10MB and file type should be jpg, jpeg, png, pdf"}
                 </p>
               </div>
             </div>
@@ -1450,14 +1483,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               onClick={() => setShowExperienceModal(false)}
               className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition shadow-sm cursor-pointer"
             >
-              {isAr ? "إلغاء" : "Cancel"}
+              {isAr ? "إلغاء" : isDe ? "Abbrechen" : "Cancel"}
             </button>
             <button
               onClick={submitExperience}
               disabled={saving}
               className="px-10 h-[44px] text-white font-bold rounded-[12px] text-[15px] transition bg-[#006EA8] hover:bg-[#005685] shadow-[0_4px_14px_rgba(0,110,168,0.3)] hover:shadow-[0_6px_20px_rgba(0,110,168,0.45)] cursor-pointer"
             >
-              {isAr ? "تأكيد" : "Submit"}
+              {isAr ? "تأكيد" : isDe ? "Bestätigen" : "Submit"}
             </button>
           </div>
         </DialogContent>
@@ -1469,11 +1502,11 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
       <Dialog open={showSkillModal} onOpenChange={setShowSkillModal}>
         <DialogContent className="max-w-[500px] p-6 rounded-[20px] bg-white border-0 shadow-lg">
           <DialogDescription className="sr-only">
-            {isAr ? "إضافة وتعديل المهارات في سيرتك الذاتية" : "Add and manage skills in your portfolio"}
+            {isAr ? "إضافة وتعديل المهارات في سيرتك الذاتية" : isDe ? "Fähigkeiten in Ihrem Portfolio hinzufügen und bearbeiten" : "Add and manage skills in your portfolio"}
           </DialogDescription>
           <div className="flex items-center justify-between mb-5">
             <DialogTitle className={gradientTitleClasses}>
-              {isAr ? "المهارات" : "Skills"}
+              {isAr ? "المهارات" : isDe ? "Fähigkeiten" : "Skills"}
             </DialogTitle>
             <button
               type="button"
@@ -1487,9 +1520,9 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
           <div className="space-y-4">
             <div className="space-y-1">
               <label className={labelClass}>
-                {isAr ? "المهارة *" : "Skill *"}
+                {isAr ? "المهارة *" : isDe ? "Fähigkeit *" : "Skill *"}
               </label>
-              
+
               <div className="relative w-full">
                 <div className="w-full border-b border-[#D4D4D4] focus-within:border-[#40A0CA] py-2 flex flex-wrap gap-2 items-center min-h-[42px] pe-8 relative">
                   {modalSkills.map((s, idx) => (
@@ -1502,7 +1535,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                         type="button"
                         onClick={() => removeSkillFromModal(idx)}
                         className="p-0.5 hover:bg-red-50 rounded-full transition flex items-center justify-center"
-                        title={isAr ? "حذف" : "Remove"}
+                        title={isAr ? "حذف" : isDe ? "Entfernen" : "Remove"}
                       >
                         <img src="/portfolio/remove.svg" alt="Remove" className="w-[10px] h-[10px]" />
                       </button>
@@ -1523,7 +1556,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                         addSkillToModal();
                       }
                     }}
-                    placeholder={modalSkills.length === 0 ? (isAr ? "أدخل اسم المهارة واضغط Enter" : "Type a skill and press Enter") : ""}
+                    placeholder={modalSkills.length === 0 ? (isAr ? "أدخل اسم المهارة واضغط Enter" : isDe ? "Fähigkeit eingeben und Enter drücken" : "Type a skill and press Enter") : ""}
                     className="flex-1 min-w-[120px] bg-transparent outline-none text-sm text-[#525252] border-0 p-0 focus:ring-0 focus:border-0 shadow-none rounded-none"
                   />
                   <button
@@ -1557,14 +1590,14 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                         s.toLowerCase().includes(newSkillInput.toLowerCase()) &&
                         !modalSkills.some((ms) => ms.skillName.toLowerCase() === s.toLowerCase())
                     ).length === 0 && newSkillInput.trim() !== "" && (
-                      <button
-                        type="button"
-                        onClick={addSkillToModal}
-                        className="w-full text-start px-4 py-2 text-sm text-[#006EA8] hover:bg-gray-50 transition font-bold"
-                      >
-                        {isAr ? `إضافة "${newSkillInput}"` : `Add "${newSkillInput}"`}
-                      </button>
-                    )}
+                        <button
+                          type="button"
+                          onClick={addSkillToModal}
+                          className="w-full text-start px-4 py-2 text-sm text-[#006EA8] hover:bg-gray-50 transition font-bold"
+                        >
+                          {isAr ? `إضافة "${newSkillInput}"` : isDe ? `"${newSkillInput}" hinzufügen` : `Add "${newSkillInput}"`}
+                        </button>
+                      )}
                   </div>
                 )}
               </div>
@@ -1577,7 +1610,7 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               onClick={() => setShowSkillModal(false)}
               className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition shadow-sm cursor-pointer"
             >
-              {isAr ? "إلغاء" : "Cancel"}
+              {isAr ? "إلغاء" : isDe ? "Abbrechen" : "Cancel"}
             </button>
             <button
               type="button"
@@ -1585,12 +1618,13 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
               disabled={saving}
               className="px-10 h-[44px] text-white font-bold rounded-[12px] text-[15px] transition bg-[#006EA8] hover:bg-[#005685] shadow-[0_4px_14px_rgba(0,110,168,0.3)] hover:shadow-[0_6px_20px_rgba(0,110,168,0.45)] cursor-pointer"
             >
-              {isAr ? "تأكيد" : "Submit"}
+              {isAr ? "تأكيد" : isDe ? "Bestätigen" : "Submit"}
             </button>
           </div>
         </DialogContent>
       </Dialog>
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         /* Hide native date picker across all browsers — our SVG is the trigger */
         /* Chrome, Safari, Edge, Opera */
         .custom-date-input::-webkit-calendar-picker-indicator {

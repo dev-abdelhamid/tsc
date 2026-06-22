@@ -59,7 +59,7 @@ export function JobDetailSidebar({
 }: JobDetailSidebarProps) {
   const industry = getLocalizedName(job.company?.company_type?.name || job.category?.name, locale)
   const employment = formatDetailEmployment(job, locale)
-  const salaryRange = formatJobSalaryRange(job)
+  const salaryRange = formatJobSalaryRange(job, locale === "ar")
   const ageRange = formatAgeRange(job, locale)
   const deadline = formatApplicationDeadline(job.application_deadline, locale)
   const genderLabel = job.gender ? formatGenderForDetail(job.gender, locale) : null
@@ -86,7 +86,7 @@ export function JobDetailSidebar({
         {showSalary ? (
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[32px] font-black leading-[1.16] text-[#262626] sm:text-[40px]" dir="ltr">
+              <p className="text-[26px] font-bold leading-[1.2] text-[#262626] sm:text-[32px]" dir="ltr">
                 {salaryRange}
               </p>
               <p className="mt-1 text-[14px] font-medium leading-[1.16] text-[#525252]">

@@ -1,271 +1,358 @@
 "use client"
 
+import { useState, useTransition } from "react"
 import { useTranslations } from "next-intl"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import type { User } from "@/lib/api/types"
-import { getCountryById } from "@/lib/countries"
 import { cn } from "@/lib/utils"
+import { updateAdminUserAction } from "@/features/admin/actions/admin-actions"
+import { User as UserIcon, ShieldAlert } from "lucide-react"
 
 export function AdminUserDetailView({ user, locale }: { user: User; locale: string }) {
   const t = useTranslations("Admin.users")
   const isAr = locale === "ar"
+  const [pending, startTransition] = useTransition()
 
-  const userProfile = (user as any).Userprofile || {}
+  const [isEditing, setIsEditing] = useState(false)
+  const [name, setName] = useState(user.name || "")
+  const [email, setEmail] = useState(user.email || "")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  const userProfile = (user as any).Userprofile || (user as any).user_profile || {}
   const country = (user as any).country
   const city = (user as any).city
 
+  function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
+    startTransition(async () => {
+      const payload: { name?: string; email?: string; password?: string } = {}
+      if (name.trim() !== user.name) payload.name = name.trim()
+      if (email.trim() !== user.email) payload.email = email.trim()
+      if (password.trim() !== "") payload.password = password.trim()
+
+      if (Object.keys(payload).length === 0) {
+        setIsEditing(false)
+        return
+      }
+
+      const res = await updateAdminUserAction(user.id, payload, locale)
+      if (!res.ok) {
+        setError(res.message || (isAr ? "فشل تحديث البيانات" : "Failed to update user"))
+        return
+      }
+      setSuccess(isAr ? "تم تحديث البيانات بنجاح" : "User updated successfully")
+      setIsEditing(false)
+      setPassword("")
+      setTimeout(() => location.reload(), 1000)
+    })
+  }
+
+  // Common styling classes to match user profile page
+  const fieldBase = "w-full border-b border-[#D4D4D4] py-2.5 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] placeholder:text-[#A3A3A3]"
+
   return (
-    <div className="w-full">
-      <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Left Sidebar - Avatar */}
-          <div className="lg:col-span-1 flex flex-col items-center gap-6">
-            <div className="w-full flex flex-col items-center">
-              <Avatar className="h-40 w-40 mb-4">
-                {user.avatar ? (
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                ) : (
-                  <AvatarFallback className="text-4xl">
-                    {(user.name || "").charAt(0).toUpperCase()}
-                  </AvatarFallback>
+    <div className="w-full flex flex-col gap-6" dir={isAr ? "rtl" : "ltr"}>
+      {error && (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">{error}</p>
+      )}
+      {success && (
+        <p className="rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800">{success}</p>
+      )}
+
+      {/* Profile Card */}
+      <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
+        <div className="px-8 pt-8 pb-4 flex justify-between items-center border-b border-[#F3F4F6]">
+          <h2 className="text-xl font-bold text-[#006EA8]">
+            {isAr ? "ملف المستخدم" : "User Profile"}
+          </h2>
+          {!isEditing ? (
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="rounded-lg bg-gradient-to-b from-[#006EA8] to-[#005685] px-5 py-2 text-sm font-semibold text-white hover:from-[#005685] hover:to-[#004268] shadow-sm transition"
+            >
+              {isAr ? "تعديل الملف الشخصي" : "Edit Profile"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </button>
+          )}
+        </div>
+
+        <div className="p-8">
+          {/* Avatar and Verification */}
+          <div className="flex flex-col items-center mb-8 gap-4">
+            <div className="relative">
+              <div className="h-36 w-36 rounded-full border-4 border-white shadow-md overflow-hidden bg-[#E0F2FE] flex items-center justify-center relative">
+                <UserIcon className="h-20 w-20 text-[#006EA8]" />
+                {user.avatar && user.avatar.trim() !== "" && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="h-full w-full object-cover absolute inset-0"
+                    onError={(e) => { (e.target as HTMLImageElement).style.opacity = "0" }}
+                  />
                 )}
-              </Avatar>
-              <div className="text-center">
-                <h2 className="text-xl font-bold text-[#111827]">{user.name}</h2>
-                <p className="text-sm text-[#6B7280]">{user.email}</p>
               </div>
             </div>
+            
+            <div className="text-center">
+              <h3 className="text-xl font-bold text-[#111827]">{user.name}</h3>
+              <p className="text-sm text-[#6B7280]">{user.email}</p>
+            </div>
 
-            {/* Status Badges */}
-            <div className="w-full flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[#374151]">
-                  {isAr ? "الحالة" : "Status"}
-                </span>
-                <span className={cn(
-                  "px-3 py-1 rounded-full text-xs font-semibold",
-                  user.status === "active" ? "bg-[#DCFCE7] text-[#166534]" : "bg-[#FEE2E2] text-[#991B1B]"
-                )}>
-                  {user.status}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[#374151]">
-                  {isAr ? "التحقق" : "Verified"}
-                </span>
-                <div className="flex items-center gap-3">
-                  <span className={cn(
-                    "px-3 py-1 rounded-full text-xs font-semibold",
-                    user.emailVerified ? "bg-[#DCFCE7] text-[#166534]" : "bg-[#FEE2E2] text-[#991B1B]"
-                  )}>
-                    {user.emailVerified ? (isAr ? "مؤكد" : "Verified") : (isAr ? "غير مؤكد" : "Not Verified")}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        const res = await fetch(`/api/proxy/users/${user.id}/verify`, {
-                          method: 'POST',
-                          credentials: 'include',
-                          headers: { 'Accept-Language': locale }
-                        })
-                        if (!res.ok) {
-                          const err = await res.json().catch(() => ({}))
-                          alert(err.message || (isAr ? 'فشل تحديث التحقق' : 'Failed to update verification'))
-                          return
-                        }
-                        location.reload()
-                      } catch (e) {
-                        // eslint-disable-next-line no-console
-                        console.error('Verify toggle error', e)
-                        alert(isAr ? 'فشل الاتصال بالخادم' : 'Failed to contact server')
+            <div className="flex items-center gap-3 mt-1">
+              <span className={cn(
+                "px-3 py-1 rounded-full text-xs font-semibold capitalize",
+                user.status === "active" ? "bg-[#DCFCE7] text-[#166534]" : "bg-[#FEF3C7] text-[#92400E]"
+              )}>
+                {user.status === "active" ? (isAr ? "نشط" : "Active") : (isAr ? "معلق" : "Suspended")}
+              </span>
+              
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    let res = await fetch(`/api/proxy/users/${user.id}/verify`, {
+                      method: 'POST',
+                      credentials: 'include',
+                      headers: { 'Accept-Language': locale }
+                    })
+                    if (!res.ok) {
+                      res = await fetch(`/api/proxy/admin/users/${user.id}/verify`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Accept-Language': locale }
+                      })
+                    }
+                    if (!res.ok) {
+                      const updateRes = await updateAdminUserAction(user.id, { email_verified: !user.emailVerified }, locale)
+                      if (!updateRes.ok) {
+                        alert(updateRes.message || (isAr ? 'فشل تحديث التحقق' : 'Failed to update verification'))
+                        return
                       }
-                    }}
-                    className={cn(
-                      "text-xs font-semibold px-3 py-1 rounded-lg",
-                      user.emailVerified ? "bg-white border border-gray-200 text-[#006EA8]" : "bg-[#006EA8] text-white"
-                    )}
-                  >
-                    {user.emailVerified ? (isAr ? 'إلغاء التحقق' : 'Unverify') : (isAr ? 'تأكيد الحساب' : 'Verify')}
-                  </button>
-                </div>
-              </div>
+                    }
+                    location.reload()
+                  } catch (e) {
+                    alert(isAr ? 'فشل الاتصال بالخادم' : 'Failed to contact server')
+                  }
+                }}
+                className={cn(
+                  "text-xs font-semibold px-3 py-1 rounded-full border transition",
+                  user.emailVerified 
+                    ? "bg-[#DCFCE7] border-[#10B981] text-[#166534] hover:bg-red-50 hover:text-red-600 hover:border-red-200" 
+                    : "bg-red-50 border-red-200 text-red-600 hover:bg-[#DCFCE7] hover:text-[#166534] hover:border-[#10B981]"
+                )}
+              >
+                {user.emailVerified ? (isAr ? "مؤكد (إلغاء)" : "Verified (Unverify)") : (isAr ? "غير مؤكد (تأكيد)" : "Not Verified (Verify)")}
+              </button>
             </div>
           </div>
 
-          {/* Right Content - Details */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Basic Information */}
-            <div>
-              <h3 className="text-lg font-bold text-[#111827] mb-4">
-                {isAr ? "المعلومات الأساسية" : "Basic Information"}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                  <p className="text-xs text-[#6B7280] font-medium mb-1">
+          {/* Form / Details view */}
+          {isEditing ? (
+            <form onSubmit={handleSave} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[#262626]">
+                    {isAr ? "الاسم" : "Name"}
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={fieldBase}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[#262626]">
                     {isAr ? "البريد الإلكتروني" : "Email"}
-                  </p>
-                  <p className="text-sm font-medium text-[#111827]">{user.email}</p>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={fieldBase}
+                    required
+                  />
                 </div>
-                <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                  <p className="text-xs text-[#6B7280] font-medium mb-1">
-                    {isAr ? "الهاتف" : "Phone"}
-                  </p>
-                  <p className="text-sm font-medium text-[#111827]">{user.phone || "—"}</p>
-                </div>
-                <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                  <p className="text-xs text-[#6B7280] font-medium mb-1">
-                    {isAr ? "البلد" : "Country"}
-                  </p>
-                  <p className="text-sm font-medium text-[#111827]">
-                    {country ? `${country.name}` : "—"}
-                  </p>
-                </div>
-                <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                  <p className="text-xs text-[#6B7280] font-medium mb-1">
-                    {isAr ? "المدينة" : "City"}
-                  </p>
-                  <p className="text-sm font-medium text-[#111827]">{city?.name || "—"}</p>
+                <div className="md:col-span-2 flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[#262626]">
+                    {isAr ? "كلمة المرور الجديدة (اتركها فارغة في حال عدم التغيير)" : "New Password (leave empty to keep current)"}
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className={fieldBase}
+                  />
                 </div>
               </div>
-            </div>
-
-            {/* User Profile Details */}
-            {userProfile && (
+              
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={pending}
+                  className="rounded-lg bg-gradient-to-b from-[#006EA8] to-[#005685] px-6 py-2.5 text-sm font-semibold text-white hover:from-[#005685] hover:to-[#004268] disabled:opacity-60 transition"
+                >
+                  {pending ? (isAr ? "جاري الحفظ..." : "Saving...") : (isAr ? "حفظ التغييرات" : "Save Changes")}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-8">
+              {/* Basic Section */}
               <div>
-                <h3 className="text-lg font-bold text-[#111827] mb-4">
+                <h4 className="text-base font-bold text-[#006EA8] mb-6 pb-2 border-b border-[#E5E7EB]">
+                  {isAr ? "البيانات الأساسية" : "Basic Info"}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium text-[#262626]">
+                      {isAr ? "الاسم" : "Name"}
+                    </span>
+                    <div className="w-full border-b border-[#E5E7EB] py-2 text-sm text-[#525252]">
+                      {user.name}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium text-[#262626]">
+                      {isAr ? "البريد الإلكتروني" : "Email"}
+                    </span>
+                    <div className="w-full border-b border-[#E5E7EB] py-2 text-sm text-[#525252]">
+                      {user.email}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium text-[#262626]">
+                      {isAr ? "رقم الهاتف" : "Phone"}
+                    </span>
+                    <div className="w-full border-b border-[#E5E7EB] py-2 text-sm text-[#525252]">
+                      {user.phone || "—"}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium text-[#262626]">
+                      {isAr ? "البلد" : "Country"}
+                    </span>
+                    <div className="w-full border-b border-[#E5E7EB] py-2 text-sm text-[#525252]">
+                      {country ? country.name : "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Details Section */}
+              <div>
+                <h4 className="text-base font-bold text-[#006EA8] mb-6 pb-2 border-b border-[#E5E7EB]">
                   {isAr ? "بيانات الملف الشخصي" : "Profile Details"}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                    <p className="text-xs text-[#6B7280] font-medium mb-1">
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium text-[#262626]">
                       {isAr ? "الجنس" : "Gender"}
-                    </p>
-                    <p className="text-sm font-medium text-[#111827] capitalize">
-                      {userProfile.gender || "—"}
-                    </p>
+                    </span>
+                    <div className="w-full border-b border-[#E5E7EB] py-2 text-sm text-[#525252] capitalize">
+                      {isAr 
+                        ? (userProfile.gender === "male" ? "ذكر" : userProfile.gender === "female" ? "أنثى" : userProfile.gender || "—") 
+                        : (userProfile.gender || "—")}
+                    </div>
                   </div>
-                  <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                    <p className="text-xs text-[#6B7280] font-medium mb-1">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium text-[#262626]">
                       {isAr ? "تاريخ الميلاد" : "Date of Birth"}
-                    </p>
-                    <p className="text-sm font-medium text-[#111827]">
+                    </span>
+                    <div className="w-full border-b border-[#E5E7EB] py-2 text-sm text-[#525252]">
                       {userProfile.dateOfBirth || "—"}
-                    </p>
+                    </div>
                   </div>
-                  <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                    <p className="text-xs text-[#6B7280] font-medium mb-1">
-                      {isAr ? "التصنيف" : "Category"}
-                    </p>
-                    <p className="text-sm font-medium text-[#111827]">
-                      {userProfile.categoryId ? `Category #${userProfile.categoryId}` : "—"}
-                    </p>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium text-[#262626]">
+                      {isAr ? "التخصص" : "Category"}
+                    </span>
+                    <div className="w-full border-b border-[#E5E7EB] py-2 text-sm text-[#525252]">
+                      {(user as any).category?.name || "—"}
+                    </div>
                   </div>
-                  <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                    <p className="text-xs text-[#6B7280] font-medium mb-1">
-                      {isAr ? "التصنيف الفرعي" : "Subcategory"}
-                    </p>
-                    <p className="text-sm font-medium text-[#111827]">
-                      {userProfile.subcategoryId ? `Subcategory #${userProfile.subcategoryId}` : "—"}
-                    </p>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium text-[#262626]">
+                      {isAr ? "التخصص الفرعي" : "Subcategory"}
+                    </span>
+                    <div className="w-full border-b border-[#E5E7EB] py-2 text-sm text-[#525252]">
+                      {(user as any).sub_category?.name || "—"}
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Social Links */}
-            {(userProfile.facebook || userProfile.linkedin || userProfile.twitterX || userProfile.pinterest) && (
-              <div>
-                <h3 className="text-lg font-bold text-[#111827] mb-4">
-                  {isAr ? "الروابط الاجتماعية" : "Social Links"}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {userProfile.facebook && (
-                    <a 
-                      href={userProfile.facebook} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB] hover:border-[#006EA8] transition"
-                    >
-                      <p className="text-xs text-[#6B7280] font-medium mb-1">Facebook</p>
-                      <p className="text-sm font-medium text-[#006EA8] truncate">{userProfile.facebook}</p>
-                    </a>
-                  )}
-                  {userProfile.linkedin && (
-                    <a 
-                      href={userProfile.linkedin} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB] hover:border-[#006EA8] transition"
-                    >
-                      <p className="text-xs text-[#6B7280] font-medium mb-1">LinkedIn</p>
-                      <p className="text-sm font-medium text-[#006EA8] truncate">{userProfile.linkedin}</p>
-                    </a>
-                  )}
-                  {userProfile.twitterX && (
-                    <a 
-                      href={userProfile.twitterX} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB] hover:border-[#006EA8] transition"
-                    >
-                      <p className="text-xs text-[#6B7280] font-medium mb-1">X (Twitter)</p>
-                      <p className="text-sm font-medium text-[#006EA8] truncate">{userProfile.twitterX}</p>
-                    </a>
-                  )}
-                  {userProfile.pinterest && (
-                    <a 
-                      href={userProfile.pinterest} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB] hover:border-[#006EA8] transition"
-                    >
-                      <p className="text-xs text-[#6B7280] font-medium mb-1">Pinterest</p>
-                      <p className="text-sm font-medium text-[#006EA8] truncate">{userProfile.pinterest}</p>
-                    </a>
-                  )}
+              {/* Social Platforms Links */}
+              {(userProfile.facebook || userProfile.linkedin || userProfile.twitterX || userProfile.pinterest) && (
+                <div>
+                  <h4 className="text-base font-bold text-[#006EA8] mb-6 pb-2 border-b border-[#E5E7EB]">
+                    {isAr ? "الحسابات المرتبطة" : "Linked accounts"}
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    {userProfile.facebook && (
+                      <a
+                        href={userProfile.facebook}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center justify-center p-3 border border-[#E6EEF4] rounded-xl hover:border-[#006EA8] transition"
+                      >
+                        <img src="/Linked_accounts/Facebook.svg" alt="Facebook" className="h-6 w-6 mb-2" />
+                        <span className="text-xs font-semibold text-[#525252]">Facebook</span>
+                      </a>
+                    )}
+                    {userProfile.linkedin && (
+                      <a
+                        href={userProfile.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center justify-center p-3 border border-[#E6EEF4] rounded-xl hover:border-[#006EA8] transition"
+                      >
+                        <img src="/Linked_accounts/LinkedIn.svg" alt="LinkedIn" className="h-6 w-6 mb-2" />
+                        <span className="text-xs font-semibold text-[#525252]">LinkedIn</span>
+                      </a>
+                    )}
+                    {userProfile.twitterX && (
+                      <a
+                        href={userProfile.twitterX}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center justify-center p-3 border border-[#E6EEF4] rounded-xl hover:border-[#006EA8] transition"
+                      >
+                        <img src="/Linked_accounts/X.svg" alt="X" className="h-6 w-6 mb-2" />
+                        <span className="text-xs font-semibold text-[#525252]">X (Twitter)</span>
+                      </a>
+                    )}
+                    {userProfile.pinterest && (
+                      <a
+                        href={userProfile.pinterest}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center justify-center p-3 border border-[#E6EEF4] rounded-xl hover:border-[#006EA8] transition"
+                      >
+                        <img src="/Linked_accounts/pinterest.svg" alt="Pinterest" className="h-6 w-6 mb-2" />
+                        <span className="text-xs font-semibold text-[#525252]">Pinterest</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* Account Info */}
-            <div>
-              <h3 className="text-lg font-bold text-[#111827] mb-4">
-                {isAr ? "معلومات الحساب" : "Account Information"}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                  <p className="text-xs text-[#6B7280] font-medium mb-1">
-                    {isAr ? "معرّف UUID" : "UUID"}
-                  </p>
-                  <p className="text-xs font-mono text-[#111827] truncate">{user.uuid}</p>
-                </div>
-                <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                  <p className="text-xs text-[#6B7280] font-medium mb-1">
-                    {isAr ? "التنسيق اللغوي" : "Locale"}
-                  </p>
-                  <p className="text-sm font-medium text-[#111827]">{(user as any).locale || "—"}</p>
-                </div>
-                <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                  <p className="text-xs text-[#6B7280] font-medium mb-1">
-                    {isAr ? "تاريخ التسجيل" : "Created At"}
-                  </p>
-                  <p className="text-sm font-medium text-[#111827]">
-                    {new Date((user as any).createdAt).toLocaleDateString(locale)}
-                  </p>
-                </div>
-                <div className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                  <p className="text-xs text-[#6B7280] font-medium mb-1">
-                    {isAr ? "آخر تحديث" : "Updated At"}
-                  </p>
-                  <p className="text-sm font-medium text-[#111827]">
-                    {new Date((user as any).updatedAt).toLocaleDateString(locale)}
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

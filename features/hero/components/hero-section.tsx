@@ -50,7 +50,7 @@ export async function HeroSection({ title: titleOverride, description: descripti
     <SectionShell
       id="home"
       stagger={false}
-      className="relative min-h-[640px] overflow-hidden bg-[#001222] pb-16 pt-4 sm:min-h-[760px] lg:h-[982px] lg:pb-[30px] lg:pt-0"
+      className="relative min-h-[640px] overflow-hidden bg-[#001222] pb-16 pt-4 sm:min-h-[760px] lg:h-auto lg:min-h-0 lg:pb-0 lg:pt-0 lg:py-24"
     >
       {/* Background Bars */}
       <div
@@ -70,7 +70,7 @@ export async function HeroSection({ title: titleOverride, description: descripti
 
       {/* Bottom Glow / Spotlight Arc */}
       <div 
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[160%] h-[400px] sm:h-[450px] rounded-[100%] bg-gradient-to-t from-[#40a0ca]/70 via-[#006ea8]/30 to-transparent blur-[50px] sm:blur-[75px] pointer-events-none z-[1]"
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[160%] h-[400px] sm:h-[450px] lg:hidden rounded-[100%] bg-gradient-to-t from-[#40a0ca]/70 via-[#006ea8]/30 to-transparent blur-[50px] sm:blur-[75px] pointer-events-none z-[1]"
         style={{
           transform: "translateX(-50%) translateY(50%)",
         }}
@@ -95,7 +95,7 @@ export async function HeroSection({ title: titleOverride, description: descripti
 
       <StaggerInView
         immediate
-        className="relative z-10 mt-6 flex flex-col items-center gap-8 px-4 pb-8 sm:mt-10 sm:gap-10 lg:mt-[48px] lg:gap-[48px] lg:px-0 lg:pb-[30px]"
+        className="relative z-10 mt-6 flex flex-col items-center gap-8 px-4 pb-8 sm:mt-10 sm:gap-10 lg:mt-0 lg:gap-[28px] lg:px-0 lg:pb-0"
       >
         <StaggerItem immediate>
           <div className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-[13px] font-semibold tracking-[0.06em] text-white/95">
@@ -105,20 +105,20 @@ export async function HeroSection({ title: titleOverride, description: descripti
         </StaggerItem>
 
         <StaggerItem immediate>
-          <h1 className="font-heading mx-auto mt-2 max-w-[866px] text-balance text-center text-[32px] font-bold leading-relaxed text-white sm:mt-4 sm:text-[44px] md:text-[56px] lg:text-[72px] lg:leading-[1.1]">
+          <h1 className="font-heading mx-auto mt-2 max-w-[866px] text-balance text-center text-[32px] font-bold leading-relaxed text-white sm:mt-4 sm:text-[44px] md:text-[56px] lg:text-[56px] lg:leading-[1.15]">
             {renderTitle()}
           </h1>
         </StaggerItem>
 
         <StaggerItem immediate>
-          <p className="mx-auto mt-4 max-w-[680px] text-pretty text-center text-[15px] font-normal leading-relaxed text-white/80 sm:mt-6 sm:text-[16px] lg:mt-8 lg:text-[18px] lg:leading-[1.6]">
+          <p className="mx-auto mt-4 max-w-[680px] text-pretty text-center text-[15px] font-normal leading-relaxed text-white/80 sm:mt-6 sm:text-[16px] lg:mt-4 lg:text-[16px] lg:leading-[1.6]">
             {description}
           </p>
         </StaggerItem>
 
         <StaggerItem immediate>
           <Link locale={locale} href="/jobs">
-            <PrimaryButton className="mt-4 h-[52px] w-[220px]">
+            <PrimaryButton className="mt-4 h-[52px] w-[220px] lg:mt-2 lg:h-[48px] lg:w-[200px]">
               {t("cta")}
             </PrimaryButton>
           </Link>

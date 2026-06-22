@@ -50,6 +50,7 @@ export default async function CompanyDashboardPage({
   }
 
   const isAr = locale === "ar"
+  const isDe = locale === "de"
 
   let stats = { total_jobs: 0, total_applications: 0, pending_applications: 0 }
   let jobs: Job[] = []
@@ -155,8 +156,8 @@ export default async function CompanyDashboardPage({
 
   return (
     <DashboardPageShell
-      title={isAr ? "لوحة التحكم" : "Dashboard"}
-      description={isAr ? "إحصائيات عامة وإدارة الوظائف والتذاكر" : "Overview of stats, job posts, and support tickets"}
+      title={isAr ? "لوحة التحكم" : isDe ? "Dashboard" : "Dashboard"}
+      description={isAr ? "إحصائيات عامة وإدارة الوظائف والتذاكر" : isDe ? "Übersicht über Statistiken, Stellenangebote und Tickets" : "Overview of stats, job posts, and support tickets"}
       isRTL={isAr}
     >
       <div className="flex w-full flex-col gap-6">
@@ -164,31 +165,31 @@ export default async function CompanyDashboardPage({
           <div className="flex flex-col gap-6 md:flex-row">
             <DashboardStatCard
               iconSrc="/dashboard/jobs.svg"
-              title={isAr ? "إجمالي الوظائف" : "Total Jobs"}
+              title={isAr ? "إجمالي الوظائف" : isDe ? "Gesamte Jobs" : "Total Jobs"}
               value={stats.total_jobs}
-              unit={isAr ? "وظيفة" : "Job"}
+              unit={isAr ? "وظيفة" : isDe ? (stats.total_jobs === 1 ? "Job" : "Jobs") : (stats.total_jobs === 1 ? "Job" : "Jobs")}
               viewAllHref="/dashboard/company/jobs"
-              viewAllLabel={isAr ? "عرض الكل" : "View All"}
+              viewAllLabel={isAr ? "عرض الكل" : isDe ? "Alle anzeigen" : "View All"}
               locale={locale}
               isRTL={isAr}
             />
             <DashboardStatCard
               iconSrc="/dashboard/education_Info.svg"
-              title={isAr ? "إجمالي المتقدمين" : "Total Applicants"}
+              title={isAr ? "إجمالي المتقدمين" : isDe ? "Bewerber insgesamt" : "Total Applicants"}
               value={stats.total_applications}
-              unit={isAr ? "طلب" : "Application"}
+              unit={isAr ? "طلب" : isDe ? (stats.total_applications === 1 ? "Bewerbung" : "Bewerbungen") : (stats.total_applications === 1 ? "Application" : "Applications")}
               viewAllHref="/dashboard/company/applicants"
-              viewAllLabel={isAr ? "عرض الكل" : "View All"}
+              viewAllLabel={isAr ? "عرض الكل" : isDe ? "Alle anzeigen" : "View All"}
               locale={locale}
               isRTL={isAr}
             />
             <DashboardStatCard
               iconSrc="/dashboard/tickets.svg"
-              title={isAr ? "إجمالي التذاكر" : "Total Tickets"}
+              title={isAr ? "إجمالي التذاكر" : isDe ? "Tickets insgesamt" : "Total Tickets"}
               value={totalTickets}
-              unit={isAr ? "تذكرة" : "Ticket"}
+              unit={isAr ? "تذكرة" : isDe ? (totalTickets === 1 ? "Ticket" : "Tickets") : (totalTickets === 1 ? "Ticket" : "Tickets")}
               viewAllHref="/dashboard/company/tickets"
-              viewAllLabel={isAr ? "عرض الكل" : "View All"}
+              viewAllLabel={isAr ? "عرض الكل" : isDe ? "Alle anzeigen" : "View All"}
               locale={locale}
               isRTL={isAr}
             />
@@ -196,28 +197,28 @@ export default async function CompanyDashboardPage({
         </div>
 
         <DashboardJobsTable
-          title={isAr ? "آخر الوظائف" : "Recent Jobs"}
+          title={isAr ? "آخر الوظائف" : isDe ? "Aktuelle Jobs" : "Recent Jobs"}
           rows={tableRows}
-          col2Label={isAr ? "المتقدمون" : "Applied Candidate"}
-          jobTitleLabel={isAr ? "عنوان الوظيفة" : "Job Title"}
-          deadlineLabel={isAr ? "الموعد النهائي" : "Deadline"}
-          statusLabel={isAr ? "الحالة" : "Status"}
-          actionsLabel={isAr ? "الإجراءات" : "Actions"}
-          emptyMessage={isAr ? "لا توجد وظائف" : "No jobs found"}
-          detailsLabel={isAr ? "تفاصيل" : "Details"}
+          col2Label={isAr ? "المتقدمون" : isDe ? "Bewerber" : "Applied Candidate"}
+          jobTitleLabel={isAr ? "عنوان الوظيفة" : isDe ? "Jobtitel" : "Job Title"}
+          deadlineLabel={isAr ? "الموعد النهائي" : isDe ? "Frist" : "Deadline"}
+          statusLabel={isAr ? "الحالة" : isDe ? "Status" : "Status"}
+          actionsLabel={isAr ? "الإجراءات" : isDe ? "Aktionen" : "Actions"}
+          emptyMessage={isAr ? "لا توجد وظائف" : isDe ? "Keine Jobs gefunden" : "No jobs found"}
+          detailsLabel={isAr ? "تفاصيل" : isDe ? "Details" : "Details"}
           locale={locale}
           isRTL={isAr}
         />
 
         {tableRows.length === 0 && (
           <p className="text-center text-sm text-gray-500">
-            {isAr ? "لا توجد وظائف بعد — " : "No jobs yet — "}
+            {isAr ? "لا توجد وظائف بعد — " : isDe ? "Noch keine Jobs — " : "No jobs yet — "}
             <Link
               locale={locale}
               href="/dashboard/company/jobs/create"
               className="font-semibold text-[#006EA8] hover:underline"
             >
-              {isAr ? "أنشئ وظيفة" : "Create a job"}
+              {isAr ? "أنشئ وظيفة" : isDe ? "Job erstellen" : "Create a job"}
             </Link>
           </p>
         )}

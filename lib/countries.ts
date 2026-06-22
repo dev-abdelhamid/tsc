@@ -64,6 +64,43 @@ export const COUNTRIES: CountryData[] = [
   { id: 45, name: "ماليزيا", code: "MY", flag: "🇲🇾", dialCode: "+60" },
   { id: 46, name: "سنغافورة", code: "SG", flag: "🇸🇬", dialCode: "+65" },
   { id: 47, name: "أستراليا", code: "AU", flag: "🇦🇺", dialCode: "+61" },
+
+  // Africa
+  { id: 48, name: "ليبيا", code: "LY", flag: "🇱🇾", dialCode: "+218" },
+  { id: 49, name: "السودان", code: "SD", flag: "🇸🇩", dialCode: "+249" },
+  { id: 50, name: "موريتانيا", code: "MR", flag: "🇲🇷", dialCode: "+222" },
+  { id: 51, name: "الصومال", code: "SO", flag: "🇸🇴", dialCode: "+252" },
+  { id: 52, name: "جنوب أفريقيا", code: "ZA", flag: "🇿🇦", dialCode: "+27" },
+  { id: 53, name: "نيجيريا", code: "NG", flag: "🇳🇬", dialCode: "+234" },
+  { id: 54, name: "كينيا", code: "KE", flag: "🇰🇪", dialCode: "+254" },
+  { id: 55, name: "غانا", code: "GH", flag: "🇬🇭", dialCode: "+233" },
+  { id: 56, name: "إثيوبيا", code: "ET", flag: "🇪🇹", dialCode: "+251" },
+  { id: 57, name: "تنزانيا", code: "TZ", flag: "🇹🇿", dialCode: "+255" },
+  { id: 58, name: "جيبوتي", code: "DJ", flag: "🇩🇯", dialCode: "+253" },
+  { id: 59, name: "جزر القمر", code: "KM", flag: "🇰🇲", dialCode: "+269" },
+
+  // Europe (additional)
+  { id: 60, name: "روسيا", code: "RU", flag: "🇷🇺", dialCode: "+7" },
+  { id: 61, name: "أوكرانيا", code: "UA", flag: "🇺🇦", dialCode: "+380" },
+  { id: 62, name: "رومانيا", code: "RO", flag: "🇷🇴", dialCode: "+40" },
+  { id: 63, name: "المجر", code: "HU", flag: "🇭🇺", dialCode: "+36" },
+  { id: 64, name: "كرواتيا", code: "HR", flag: "🇭🇷", dialCode: "+385" },
+  { id: 65, name: "صربيا", code: "RS", flag: "🇷🇸", dialCode: "+381" },
+
+  // Americas (additional)
+  { id: 66, name: "الأرجنتين", code: "AR", flag: "🇦🇷", dialCode: "+54" },
+  { id: 67, name: "كولومبيا", code: "CO", flag: "🇨🇴", dialCode: "+57" },
+  { id: 68, name: "تشيلي", code: "CL", flag: "🇨🇱", dialCode: "+56" },
+  { id: 69, name: "بيرو", code: "PE", flag: "🇵🇪", dialCode: "+51" },
+
+  // Asia (additional)
+  { id: 70, name: "باكستان", code: "PK", flag: "🇵🇰", dialCode: "+92" },
+  { id: 71, name: "بنجلاديش", code: "BD", flag: "🇧🇩", dialCode: "+880" },
+  { id: 72, name: "إندونيسيا", code: "ID", flag: "🇮🇩", dialCode: "+62" },
+  { id: 73, name: "الفلبين", code: "PH", flag: "🇵🇭", dialCode: "+63" },
+  { id: 74, name: "فيتنام", code: "VN", flag: "🇻🇳", dialCode: "+84" },
+  { id: 75, name: "نيوزيلندا", code: "NZ", flag: "🇳🇿", dialCode: "+64" },
+  { id: 76, name: "سريلانكا", code: "LK", flag: "🇱🇰", dialCode: "+94" },
 ]
 
 export function getCountryByCode(code: string): CountryData | undefined {

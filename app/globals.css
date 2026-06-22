@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "flag-icons/css/flag-icons.min.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -239,22 +240,17 @@
     /* Use only webkit scrollbar styling for cross-browser safety */
   }
 
-  /* Webkit browsers (Chrome, Safari, Edge) */
+  /* Hide scrollbars globally for Google Chrome, Safari, Firefox, and Edge */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--primary, #40a0ca) 80%, transparent 20%);
-    border-radius: 9999px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--primary, #40a0ca);
+
+  /* Firefox & IE/Edge */
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
   }
 }
 
@@ -316,11 +312,11 @@
     align-items: center;
     gap: 0.75rem;
     width: 100%;
-    height: 52px;
+    height: 56px;
     padding: 0 0.9rem;
     border-radius: 0.625rem;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(2,34,59,0.95);
+    border: 1px solid rgba(255,255,255,0.08);
     transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
     box-sizing: border-box;
   }
@@ -328,7 +324,26 @@
   .auth-input-wrap:focus-within {
     border-color: var(--ring);
     box-shadow: 0 6px 18px rgba(64,160,202,0.12);
-    background: rgba(255,255,255,0.02);
+    background: rgba(2,40,65,0.98);
+  }
+
+  /* Underline input wrapper to match mockup design exactly */
+  .auth-input-underline-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    height: 50px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+    box-sizing: border-box;
+  }
+
+  .auth-input-underline-wrap:focus-within {
+    border-color: #006ea8;
   }
 
   /* Inputs inside the wrapper */
@@ -375,4 +390,137 @@
     align-items: center;
     justify-content: center;
   }
+}
+
+/* ==================== CUSTOM PREMIUM SONNER TOAST STYLING ==================== */
+/* Shift toast containers below the sticky website header (88px on mobile, 128px on desktop) */
+section[data-sonner-toaster] {
+  top: 104px !important; /* Mobile: 88px header + 16px padding */
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  width: calc(100% - 32px) !important;
+  max-width: 420px !important;
+  z-index: 999999 !important;
+  pointer-events: auto !important;
+}
+
+@media (min-width: 1024px) {
+  section[data-sonner-toaster] {
+    top: 144px !important; /* Desktop: 128px header + 16px padding */
+  }
+}
+
+/* Elegant card layout for toasts */
+section[data-sonner-toaster] [data-toast] {
+  font-family: inherit !important;
+  border-radius: 12px !important;
+  padding: 14px 18px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  border: 1px solid #e5e7eb !important;
+  
+  /* Force SOLID background to fix transparency issues */
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #171717 !important;
+  opacity: 1 !important;
+  transition: transform 0.2s ease, opacity 0.2s ease !important;
+}
+
+/* Dark mode fallback override */
+.dark section[data-sonner-toaster] [data-toast] {
+  background-color: #002b46 !important;
+  background: #002b46 !important;
+  color: #f5f5f5 !important;
+  border-color: #1e4d6b !important;
+}
+
+/* Loading State Toast - Force opaque background so it is visible */
+section[data-sonner-toaster] [data-toast][data-type="loading"] {
+  background-color: #EFF6FF !important;
+  background: #EFF6FF !important;
+  color: #1E3A8A !important;
+  border-color: #BFDBFE !important;
+  opacity: 1 !important;
+}
+
+.dark section[data-sonner-toaster] [data-toast][data-type="loading"] {
+  background-color: #002b46 !important;
+  background: #002b46 !important;
+  color: #f5f5f5 !important;
+  border-color: #1e4d6b !important;
+}
+
+/* Loading / Icon container styling */
+section[data-sonner-toaster] [data-toast] [data-icon] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Style the loading spinner */
+section[data-sonner-toaster] [data-toast] svg.animate-spin,
+section[data-sonner-toaster] [data-toast][data-type="loading"] svg {
+  color: #006ea8 !important;
+  width: 20px !important;
+  height: 20px !important;
+  opacity: 1 !important;
+}
+
+/* Success Toast - Matching brand green/emerald */
+section[data-sonner-toaster] [data-toast][data-type="success"] {
+  background-color: #ECFDF5 !important;
+  background: #ECFDF5 !important;
+  color: #065F46 !important;
+  border-color: #A7F3D0 !important;
+}
+section[data-sonner-toaster] [data-toast][data-type="success"] svg {
+  color: #059669 !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Error Toast - Soft red */
+section[data-sonner-toaster] [data-toast][data-type="error"] {
+  background-color: #FEF2F2 !important;
+  background: #FEF2F2 !important;
+  color: #991B1B !important;
+  border-color: #FCA5A5 !important;
+}
+section[data-sonner-toaster] [data-toast][data-type="error"] svg {
+  color: #DC2626 !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Info Toast - Soft brand blue */
+section[data-sonner-toaster] [data-toast][data-type="info"] {
+  background-color: #EFF6FF !important;
+  background: #EFF6FF !important;
+  color: #1E3A8A !important;
+  border-color: #BFDBFE !important;
+}
+section[data-sonner-toaster] [data-toast][data-type="info"] svg {
+  color: #2563EB !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Warning Toast - Soft amber/yellow */
+section[data-sonner-toaster] [data-toast][data-type="warning"] {
+  background-color: #FFFBEB !important;
+  background: #FFFBEB !important;
+  color: #78350F !important;
+  border-color: #FDE68A !important;
+}
+section[data-sonner-toaster] [data-toast][data-type="warning"] svg {
+  color: #D97706 !important;
+  width: 20px !important;
+  height: 20px !important;
 }

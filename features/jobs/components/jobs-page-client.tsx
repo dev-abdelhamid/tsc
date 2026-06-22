@@ -52,7 +52,7 @@ export function JobsPageClient({
           <StaggerItem>
             <div className="flex flex-col items-center gap-6 w-full">
               {/* Eyebrow/tag with globe icon */}
-              <span className="inline-flex items-center gap-2 rounded-[8px] bg-[#40A0CA]/25 px-4 py-2 text-[13px] font-medium tracking-[0.06em] text-[#40A0CA] shadow-sm w-[180px] h-[32px] justify-center">
+              <span className="inline-flex items-center gap-2 rounded-[8px] bg-[#40A0CA]/25 px-4 py-2 text-[13px] font-medium tracking-[0.06em] text-[#40A0CA] shadow-sm w-fit h-[32px] justify-center whitespace-nowrap">
                 <Image src="/footer/icon-link.svg" alt="" width={16} height={16} aria-hidden />
                 <span className="text-[12px] font-normal leading-[1.16]">{hero.eyebrow}</span>
               </span>
@@ -70,7 +70,13 @@ export function JobsPageClient({
                   <Input
                     name="search"
                     value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
+                    onChange={(event) => {
+                      const val = event.target.value
+                      setSearchQuery(val)
+                      if (!val) {
+                        setAppliedSearch("")
+                      }
+                    }}
                     placeholder={hero.searchPlaceholder}
                     className="h-[44px] flex-1 min-w-0 rounded-[12px] border border-[#40A0CA] px-4 text-[#171717] placeholder:text-[#737373]/80 text-[14px] font-normal focus:border-[#006EA8] focus:ring-1 focus:ring-[#006EA8] shadow-sm transition-colors"
                     style={{background:'linear-gradient(180deg,rgba(0,110,168,0.12) 0%,rgba(0,86,133,0.12) 100%)'}}

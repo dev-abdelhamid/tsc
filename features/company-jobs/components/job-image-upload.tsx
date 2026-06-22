@@ -89,9 +89,9 @@ export function JobImageUpload({
             disabled={compressing}
             onClick={() => inputRef.current?.click()}
             className={cn(
-              "group relative flex w-full max-w-full shrink-0 overflow-hidden rounded-[12px] border border-dashed border-[#78A3BE] bg-white transition",
+              "group relative flex w-full h-[140px] items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#78A3BE] bg-white transition",
               "hover:border-[#40A0CA] hover:shadow-[0_8px_24px_rgba(0,110,168,0.08)]",
-              previewUrl && "border-solid border-[#D4D4D4]",
+              previewUrl ? "border-solid border-[#D4D4D4]" : "py-6",
               compressing && "pointer-events-none opacity-70"
             )}
           >
@@ -112,7 +112,7 @@ export function JobImageUpload({
                 </span>
               </>
             ) : (
-              <span className="flex flex-col items-center justify-center gap-3 px-6 text-center">
+              <span className="flex flex-col items-center justify-center gap-3 px-6 text-center w-full">
                 <span className="flex size-12 items-center justify-center rounded-full bg-[#E8F2FF] text-[#006EA8]">
                   {compressing ? (
                     <Loader2 className="size-6 animate-spin" aria-hidden />
@@ -130,31 +130,31 @@ export function JobImageUpload({
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-3 text-start text-sm text-[#525252]">
             <p>{sizeHintLabel}</p>
             {file ? (
-              <div className="rounded-lg border border-[#E8F2FF] bg-white px-3 py-2">
-                <p className="truncate font-medium text-[#171717]">{file.name}</p>
-                <p className="mt-1 text-xs text-[#737373]">{formatBytes(file.size)}</p>
-              </div>
+              <>
+                <div className="rounded-lg border border-[#E8F2FF] bg-white px-3 py-2">
+                  <p className="truncate font-medium text-[#171717]">{file.name}</p>
+                  <p className="mt-1 text-xs text-[#737373]">{formatBytes(file.size)}</p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    disabled={compressing}
+                    onClick={() => inputRef.current?.click()}
+                    className="text-[#006EA8] underline-offset-2 hover:underline disabled:opacity-50"
+                  >
+                    {hint}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={compressing}
+                    onClick={() => handleFile(null)}
+                    className="text-[#FF2D55] hover:underline disabled:opacity-50"
+                  >
+                    {removeLabel}
+                  </button>
+                </div>
+              </>
             ) : null}
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={compressing}
-                onClick={() => inputRef.current?.click()}
-                className="text-[#006EA8] underline-offset-2 hover:underline disabled:opacity-50"
-              >
-                {file ? hint : hint}
-              </button>
-              {file ? (
-                <button
-                  type="button"
-                  disabled={compressing}
-                  onClick={() => handleFile(null)}
-                  className="text-[#FF2D55] hover:underline disabled:opacity-50"
-                >
-                  {removeLabel}
-                </button>
-              ) : null}
-            </div>
           </div>
         </div>
       </div>

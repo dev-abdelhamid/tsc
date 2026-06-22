@@ -7,6 +7,7 @@ import { getUserPortfolio } from "@/lib/api/services/portfolio.service"
 import { getProfile } from "@/lib/api/services/auth.service"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
 import { Card } from "@/components/ui/card"
+import { PrimaryButton } from "@/components/ui/primary-button"
 import { cn } from "@/lib/utils"
 
 function formatDate(date: string | undefined, locale: string) {
@@ -52,6 +53,7 @@ export default async function ApplicationDetailPage({
   setRequestLocale(locale)
   const session = await getSession()
   const isAr = locale === "ar"
+  const isDe = locale === "de"
 
   if (!session.isLoggedIn || !session.accessToken) {
     redirect(`/${locale}/sign-in`)
@@ -91,20 +93,20 @@ export default async function ApplicationDetailPage({
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-[8px] bg-white p-6 shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)] sm:p-8">
           <div className="min-w-0 flex-1">
             <h1 className={cn("text-[24px] leading-relaxed py-1", gradientClasses)}>
-              {isAr ? "تفاصيل الطلب" : "Application Details"}
+              {isAr ? "تفاصيل الطلب" : isDe ? "Bewerbungsdetails" : "Application Details"}
             </h1>
           </div>
         </div>
         <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-12 text-center shadow-sm">
           <img src="/portfolio/drop.svg" alt="" className="w-16 h-16 mx-auto opacity-40 mb-4" />
           <p className="text-gray-500 font-medium">
-            {isAr ? "لم يتم العثور على هذا الطلب" : "Application not found"}
+            {isAr ? "لم يتم العثور على هذا الطلب" : isDe ? "Bewerbung nicht gefunden" : "Application not found"}
           </p>
           <Link
             href="/dashboard/user/applications"
             className="inline-block mt-4 text-xs font-bold text-[#006EA8] hover:underline"
           >
-            {isAr ? "العودة إلى الطلبات" : "Back to Applications"}
+            {isAr ? "العودة إلى الطلبات" : isDe ? "Zurück zu Bewerbungen" : "Back to Applications"}
           </Link>
         </div>
       </div>
@@ -112,60 +114,60 @@ export default async function ApplicationDetailPage({
   }
 
   const labels = {
-    title: isAr ? "تفاصيل الطلب" : "Application Details",
-    jobTitle: isAr ? "عنوان الوظيفة" : "Job Title",
-    company: isAr ? "الشركة" : "Company",
-    status: isAr ? "الحالة" : "Status",
-    appliedOn: isAr ? "تاريخ التقديم" : "Applied On",
-    cvUrl: isAr ? "السيرة الذاتية" : "CV",
-    backToApplications: isAr ? "العودة إلى الطلبات" : "Back to Applications",
-    viewJob: isAr ? "عرض الوظيفة" : "View Job",
-    download: isAr ? "تحميل" : "Download",
-    location: isAr ? "الموقع" : "Location",
-    employmentType: isAr ? "نوع التوظيف" : "Employment Type",
-    salary: isAr ? "الراتب" : "Salary",
-    jobDetails: isAr ? "تفاصيل الوظيفة" : "Job Details",
-    personalDetails: isAr ? "البيانات الشخصية" : "Personal Details",
-    name: isAr ? "الاسم" : "Name",
-    email: isAr ? "البريد الإلكتروني" : "Email",
-    phone: isAr ? "رقم الهاتف" : "Phone",
-    gender: isAr ? "الجنس" : "Gender",
-    dateOfBirth: isAr ? "تاريخ الميلاد" : "Date of Birth",
-    maritalStatus: isAr ? "الحالة الاجتماعية" : "Marital Status",
-    male: isAr ? "ذكر" : "Male",
-    female: isAr ? "أنثى" : "Female",
-    single: isAr ? "أعزب" : "Single",
-    married: isAr ? "متزوج" : "Married",
-    cv: isAr ? "السيرة الذاتية المرفقة" : "Attached CV",
-    noCv: isAr ? "لا توجد سيرة ذاتية مرفوعة" : "No CV uploaded",
-    education: isAr ? "التعليم والمؤهلات" : "Education",
-    noEducation: isAr ? "لا توجد مؤهلات تعليمية مضافة" : "No education added yet",
-    experience: isAr ? "الخبرة المهنية" : "Work Experience",
-    noExperience: isAr ? "لا توجد خبرات مهنية مضافة" : "No work experience added yet",
-    skills: isAr ? "المهارات" : "Skills",
-    noSkills: isAr ? "لا توجد مهارات مضافة" : "No skills added yet",
-    languages: isAr ? "اللغات" : "Languages",
-    noLanguages: isAr ? "لا توجد لغات مضافة" : "No languages added yet",
-    year: isAr ? "سنة التخرج" : "Graduation Year",
-    grade: isAr ? "التقدير" : "Grade",
+    title: isAr ? "تفاصيل الطلب" : isDe ? "Bewerbungsdetails" : "Application Details",
+    jobTitle: isAr ? "عنوان الوظيفة" : isDe ? "Stellentitel" : "Job Title",
+    company: isAr ? "الشركة" : isDe ? "Unternehmen" : "Company",
+    status: isAr ? "الحالة" : isDe ? "Status" : "Status",
+    appliedOn: isAr ? "تاريخ التقديم" : isDe ? "Beworben am" : "Applied On",
+    cvUrl: isAr ? "السيرة الذاتية" : isDe ? "Lebenslauf" : "CV",
+    backToApplications: isAr ? "العودة إلى الطلبات" : isDe ? "Zurück zu Bewerbungen" : "Back to Applications",
+    viewJob: isAr ? "عرض الوظيفة" : isDe ? "Stelle anzeigen" : "View Job",
+    download: isAr ? "تحميل" : isDe ? "Herunterladen" : "Download",
+    location: isAr ? "الموقع" : isDe ? "Ort" : "Location",
+    employmentType: isAr ? "نوع التوظيف" : isDe ? "Anstellungsart" : "Employment Type",
+    salary: isAr ? "الراتب" : isDe ? "Gehalt" : "Salary",
+    jobDetails: isAr ? "تفاصيل الوظيفة" : isDe ? "Stellendetails" : "Job Details",
+    personalDetails: isAr ? "البيانات الشخصية" : isDe ? "Persönliche Daten" : "Personal Details",
+    name: isAr ? "الاسم" : isDe ? "Name" : "Name",
+    email: isAr ? "البريد الإلكتروني" : isDe ? "E-Mail" : "Email",
+    phone: isAr ? "رقم الهاتف" : isDe ? "Telefonnummer" : "Phone",
+    gender: isAr ? "الجنس" : isDe ? "Geschlecht" : "Gender",
+    dateOfBirth: isAr ? "تاريخ الميلاد" : isDe ? "Geburtsdatum" : "Date of Birth",
+    maritalStatus: isAr ? "الحالة الاجتماعية" : isDe ? "Familienstand" : "Marital Status",
+    male: isAr ? "ذكر" : isDe ? "Männlich" : "Male",
+    female: isAr ? "أنثى" : isDe ? "Weiblich" : "Female",
+    single: isAr ? "أعزب" : isDe ? "Ledig" : "Single",
+    married: isAr ? "متزوج" : isDe ? "Verheiratet" : "Married",
+    cv: isAr ? "السيرة الذاتية المرفقة" : isDe ? "Beigefügter Lebenslauf" : "Attached CV",
+    noCv: isAr ? "لا توجد سيرة ذاتية مرفوعة" : isDe ? "Kein Lebenslauf hochgeladen" : "No CV uploaded",
+    education: isAr ? "التعليم والمؤهلات" : isDe ? "Ausbildung" : "Education",
+    noEducation: isAr ? "لا توجد مؤهلات تعليمية مضافة" : isDe ? "Bisher keine Ausbildung hinzugefügt" : "No education added yet",
+    experience: isAr ? "الخبرة المهنية" : isDe ? "Berufserfahrung" : "Work Experience",
+    noExperience: isAr ? "لا توجد خبرات مهنية مضافة" : isDe ? "Bisher keine Berufserfahrung hinzugefügt" : "No work experience added yet",
+    skills: isAr ? "المهارات" : isDe ? "Fähigkeiten" : "Skills",
+    noSkills: isAr ? "لا توجد مهارات مضافة" : isDe ? "Bisher keine Fähigkeiten hinzugefügt" : "No skills added yet",
+    languages: isAr ? "اللغات" : isDe ? "Sprachen" : "Languages",
+    noLanguages: isAr ? "لا توجد لغات مضافة" : isDe ? "Bisher keine Sprachen hinzugefügt" : "No languages added yet",
+    year: isAr ? "سنة التخرج" : isDe ? "Abschlussjahr" : "Graduation Year",
+    grade: isAr ? "التقدير" : isDe ? "Note" : "Grade",
   }
 
   const getEduLevelLabel = (level: string) => {
     const map: Record<string, string> = {
-      high_school: isAr ? "ثانوية عامة" : "High School",
-      bachelor: isAr ? "بكالوريوس" : "Bachelor's Degree",
-      master: isAr ? "ماجستير" : "Master's Degree",
-      phd: isAr ? "دكتوراه" : "PhD",
+      high_school: isAr ? "ثانوية عامة" : isDe ? "Abitur / Oberschule" : "High School",
+      bachelor: isAr ? "بكالوريوس" : isDe ? "Bachelor-Abschluss" : "Bachelor's Degree",
+      master: isAr ? "ماجستير" : isDe ? "Master-Abschluss" : "Master's Degree",
+      phd: isAr ? "دكتوراه" : isDe ? "Promotion / PhD" : "PhD",
     }
     return map[level] || level
   }
 
   const getGradeLabel = (grd: string) => {
     const map: Record<string, string> = {
-      excellent: isAr ? "ممتاز" : "Excellent",
-      very_good: isAr ? "جيد جداً" : "Very Good",
-      good: isAr ? "جيد" : "Good",
-      pass: isAr ? "مقبول" : "Pass",
+      excellent: isAr ? "ممتاز" : isDe ? "Sehr gut / Ausgezeichnet" : "Excellent",
+      very_good: isAr ? "جيد جداً" : isDe ? "Gut" : "Very Good",
+      good: isAr ? "جيد" : isDe ? "Befriedigend" : "Good",
+      pass: isAr ? "مقبول" : isDe ? "Ausreichend" : "Pass",
     }
     return map[grd] || grd
   }
@@ -205,13 +207,19 @@ export default async function ApplicationDetailPage({
   const statusColors: Record<string, { bg: string; text: string; border: string }> = {
     pending: { bg: "bg-[#FFF8EE]", text: "text-[#FFB64D]", border: "border-[#FFB64D]" },
     accepted: { bg: "bg-[#EAFBF3]", text: "text-[#39DA8A]", border: "border-[#39DA8A]" },
+    approved: { bg: "bg-[#F3E8FF]", text: "text-[#9333CD]", border: "border-[#D8B4FE]" },
     rejected: { bg: "bg-[#FFF5F5]", text: "text-[#FF5B5C]", border: "border-[#FF5B5C]" },
+    reviewed: { bg: "bg-[#EFF6FF]", text: "text-[#1E40AF]", border: "border-[#BFDBFE]" },
+    stopped: { bg: "bg-[#F3F4F6]", text: "text-[#4B5563]", border: "border-[#D1D5DB]" },
   }
 
   const statusLabels: Record<string, string> = {
-    pending: isAr ? "معلق" : "Pending",
-    accepted: isAr ? "مقبول" : "Accepted",
-    rejected: isAr ? "مرفوض" : "Rejected",
+    pending: isAr ? "قيد المراجعة" : isDe ? "Ausstehend" : "Pending",
+    accepted: isAr ? "مقبول" : isDe ? "Akzeptiert" : "Accepted",
+    approved: isAr ? "مقبول" : isDe ? "Freigegeben" : "Approved",
+    rejected: isAr ? "مرفوض" : isDe ? "Abgelehnt" : "Rejected",
+    reviewed: isAr ? "تمت المراجعة" : isDe ? "Überprüft" : "Reviewed",
+    stopped: isAr ? "موقوفة" : isDe ? "Gestoppt" : "Stopped",
   }
 
   const jobTitle = application.job
@@ -244,14 +252,14 @@ export default async function ApplicationDetailPage({
             {labels.title}
           </h1>
           <p className="mt-1 text-sm text-[#525252]">
-            {isAr ? "عرض تفاصيل طلب التقديم على الوظيفة" : "View your job application details"}
+            {isAr ? "عرض تفاصيل طلب التقديم على الوظيفة" : isDe ? "Details Ihrer Bewerbung anzeigen" : "View your job application details"}
           </p>
         </div>
         <Link
           href="/dashboard/user/applications"
           className="flex items-center gap-2 px-5 py-2.5 border border-[#006EA8] text-[#006EA8] hover:bg-[#F0F9FF] rounded-[8px] text-[14px] font-semibold transition"
         >
-          <span aria-hidden>{isAr ? "→" : "←"}</span>
+          <span aria-hidden>{isAr ? "→" : isDe ? "→" : "←"}</span>
           {labels.backToApplications}
         </Link>
       </div>
@@ -317,50 +325,12 @@ export default async function ApplicationDetailPage({
                 </div>
               </div>
 
-              {/* Job Details Section */}
-              {application.job && (
-                <div className="border-t border-[#E5E7EB] pt-6">
-                  <h3 className={cn("text-[18px] mb-4", gradientClasses)}>
-                    {labels.jobDetails}
-                  </h3>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {application.job.location && (
-                      <div className="rounded-[12px] border border-[#E5E7EB] p-4 bg-[#F9FAFB]">
-                        <p className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider mb-1">
-                          {labels.location}
-                        </p>
-                        <p className="text-[#032C44] font-medium">{application.job.location}</p>
-                      </div>
-                    )}
-                    {application.job.employment_type && (
-                      <div className="rounded-[12px] border border-[#E5E7EB] p-4 bg-[#F9FAFB]">
-                        <p className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider mb-1">
-                          {labels.employmentType}
-                        </p>
-                        <p className="text-[#032C44] font-medium">{application.job.employment_type}</p>
-                      </div>
-                    )}
-                    {application.job.salary_from && (
-                      <div className="rounded-[12px] border border-[#E5E7EB] p-4 bg-[#F9FAFB] sm:col-span-2">
-                        <p className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider mb-1">
-                          {labels.salary}
-                        </p>
-                        <p className="text-[#032C44] font-medium">
-                          {application.job.salary_from}
-                          {application.job.salary_to && ` - ${application.job.salary_to}`}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* View Job Link */}
+              {/* View Job Button */}
               <div className="flex flex-col gap-3 border-t border-[#E5E7EB] pt-6 sm:flex-row">
                 {application.job?.id && (
                   <Link
                     href={`/jobs/${application.job.id}`}
-                    className="inline-flex items-center justify-center gap-2 h-[44px] px-6 bg-gradient-to-b from-[#006EA8] to-[#005685] text-white font-bold rounded-[12px] text-[14px] transition hover:brightness-105 shadow-[inset_0px_1px_18px_2px_#E8F2FF,inset_0px_1px_4px_2px_#C2DDFF]"
+                    className="inline-flex items-center justify-center h-[44px] px-6 bg-gradient-to-b from-[#006EA8] to-[#005685] text-white font-bold rounded-[12px] text-[14px] transition hover:brightness-105 shadow-[inset_0px_1px_18px_2px_#E8F2FF,inset_0px_1px_4px_2px_#C2DDFF] w-full sm:w-auto"
                   >
                     {labels.viewJob}
                   </Link>
@@ -418,7 +388,7 @@ export default async function ApplicationDetailPage({
                       {exp.company || exp.company_name}
                     </p>
                     <p className="text-xs text-gray-500 font-semibold mt-1">
-                      {exp.start_date} - {exp.is_current || exp.currently_working ? (isAr ? "حتى الآن" : "Present") : exp.end_date || ""}
+                      {exp.start_date} - {exp.is_current || exp.currently_working ? (isAr ? "حتى الآن" : isDe ? "Gegenwart" : "Present") : exp.end_date || ""}
                     </p>
                   </div>
                 ))}
@@ -476,29 +446,32 @@ export default async function ApplicationDetailPage({
             <h2 className="text-[17px] font-bold text-[#032C44] border-b border-[#E5E7EB] pb-3 mb-4">
               {labels.cv}
             </h2>
-            {application.cv_url ? (
-              <div className="flex items-center gap-3 border border-[#E5E7EB] rounded-[12px] p-4 bg-[#F4FAFF]">
-                <img src="/portfolio/pdf.svg" alt="PDF" className="w-10 h-10 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-[#032C44] truncate">
-                    {getFilenameFromUrl(application.cv_url)}
-                  </p>
-                  <p className="text-[10px] text-gray-500 font-medium mt-0.5">PDF Document</p>
+            {(() => {
+              const cvUrl = application.cv_url || portfolio?.cv_url
+              return cvUrl ? (
+                <div className="flex items-center gap-3 border border-[#E5E7EB] rounded-[12px] p-4 bg-[#F4FAFF]">
+                  <img src="/portfolio/pdf.svg" alt="PDF" className="w-10 h-10 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-[#032C44] truncate">
+                      {getFilenameFromUrl(cvUrl)}
+                    </p>
+                    <p className="text-[10px] text-gray-500 font-medium mt-0.5">PDF Document</p>
+                  </div>
+                  <a
+                    href={cvUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-bold text-[#006EA8] hover:underline"
+                  >
+                    {isAr ? "عرض" : isDe ? "Ansehen" : "View"}
+                  </a>
                 </div>
-                <a
-                  href={application.cv_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-bold text-[#006EA8] hover:underline"
-                >
-                  {isAr ? "عرض" : "View"}
-                </a>
-              </div>
-            ) : (
-              <div className="text-center py-2 text-gray-400 text-sm font-medium">
-                {labels.noCv}
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-2 text-gray-400 text-sm font-medium">
+                  {labels.noCv}
+                </div>
+              )
+            })()}
           </Card>
 
           {/* Skills */}

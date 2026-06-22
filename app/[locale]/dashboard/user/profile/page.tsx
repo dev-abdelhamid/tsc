@@ -67,11 +67,12 @@ export default async function UserProfilePage({ params }: { params: Promise<{ lo
   }
 
   const isAr = locale === "ar"
+  const isDe = locale === "de"
 
   return (
     <DashboardPageShell
-      title={isAr ? "الملف الشخصي" : "My Profile"}
-      description={isAr ? "تعديل بياناتك الشخصية" : "Edit your personal information"}
+      title={isAr ? "الملف الشخصي" : isDe ? "Mein Profil" : "My Profile"}
+      description={isAr ? "تعديل بياناتك الشخصية" : isDe ? "Bearbeiten Sie Ihre persönlichen Daten" : "Edit your personal information"}
       isRTL={isAr}
     >
       <UserProfileClient locale={locale} initialProfile={initialProfile} />

@@ -48,13 +48,18 @@ export default async function AdminTicketsPage({
     ticketsData = []
   }
 
+  const isAr = locale === "ar"
+  const isDe = locale === "de"
+
   return (
     <AdminPageLayout
-      title={locale === "ar" ? "التذاكر" : "Tickets"}
+      title={isAr ? "التذاكر" : isDe ? "Tickets" : "Tickets"}
       description={
-        locale === "ar"
+        isAr
           ? "عرض تذاكر الدعم الفني وإدارتها"
-          : "View and manage support tickets"
+          : isDe
+            ? "Support-Tickets anzeigen und verwalten"
+            : "View and manage support tickets"
       }
       needsClientPersist={needsClientPersist}
       initialAuthTokens={initialAuthTokens}

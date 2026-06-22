@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { cache } from "react"
 
 export const TOKEN_COOKIE = 'access_token'
 export const ROLE_COOKIE = 'user_role'
@@ -16,6 +17,9 @@ export interface SessionData {
     email: string
     role: "user" | "company" | "admin"
     avatar?: string
+    company?: any
+    company_profile?: any
+    companyProfile?: any
   } | null
 }
 
@@ -130,13 +134,8 @@ export function normalizeRole(roleInput: unknown): "user" | "company" | "admin" 
 }
 
 // Compatibility helper: getSession
-export async function getSession(): Promise<SessionData> {
+export const getSession = cache(async (): Promise<SessionData> => {
   const token = await getTokenFromCookie()
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      console.log('getSession: tokenPreview', token ? String(token).slice(0, 8) + '...' : null)
-    } catch {}
-  }
   // const role intentionally not read here; server will attempt an
   // upstream profile fetch when a token exists and fall back to
   // returning a minimal session if the profile call fails.
@@ -161,11 +160,6 @@ export async function getSession(): Promise<SessionData> {
     } catch {}
 
     const { data: profile, error, status } = await callBackend<Record<string, unknown>>('/auth/profile', { method: 'GET', headers: { 'Accept-Language': acceptLang } }, token)
-    if (process.env.NODE_ENV !== 'production') {
-      try {
-        console.log('getSession: profile fetch', { status, hasProfile: !!profile, error })
-      } catch {}
-    }
     if (!error && profile) {
         const userRaw = (profile && (profile.data || profile)) || null
         if (userRaw) {
@@ -173,6 +167,10 @@ export async function getSession(): Promise<SessionData> {
 
           if (typeof ur.id === 'number' && !Number.isNaN(ur.id) && ur.id > 0) {
             const r = normalizeRole(ur)
+            const cp = (ur as any).companyProfile || (ur as any).company_profile || (ur as any).company
+            const companyLogo = cp ? (cp.logoUrl || cp.logo || cp.logo_url || cp.avatar || cp.avatar_url) : undefined
+            const resolvedAvatar = (r === 'company' && companyLogo) ? companyLogo : (ur.avatar || ur.avatar_url || undefined)
+
             return {
               isLoggedIn: true,
               accessToken: token,
@@ -182,7 +180,10 @@ export async function getSession(): Promise<SessionData> {
                 name: ur.name || ur.username || "",
                 email: ur.email || "",
                 role: r,
-                avatar: ur.avatar || ur.avatar_url || undefined,
+                avatar: resolvedAvatar,
+                company: (ur as any).company || undefined,
+                company_profile: (ur as any).company_profile || undefined,
+                companyProfile: (ur as any).companyProfile || undefined,
               }
             }
           }
@@ -195,7 +196,7 @@ export async function getSession(): Promise<SessionData> {
   // If we could not validate the token by fetching the upstream profile
   // treat the session as unauthenticated. Do NOT return a stub user.
   return { isLoggedIn: false, accessToken: null, user: null, role: null }
-}
+})
 
 // Compatibility helper: getCanonicalRole
 export async function getCanonicalRole(session: SessionData | undefined): Promise<"user" | "company" | "admin"> {

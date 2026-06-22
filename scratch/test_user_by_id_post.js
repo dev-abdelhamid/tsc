@@ -14,23 +14,22 @@ async function run() {
 
     const loginData = await loginRes.json();
     const token = loginData.data?.tokens?.access_token || loginData.data?.accessToken || loginData.data?.token || loginData.accessToken;
-    console.log('Token:', token ? 'obtained' : 'FAILED');
-
+    
     if (token) {
-      const id = 2; // adham
-      const res = await fetch(`${baseUrl}/users/${id}`, {
-        method: 'POST',
+      const id = 17;
+      const res = await fetch(`${baseUrl}/users?filter[id]=${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
           'Accept-Language': 'ar'
         }
       });
-      console.log(`POST /users/${id} | Status: ${res.status}`);
       const data = await res.json();
-      console.log(`Response keys:`, Object.keys(data));
-      if (data.data) {
-        console.log(`User name:`, data.data.name, `role:`, data.data.roles || data.data.role);
+      console.log("Filtered user response keys:", Object.keys(data));
+      const list = data.data || data;
+      console.log("Filtered user response list length:", list.length);
+      if (Array.isArray(list) && list.length > 0) {
+        console.log("User at index 0:", JSON.stringify(list[0], null, 2));
       }
     }
   } catch (err) {

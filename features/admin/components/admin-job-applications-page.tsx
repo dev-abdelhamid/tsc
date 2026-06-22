@@ -32,6 +32,7 @@ export async function AdminJobApplicationsPage({
   accessToken: string
 }) {
   const t = await getTranslations("Admin.jobs")
+  const isRtl = locale === "ar"
   const safeT = (key: string, fallback = key) => {
     try {
       return t(key)
@@ -62,7 +63,7 @@ export async function AdminJobApplicationsPage({
             href={`/dashboard/admin/jobs/${jobId}`}
             className="inline-flex items-center gap-2 text-sm font-semibold text-[#006EA8]"
           >
-            ← {t("applicationsPage.backToDetail")}
+            {isRtl ? "→" : "←"} {t("applicationsPage.backToDetail")}
           </Link>
           <h1 className="mt-3 text-[26px] font-bold text-[#111827] sm:text-[30px]">
             {t("applicationsPage.title")}
@@ -81,7 +82,7 @@ export async function AdminJobApplicationsPage({
       <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)]">
         <div className={cn(
           "border-b border-[#F0F4F8] text-white px-4 py-4",
-          locale === "ar" ? "bg-gradient-to-r" : "bg-gradient-to-l",
+          isRtl ? "bg-gradient-to-r" : "bg-gradient-to-l",
           "from-[#032C44] to-[#41A0CA]"
         )}>
           <p className="text-sm font-semibold">{t("applicationsPage.summary")}</p>
@@ -115,10 +116,12 @@ export async function AdminJobApplicationsPage({
                   : null
 
                 return (
-                  <div
+                  <Link
                     key={application.id ?? `application-${index}`}
+                    locale={locale}
+                    href={`/dashboard/admin/jobs/${jobId}/applications/${application.id}`}
                     className={cn(
-                      "flex items-center border-b border-[#F0F4F8] last:border-0",
+                      "flex items-center border-b border-[#F0F4F8] last:border-0 cursor-pointer transition-colors duration-150 hover:bg-[#F0F9FF]",
                       index % 2 === 0 ? "bg-white" : "bg-[#F9FBFD]"
                     )}
                   >
@@ -136,19 +139,27 @@ export async function AdminJobApplicationsPage({
                     </div>
                     <div className="flex-1 flex items-center justify-center gap-2 px-4 py-4">
                       {cvUrl ? (
-                        <a
-                          href={cvUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 rounded-lg bg-[#D1FAE5] px-3 py-1.5 text-xs font-semibold text-[#065F46] hover:bg-[#A7F3D0]"
+                        <span
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex"
                         >
-                          📄 {safeT("applicationsPage.viewCv", "View CV")}
-                        </a>
+                          <a
+                            href={cvUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-lg bg-[#D1FAE5] px-3 py-1.5 text-xs font-semibold text-[#065F46] hover:bg-[#A7F3D0]"
+                          >
+                            📄 {safeT("applicationsPage.viewCv", "View CV")}
+                          </a>
+                        </span>
                       ) : (
                         <span className="text-xs text-[#9CA3AF]">—</span>
                       )}
+                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#78A3BE] bg-white px-3 py-1.5 text-xs font-semibold text-[#006EA8] hover:bg-[#F5F9FC]">
+                        {isRtl ? "عرض" : "Show"}
+                      </span>
                     </div>
-                  </div>
+                  </Link>
                 )
               })
             )}
@@ -158,3 +169,4 @@ export async function AdminJobApplicationsPage({
     </div>
   )
 }
+

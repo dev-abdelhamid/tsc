@@ -45,12 +45,13 @@ function isGenderOnlyValue(value: string): boolean {
 
 export function formatJobSalary(
   job: Pick<Job, "salary_from" | "salary_to">,
-  periodLabel: string
+  periodLabel: string,
+  isRTL = false
 ): string {
   const from = job.salary_from
   const to = job.salary_to
   if (from != null && to != null) {
-    return `$${from} – $${to}${periodLabel}`
+    return isRTL ? `$${to} – $${from}${periodLabel}` : `$${from} – $${to}${periodLabel}`
   }
   if (from != null) return `$${from}${periodLabel}`
   if (to != null) return `$${to}${periodLabel}`
@@ -58,10 +59,12 @@ export function formatJobSalary(
 }
 
 /** Sidebar / hero salary block — e.g. "$1000 - $1200" */
-export function formatJobSalaryRange(job: Pick<Job, "salary_from" | "salary_to">): string {
+export function formatJobSalaryRange(job: Pick<Job, "salary_from" | "salary_to">, isRTL = false): string {
   const from = job.salary_from
   const to = job.salary_to
-  if (from != null && to != null) return `$${from} - $${to}`
+  if (from != null && to != null) {
+    return isRTL ? `$${to} - $${from}` : `$${from} - $${to}`
+  }
   if (from != null) return `$${from}`
   if (to != null) return `$${to}`
   return "—"
@@ -92,6 +95,9 @@ export function formatPostedLabel(
   locale: string,
   relativeFallback: string
 ): string {
+  if (job.created_at_human?.trim()) {
+    return job.created_at_human.trim()
+  }
   return formatPostedAgo(job.created_at, locale, relativeFallback)
 }
 
@@ -188,4 +194,96 @@ export function salaryFromSliderPercent(percent: number): number {
 /** Latin digits only — avoids SSR/client hydration mismatch on Arabic pages. */
 export function formatFilterSalaryAmount(amount: number): string {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount)
+}
+
+const STATE_TRANSLATIONS: Record<string, Record<string, string>> = {
+  "Baden-Württemberg": {
+    en: "Baden-Württemberg",
+    ar: "بادن-فورتمبيرغ",
+    de: "Baden-Württemberg",
+  },
+  "Bayern": {
+    en: "Bavaria",
+    ar: "بايرن",
+    de: "Bayern",
+  },
+  "Berlin": {
+    en: "Berlin",
+    ar: "برلين",
+    de: "Berlin",
+  },
+  "Brandenburg": {
+    en: "Brandenburg",
+    ar: "براندنبورغ",
+    de: "Brandenburg",
+  },
+  "Bremen": {
+    en: "Bremen",
+    ar: "بريمن",
+    de: "Bremen",
+  },
+  "Hamburg": {
+    en: "Hamburg",
+    ar: "هامبورغ",
+    de: "Hamburg",
+  },
+  "Hessen": {
+    en: "Hesse",
+    ar: "هسن",
+    de: "Hessen",
+  },
+  "Mecklenburg-Vorpommern": {
+    en: "Mecklenburg-Western Pomerania",
+    ar: "مكلنبورغ-فوربومرن",
+    de: "Mecklenburg-Vorpommern",
+  },
+  "Niedersachsen": {
+    en: "Lower Saxony",
+    ar: "سكسونيا السفلى",
+    de: "Niedersachsen",
+  },
+  "Nordrhein-Westfalen": {
+    en: "North Rhine-Westphalia",
+    ar: "شمال الراين-وستفاليا",
+    de: "Nordrhein-Westfalen",
+  },
+  "Rheinland-Pfalz": {
+    en: "Rhineland-Palatinate",
+    ar: "راينلند بالاتينات",
+    de: "Rheinland-Pfalz",
+  },
+  "Saarland": {
+    en: "Saarland",
+    ar: "سارلاند",
+    de: "Saarland",
+  },
+  "Sachsen": {
+    en: "Saxony",
+    ar: "سكسونيا",
+    de: "Sachsen",
+  },
+  "Sachsen-Anhalt": {
+    en: "Saxony-Anhalt",
+    ar: "سكسونيا-آنهالت",
+    de: "Sachsen-Anhalt",
+  },
+  "Schleswig-Holstein": {
+    en: "Schleswig-Holstein",
+    ar: "شليسفيغ-هولشتاين",
+    de: "Schleswig-Holstein",
+  },
+  "Thüringen": {
+    en: "Thuringia",
+    ar: "تورينغن",
+    de: "Thüringen",
+  },
+}
+
+export function getLocalizedStateName(state: string, locale: string): string {
+  if (!state) return ""
+  const match = STATE_TRANSLATIONS[state]
+  if (match) {
+    return match[locale] || match.en || state
+  }
+  return state
 }

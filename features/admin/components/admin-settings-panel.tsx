@@ -58,23 +58,7 @@ export function AdminSettingsPanel({
     return { ar, en, de }
   }
 
-  // Helper for hero_stats (JSON containing total)
-  const getHeroStatsTotal = () => {
-    const val = settings.find((item) => item.key === "hero_stats")?.value
-    if (val) {
-      if (typeof val === "object" && val !== null) {
-        return String((val as Record<string, any>).total || "13k+")
-      } else if (typeof val === "string") {
-        try {
-          const parsed = JSON.parse(val)
-          return String(parsed.total || val)
-        } catch {
-          return val
-        }
-      }
-    }
-    return "13k+"
-  }
+
 
   // 2. Component States (General, Contact, Socials, Hero Stats)
   const footerDescInit = getFooterDescription()
@@ -103,9 +87,7 @@ export function AdminSettingsPanel({
     twitter: getSettingValue("twitter_url", ""),
   })
 
-  const [heroStatsState, setHeroStatsState] = useState({
-    total: getHeroStatsTotal(),
-  })
+
 
   // 3. For any unrecognized settings
   const knownKeys = [
@@ -246,36 +228,7 @@ export function AdminSettingsPanel({
     })
   }
 
-  function saveHeroStats(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setSuccess(null)
-    startTransition(async () => {
-      try {
-        const fd = new FormData()
-        // Save as JSON but ONLY include the total field. Unit is ignored.
-        fd.append(
-          "value",
-          JSON.stringify({
-            total: heroStatsState.total,
-            unit: "", // forced to empty
-          })
-        )
-        fd.append("type", "json")
-        fd.append("is_public", "1")
-        const res = await saveSettingAction("hero_stats", fd, locale)
 
-        if (!res.ok) {
-          setError(isRTL ? "فشل في حفظ العدادات" : "Failed to save hero stats")
-        } else {
-          setSuccess(isRTL ? "تم حفظ إحصائيات العداد بنجاح" : "Hero stats saved successfully")
-          router.refresh()
-        }
-      } catch (err) {
-        setError(isRTL ? "حدث خطأ غير متوقع" : "An unexpected error occurred")
-      }
-    })
-  }
 
   function saveOther(key: string) {
     setError(null)
@@ -571,43 +524,7 @@ export function AdminSettingsPanel({
           </div>
         </form>
 
-        {/* Card 4: Hero Stats */}
-        <form onSubmit={saveHeroStats} className="rounded-[12px] border border-[#E5E7EB] bg-white p-5 sm:p-6 shadow-sm flex flex-col justify-between">
-          <div className="space-y-5">
-            <div className="flex items-center gap-2 border-b border-[#E5E7EB] pb-3">
-              <BarChart3 className="h-5 w-5 text-[#006EA8]" />
-              <h3 className="font-bold text-[#111827]">{isRTL ? "إحصائيات واجهة الموقع" : "Hero Statistics"}</h3>
-            </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#374151] mb-1">
-                  {isRTL ? "العدد الإجمالي المعروض ف العداد" : "Total Metric Number"}
-                </label>
-                <input
-                  type="text"
-                  value={heroStatsState.total}
-                  onChange={(e) => setHeroStatsState({ total: e.target.value })}
-                  placeholder="e.g. 13k+, 5000, 1M"
-                  className="w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] bg-white text-[#111827]"
-                  required
-                />
-                <p className="mt-2 text-xs text-[#9CA3AF] leading-relaxed">
-                  {isRTL
-                    ? "تم إزالة خيار تحديد الميزة/الوحدة بناء على طلبك. سيظهر هذا الرقم كقيمة ثابتة للعداد في الصفحة الرئيسية."
-                    : "The unit option has been removed per your request. Only this total number will be shown in the home page categories banner."}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 border-t border-[#E5E7EB] pt-4 mt-6">
-            <PrimaryButton type="submit" disabled={pending} className="h-9 px-4 text-xs">
-              <Save className="h-4 w-4 me-2" />
-              {pending ? (isRTL ? "جاري الحفظ..." : "Saving...") : (isRTL ? "حفظ التعديلات" : "Save Changes")}
-            </PrimaryButton>
-          </div>
-        </form>
       </div>
 
       {/* Card 5: Other Settings (if any exist) */}

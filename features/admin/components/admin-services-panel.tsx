@@ -26,6 +26,7 @@ export function AdminServicesPanel({
   locale: string
 }) {
   const isRTL = locale === "ar"
+  const isDe = locale === "de"
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [deletePending, startDeleteTransition] = useTransition()
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -37,7 +38,7 @@ export function AdminServicesPanel({
     startDeleteTransition(async () => {
       const result = await deleteServiceAction(deleteConfirm, locale)
       if (!result.ok) {
-        setDeleteError(result.message ?? (isRTL ? "فشل الحذف" : "Delete failed"))
+        setDeleteError(result.message ?? (isRTL ? "فشل الحذف" : (isDe ? "Löschen fehlgeschlagen" : "Delete failed")))
         return
       }
       setDeleteConfirm(null)
@@ -47,18 +48,20 @@ export function AdminServicesPanel({
 
   const tableColumns = [
     { key: "num", label: "#", className: "w-12 text-center" },
-    { key: "service", label: isRTL ? "الخدمة" : "Service", className: "flex-1 min-w-[200px]" },
-    { key: "features", label: isRTL ? "المزايا" : "Features", className: "w-24 text-center" },
-    { key: "actions", label: isRTL ? "الإجراءات" : "Actions", className: "w-36 text-center" },
+    { key: "service", label: isRTL ? "الخدمة" : (isDe ? "Dienstleistung" : "Service"), className: "flex-1 min-w-[200px]" },
+    { key: "features", label: isRTL ? "المزايا" : (isDe ? "Merkmale" : "Features"), className: "w-24 text-center" },
+    { key: "actions", label: isRTL ? "الإجراءات" : (isDe ? "Aktionen" : "Actions"), className: "w-36 text-center" },
   ]
 
   return (
     <AdminPageLayout
-      title={isRTL ? "إدارة الخدمات" : "Manage Services"}
+      title={isRTL ? "إدارة الخدمات" : (isDe ? "Dienstleistungen verwalten" : "Manage Services")}
       description={
         isRTL
           ? `إجمالي الخدمات: ${services.length} · أضف وعدّل خدمات الموقع ومزاياها المعروضة في صفحة الخدمات`
-          : `Total services: ${services.length} · Add and edit the services shown on the services page`
+          : isDe
+            ? `Dienstleistungen insgesamt: ${services.length} · Dienste der Website hinzufügen und bearbeiten`
+            : `Total services: ${services.length} · Add and edit the services shown on the services page`
       }
       action={
         <PrimaryButton
@@ -67,7 +70,7 @@ export function AdminServicesPanel({
           className="w-auto h-10 px-5 mx-0 rounded-lg text-sm font-semibold flex items-center justify-center gap-2"
         >
           <Plus className="h-4 w-4 shrink-0" />
-          <span>{isRTL ? "إضافة خدمة" : "Add Service"}</span>
+          <span>{isRTL ? "إضافة خدمة" : (isDe ? "Dienstleistung hinzufügen" : "Add Service")}</span>
         </PrimaryButton>
       }
     >
@@ -81,13 +84,15 @@ export function AdminServicesPanel({
                   <Trash2 className="h-5 w-5 text-red-600" />
                 </div>
                 <h3 className="text-lg font-bold text-[#111827]">
-                  {isRTL ? "تأكيد الحذف" : "Confirm Delete"}
+                  {isRTL ? "تأكيد الحذف" : (isDe ? "Löschen bestätigen" : "Confirm Delete")}
                 </h3>
               </div>
               <p className="text-sm text-[#6B7280] mb-4">
                 {isRTL
                   ? "هل أنت متأكد من حذف هذه الخدمة؟ لا يمكن التراجع عن هذا الإجراء."
-                  : "Are you sure you want to delete this service? This action cannot be undone."}
+                  : isDe
+                    ? "Sind Sie sicher, dass Sie diese Dienstleistung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+                    : "Are you sure you want to delete this service? This action cannot be undone."}
               </p>
               {deleteError && (
                 <p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -100,7 +105,7 @@ export function AdminServicesPanel({
                   onClick={() => { setDeleteConfirm(null); setDeleteError(null) }}
                   className="rounded-lg border border-[#E5E7EB] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] transition-colors"
                 >
-                  {isRTL ? "إلغاء" : "Cancel"}
+                  {isRTL ? "إلغاء" : (isDe ? "Abbrechen" : "Cancel")}
                 </button>
                 <button
                   type="button"
@@ -108,7 +113,7 @@ export function AdminServicesPanel({
                   onClick={confirmDelete}
                   className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
                 >
-                  {deletePending ? (isRTL ? "جاري الحذف..." : "Deleting...") : (isRTL ? "حذف" : "Delete")}
+                  {deletePending ? (isRTL ? "جاري الحذف..." : (isDe ? "Löschen..." : "Deleting...")) : (isRTL ? "حذف" : (isDe ? "Löschen" : "Delete"))}
                 </button>
               </div>
             </div>
@@ -120,7 +125,7 @@ export function AdminServicesPanel({
           columns={tableColumns}
           isEmpty={services.length === 0}
           isRTL={isRTL}
-          emptyMessage={isRTL ? "لا توجد خدمات. اضغط \"إضافة خدمة\" للبدء." : "No services yet. Click \"Add Service\" to get started."}
+          emptyMessage={isRTL ? "لا توجد خدمات. اضغط \"إضافة خدمة\" للبدء." : (isDe ? "Noch keine Dienstleistungen. Klicken Sie auf \"Dienstleistung hinzufügen\", um zu beginnen." : "No services yet. Click \"Add Service\" to get started.")}
         >
           {services.map((service, index) => (
             <AdminTableRow 
@@ -153,7 +158,7 @@ export function AdminServicesPanel({
                   </div>
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-[#111827] text-sm">
-                      {service.title || (isRTL ? "بدون عنوان" : "Untitled")}
+                      {service.title || (isRTL ? "بدون عنوان" : (isDe ? "Unbenannt" : "Untitled"))}
                     </p>
                     <p className="truncate text-xs text-[#6B7280] mt-0.5 max-w-[280px]">
                       {service.description
@@ -181,7 +186,7 @@ export function AdminServicesPanel({
                     href={`/services/${service.id}`}
                     target="_blank"
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F0F4F8] text-[#6B7280] hover:bg-[#EAF4FB] hover:text-[#006EA8] transition-colors"
-                    title={isRTL ? "عرض في الموقع" : "View on site"}
+                    title={isRTL ? "عرض في الموقع" : (isDe ? "Auf Website anzeigen" : "View on site")}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <ExternalLink className="h-4 w-4" />
@@ -194,7 +199,7 @@ export function AdminServicesPanel({
                       router.push(`/dashboard/admin/services/${service.id}/edit`)
                     }}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EAF4FB] text-[#006EA8] hover:bg-[#006EA8] hover:text-white transition-colors"
-                    title={isRTL ? "تعديل" : "Edit"}
+                    title={isRTL ? "تعديل" : (isDe ? "Bearbeiten" : "Edit")}
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
@@ -206,7 +211,7 @@ export function AdminServicesPanel({
                       setDeleteConfirm(service.id)
                     }}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
-                    title={isRTL ? "حذف" : "Delete"}
+                    title={isRTL ? "حذف" : (isDe ? "Löschen" : "Delete")}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

@@ -154,41 +154,50 @@ export function ForgotPasswordForm({
     }
   }
 
-  // Progress indicator
-  const steps = [
-    { num: 1, label: isRTL ? "البريد" : "Email" },
-    { num: 2, label: isRTL ? "الكود" : "Code" },
-    { num: 3, label: isRTL ? "كلمة المرور" : "Password" },
+  // Step labels
+  const stepLabels = [
+    isRTL ? "البريد" : "Email",
+    isRTL ? "الكود" : "Code",
+    isRTL ? "كلمة المرور" : "Password",
   ]
 
+  // Common button style
+  const buttonClassName = "h-[52px] w-full rounded-xl bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] bg-[length:120px_120px,auto] bg-blend-[plus-lighter,normal] text-white shadow-[0px_42px_107px_rgba(123,190,255,0.34),0px_24.7206px_32.2574px_rgba(0,86,133,0.19),0px_10.2677px_13.3981px_rgba(0,86,133,0.22),0px_3.7136px_4.8458px_rgba(0,86,133,0.15),inset_0px_1px_18px_2px_#E8F2FF,inset_0px_1px_4px_2px_#C2DDFF] text-base font-semibold hover:brightness-105 transition-all active:translate-y-px disabled:opacity-50 flex items-center justify-center gap-2"
+
   return (
-    <div className="flex flex-col gap-5">
-      {/* Step progress bar */}
-      <div className="flex items-center justify-center gap-2" aria-label="Progress steps">
-        {steps.map((s, i) => (
-          <div key={s.num} className="flex items-center gap-2">
-            <div className={`
-              flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all duration-300
-              ${step > s.num
-                ? "bg-green-500 text-white"
-                : step === s.num
-                  ? "bg-[#40A0CA] text-white shadow-[0_0_12px_rgba(64,160,202,0.5)]"
-                  : "border border-white/20 bg-white/5 text-white/40"
-              }
-            `}>
-              {step > s.num ? (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                s.num
-              )}
+    <div className="flex w-full max-w-[470px] mx-auto flex-col gap-6">
+      {/* Step progress – circle on top, label below */}
+      <div className="flex items-start justify-center gap-0" aria-label="Progress steps">
+        {stepLabels.map((label, i) => (
+          <div key={i} className="flex items-center">
+            {/* Step circle + label */}
+            <div className="flex flex-col items-center gap-1.5 min-w-[60px] sm:min-w-[72px]">
+              <div className={`
+                flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all duration-300
+                ${step > i + 1
+                  ? "bg-green-500 text-white"
+                  : step === i + 1
+                    ? "bg-[#40A0CA] text-white shadow-[0_0_12px_rgba(64,160,202,0.5)]"
+                    : "border border-white/20 bg-white/5 text-white/40"
+                }
+              `}>
+                {step > i + 1 ? (
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  i + 1
+                )}
+              </div>
+              <span className={`text-xs font-medium text-center whitespace-nowrap ${
+                step === i + 1 ? "text-[#40A0CA]" : step > i + 1 ? "text-green-400" : "text-white/30"
+              }`}>
+                {label}
+              </span>
             </div>
-            <span className={`text-xs font-medium hidden sm:block ${step === s.num ? "text-[#40A0CA]" : step > s.num ? "text-green-400" : "text-white/30"}`}>
-              {s.label}
-            </span>
-            {i < steps.length - 1 && (
-              <div className={`h-px w-8 sm:w-12 transition-all duration-300 ${step > s.num ? "bg-green-500" : "bg-white/15"}`} />
+            {/* Connector line between steps */}
+            {i < stepLabels.length - 1 && (
+              <div className={`h-px w-10 sm:w-16 mt-4 -mx-1 transition-all duration-300 ${step > i + 1 ? "bg-green-500" : "bg-white/15"}`} />
             )}
           </div>
         ))}
@@ -196,10 +205,10 @@ export function ForgotPasswordForm({
 
       {/* ── Step 1: Email ─────────────────────────── */}
       {step === 1 && (
-        <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="flex flex-col gap-4">
+        <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="flex flex-col gap-5">
           <AuthFieldGroup>
             <label className="auth-field block">
-              <div className="auth-input-wrap">
+              <div className="auth-input-underline-wrap">
                 <Image src="/auth/email.svg" alt="" width={20} height={20} aria-hidden />
                 <input
                   {...emailForm.register("email", { required: true, pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i })}
@@ -217,11 +226,7 @@ export function ForgotPasswordForm({
               {error}
             </div>
           )}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-gradient-to-b from-[#006ea8] to-[#005685] py-3 font-semibold text-white shadow-[0_8px_24px_rgba(0,110,168,0.35)] transition-all hover:from-[#0080c2] hover:to-[#006699] active:translate-y-px disabled:opacity-50 flex items-center justify-center gap-2"
-          >
+          <button type="submit" disabled={loading} className={buttonClassName}>
             {loading ? (
               <>
                 <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
@@ -234,39 +239,39 @@ export function ForgotPasswordForm({
 
       {/* ── Step 2: OTP Code ──────────────────────── */}
       {step === 2 && (
-        <form onSubmit={onCodeSubmit} className="flex flex-col gap-4">
+        <form onSubmit={onCodeSubmit} className="flex flex-col gap-5">
           {/* Email chip */}
-          <div className="flex items-center justify-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm text-white/70">
+          <div className="flex items-center justify-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 text-sm text-white/70">
             <Image src="/auth/email.svg" alt="" width={16} height={16} aria-hidden />
             <span className="truncate">{email}</span>
           </div>
 
-          {/* 6-digit OTP boxes */}
-          <div className="flex justify-center gap-2 sm:gap-3" dir="ltr">
+          {/* 6-digit OTP – underline style */}
+          <div className="flex justify-center gap-3 sm:gap-4" dir="ltr">
             {digits.map((digit, index) => (
-              <input
-                key={index}
-                ref={(el) => { inputRefs.current[index] = el }}
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleDigitChange(index, e.target.value)}
-                onKeyDown={(e) => handleDigitKeyDown(index, e)}
-                onPaste={handleDigitPaste}
-                onFocus={(e) => e.target.select()}
-                aria-label={`${isRTL ? "الرقم" : "Digit"} ${index + 1}`}
-                className={`
-                  h-12 w-10 sm:h-14 sm:w-12 rounded-xl border text-center text-xl font-bold text-white transition-all duration-200 outline-none
-                  bg-[#02223b]/80 backdrop-blur-sm
-                  ${digit
-                    ? "border-[#40A0CA] shadow-[0_0_12px_rgba(64,160,202,0.4)]"
-                    : "border-white/20 hover:border-white/40"
-                  }
-                  focus:border-[#40A0CA] focus:shadow-[0_0_16px_rgba(64,160,202,0.5)]
-                  caret-[#40A0CA]
-                `}
-              />
+              <div key={index} className="relative flex flex-col items-center">
+                <input
+                  ref={(el) => { inputRefs.current[index] = el }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleDigitChange(index, e.target.value)}
+                  onKeyDown={(e) => handleDigitKeyDown(index, e)}
+                  onPaste={handleDigitPaste}
+                  onFocus={(e) => e.target.select()}
+                  aria-label={`${isRTL ? "الرقم" : "Digit"} ${index + 1}`}
+                  className={`
+                    w-10 sm:w-12 h-10 sm:h-12 bg-transparent border-0 border-b-2 text-center text-xl font-bold text-white
+                    outline-none transition-all duration-200 caret-transparent
+                    ${digit
+                      ? "border-[#006ea8]"
+                      : "border-white/30 hover:border-white/50"
+                    }
+                    focus:border-[#006ea8]
+                  `}
+                />
+              </div>
             ))}
           </div>
 
@@ -285,11 +290,7 @@ export function ForgotPasswordForm({
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || !isCodeComplete}
-            className="w-full rounded-xl bg-gradient-to-b from-[#006ea8] to-[#005685] py-3 font-semibold text-white shadow-[0_8px_24px_rgba(0,110,168,0.35)] transition-all hover:from-[#0080c2] hover:to-[#006699] active:translate-y-px disabled:opacity-50 flex items-center justify-center gap-2"
-          >
+          <button type="submit" disabled={loading || !isCodeComplete} className={buttonClassName}>
             {loading ? (
               <>
                 <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
@@ -299,7 +300,7 @@ export function ForgotPasswordForm({
           </button>
 
           {/* Resend */}
-          <div className="text-center text-sm text-white/70">
+          <div className="text-center text-sm text-white/60">
             {isRTL ? "لم تستلم الكود؟" : "Didn't receive the code?"}{" "}
             {cooldown > 0 ? (
               <span className="text-[#9fc9e6]">
@@ -310,7 +311,7 @@ export function ForgotPasswordForm({
                 type="button"
                 onClick={onResend}
                 disabled={loading}
-                className="font-medium text-[#40A0CA] underline-offset-2 hover:underline disabled:opacity-50"
+                className="font-medium text-[#40A0CA] underline-offset-2 hover:underline disabled:opacity-50 transition-colors"
               >
                 {isRTL ? "إعادة الإرسال" : "Resend"}
               </button>
@@ -330,11 +331,11 @@ export function ForgotPasswordForm({
 
       {/* ── Step 3: New password ──────────────────── */}
       {step === 3 && (
-        <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="flex flex-col gap-4">
+        <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="flex flex-col gap-5">
           <AuthFieldGroup>
             <div className="space-y-1">
               <label className="auth-field block">
-                <div className="auth-input-wrap">
+                <div className="auth-input-underline-wrap">
                   <Image src="/auth/password.svg" alt="" width={20} height={20} aria-hidden />
                   <input
                     {...passwordForm.register("password", { required: true, minLength: 6 })}
@@ -349,7 +350,7 @@ export function ForgotPasswordForm({
                     className="shrink-0 cursor-pointer p-2 rounded-md hover:bg-white/6 transition"
                     aria-label={showPassword ? (isRTL ? "إخفاء كلمة المرور" : "Hide password") : (isRTL ? "عرض كلمة المرور" : "Show password")}
                   >
-                    <Image src="/auth/eye.svg" alt="" width={20} height={20} aria-hidden />
+                    <Image src={showPassword ? "/auth/eye.svg" : "/auth/eye-off.svg"} alt="" width={20} height={20} aria-hidden />
                   </button>
                 </div>
               </label>
@@ -362,7 +363,7 @@ export function ForgotPasswordForm({
 
             <div className="space-y-1">
               <label className="auth-field block">
-                <div className="auth-input-wrap">
+                <div className="auth-input-underline-wrap">
                   <Image src="/auth/password.svg" alt="" width={20} height={20} aria-hidden />
                   <input
                     {...passwordForm.register("password_confirmation", { required: true })}
@@ -377,7 +378,7 @@ export function ForgotPasswordForm({
                     className="shrink-0 cursor-pointer p-2 rounded-md hover:bg-white/6 transition"
                     aria-label={showConfirm ? (isRTL ? "إخفاء" : "Hide") : (isRTL ? "عرض" : "Show")}
                   >
-                    <Image src="/auth/eye.svg" alt="" width={20} height={20} aria-hidden />
+                    <Image src={showConfirm ? "/auth/eye.svg" : "/auth/eye-off.svg"} alt="" width={20} height={20} aria-hidden />
                   </button>
                 </div>
               </label>
@@ -403,11 +404,7 @@ export function ForgotPasswordForm({
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || !passwordsMatch}
-            className="w-full rounded-xl bg-gradient-to-b from-[#006ea8] to-[#005685] py-3 font-semibold text-white shadow-[0_8px_24px_rgba(0,110,168,0.35)] transition-all hover:from-[#0080c2] hover:to-[#006699] active:translate-y-px disabled:opacity-50 flex items-center justify-center gap-2"
-          >
+          <button type="submit" disabled={loading || !passwordsMatch} className={buttonClassName}>
             {loading ? (
               <>
                 <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>

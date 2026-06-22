@@ -14,14 +14,18 @@ type LogoutButtonProps = {
 }
 
 export function LogoutButton({ label = "Logout", className, disabled = false, onDone, isRTL }: LogoutButtonProps) {
-  const { logout, isLoading } = useAuth()
+  const { logout } = useAuth()
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false)
 
   const handleClick = React.useCallback(async () => {
     try {
-      onDone?.()
-    } catch {}
-    try {
+      setIsLoggingOut(true)
       await logout()
+    } catch {
+      setIsLoggingOut(false)
+    }
+    try {
+      onDone?.()
     } catch {}
   }, [logout, onDone])
 
@@ -29,14 +33,14 @@ export function LogoutButton({ label = "Logout", className, disabled = false, on
     <button
       type="button"
       onClick={handleClick}
-      disabled={disabled}
+      disabled={disabled || isLoggingOut}
       className={cn(
         className ?? "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-100 cursor-pointer",
-        disabled && "opacity-60 cursor-not-allowed"
+        (disabled || isLoggingOut) && "opacity-60 cursor-not-allowed"
       )}
     >
       <LogOut className="h-4 w-4 stroke-[1.5]" />
-      <span>{isLoading ? "..." : (isRTL ? "تسجيل الخروج" : label)}</span>
+      <span>{isLoggingOut ? "..." : (isRTL ? "تسجيل الخروج" : label)}</span>
     </button>
   )
 }

@@ -48,7 +48,7 @@ export function JobCard({ job, locale, isRtl, labels }: JobCardProps) {
         CARD_HOVER_SHADOW
       )}
     >
-      <CardContent className="space-y-4 p-5 sm:p-6">
+      <CardContent className="space-y-3 p-4 sm:p-5">
         <Badge className="w-fit rounded-full bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] px-3 py-1 text-[12px] text-white group-hover:border group-hover:border-white/30 group-hover:bg-white/15">
           {getLocalizedName(job.category?.name, locale) || labels.department}
         </Badge>

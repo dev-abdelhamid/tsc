@@ -124,8 +124,25 @@ export function CompanyApplicationDetailView({
     { key: "experience", label: labels.experience },
   ]
 
+  const formatLanguageLevel = (level?: string) => {
+    const val = String(level || "").toLowerCase().trim()
+    const map: Record<string, string> = {
+      beginner: isAr ? "مبتدئ" : locale === "de" ? "Anfänger" : "Beginner",
+      intermediate: isAr ? "متوسط" : locale === "de" ? "Mittelstufe" : "Intermediate",
+      fluent: isAr ? "طلاقة" : locale === "de" ? "Fließend" : "Fluent",
+      native: isAr ? "اللغة الأم" : locale === "de" ? "Muttersprache" : "Native",
+    }
+    return map[val] || level || ""
+  }
+
   const languageList = portfolio.languages
-    .map((lang: Record<string, unknown>) => String(lang.language || ""))
+    .map((lang: Record<string, unknown>) => {
+      const name = String(lang.language || "").trim()
+      const level = String(lang.level || "").trim()
+      if (!name) return ""
+      const translatedLevel = formatLanguageLevel(level)
+      return translatedLevel ? `${name} (${translatedLevel})` : name
+    })
     .filter(Boolean)
     .join(isAr ? "، " : ", ")
 

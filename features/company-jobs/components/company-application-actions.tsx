@@ -46,6 +46,7 @@ export function CompanyApplicationActions({
 
         if (result.ok) {
           toast.success(successMsg)
+          router.push(`/dashboard/company/jobs/${jobId}/applications`)
           router.refresh()
         } else {
           toast.error(result.message || (isAr ? "فشل تحديث الحالة" : "Failed to update status"))

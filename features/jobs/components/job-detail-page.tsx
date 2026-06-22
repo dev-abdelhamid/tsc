@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
-import { formatPostedLabel, getJobTitle } from "@/features/jobs/lib/job-display"
+import { formatPostedLabel, getJobTitle, getLocalizedStateName } from "@/features/jobs/lib/job-display"
 import { getJobDetailForLocale } from "@/features/jobs/lib/jobs-for-locale"
 import { JobDetailHero } from "@/features/jobs/components/job-detail-hero"
 import { JobDetailSidebar } from "@/features/jobs/components/job-detail-sidebar"
@@ -61,7 +61,7 @@ export async function JobDetailPage({ jobId, locale: propLocale }: JobDetailPage
   const description = localizedField(job.description, locale)
   const requirements = localizedField(job.requirements, locale)
   const responsibilities = localizedField(job.responsibilities, locale)
-  const location = job.state || job.city?.name || job.location || ""
+  const location = getLocalizedStateName(job.state || "", locale) || job.city?.name || job.location || ""
   const postedLabel = formatPostedLabel(job, locale, t("postedAgo"))
 
   return (
@@ -130,6 +130,8 @@ export async function JobDetailPage({ jobId, locale: propLocale }: JobDetailPage
                 <div className="flex flex-col gap-4">{renderSectionBody(requirements)}</div>
               </section>
             ) : null}
+
+
 
             <JobDetailShare label={t("detail.shareWith")} className="pt-4" />
           </div>

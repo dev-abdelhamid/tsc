@@ -37,6 +37,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAr = locale === "ar";
+  const isDe = locale === "de";
 
   const fetchTickets = async () => {
     try {
@@ -54,7 +55,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      toast.error(isAr ? "حجم الملف يجب أن يكون أقل من 10 ميجا بايت" : "File size should be less than 10MB");
+      toast.error(isAr ? "حجم الملف يجب أن يكون أقل من 10 ميجا بايت" : (isDe ? "Die Dateigröße sollte weniger als 10 MB betragen" : "File size should be less than 10MB"));
       return;
     }
     setAttachmentFile(file);
@@ -67,11 +68,11 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject.trim()) {
-      toast.error(isAr ? "الرجاء إدخال موضوع التذكرة" : "Please enter the ticket subject");
+      toast.error(isAr ? "الرجاء إدخال موضوع التذكرة" : (isDe ? "Bitte geben Sie den Betreff des Tickets ein" : "Please enter the ticket subject"));
       return;
     }
     if (!message.trim()) {
-      toast.error(isAr ? "الرجاء إدخال نص الرسالة" : "Please enter the message content");
+      toast.error(isAr ? "الرجاء إدخال نص الرسالة" : (isDe ? "Bitte geben Sie den Nachrichtentext ein" : "Please enter the message content"));
       return;
     }
 
@@ -98,7 +99,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
         throw new Error(resData.message || "Failed to create ticket");
       }
 
-      toast.success(isAr ? "تم إنشاء التذكرة بنجاح" : "Ticket created successfully");
+      toast.success(isAr ? "تم إنشاء التذكرة بنجاح" : (isDe ? "Ticket erfolgreich erstellt" : "Ticket created successfully"));
       setShowNewTicketModal(false);
       
       // Reset form
@@ -111,7 +112,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
       await fetchTickets();
     } catch (err: any) {
       console.error("[Create ticket error]", err);
-      toast.error(err.message || (isAr ? "فشل إنشاء التذكرة" : "Failed to create ticket"));
+      toast.error(err.message || (isAr ? "فشل إنشاء التذكرة" : (isDe ? "Ticket konnte nicht erstellt werden" : "Failed to create ticket")));
     } finally {
       setSubmitting(false);
     }
@@ -141,7 +142,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
   // ── Reply to ticket ──
   const handleReply = async () => {
     if (!replyText.trim()) {
-      toast.error(isAr ? "الرجاء إدخال نص الرد" : "Please enter a reply message");
+      toast.error(isAr ? "الرجاء إدخال نص الرد" : (isDe ? "Bitte geben Sie eine Antwort ein" : "Please enter a reply message"));
       return;
     }
     if (!selectedTicket) return;
@@ -162,7 +163,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
         throw new Error(errData.message || "Failed to reply");
       }
 
-      toast.success(isAr ? "تم إرسال الرد بنجاح" : "Reply sent successfully");
+      toast.success(isAr ? "تم إرسال الرد بنجاح" : (isDe ? "Antwort erfolgreich gesendet" : "Reply sent successfully"));
       setReplyText("");
 
       // Refresh the detail
@@ -178,7 +179,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
       await fetchTickets();
     } catch (err: any) {
       console.error("[Reply error]", err);
-      toast.error(err.message || (isAr ? "فشل إرسال الرد" : "Failed to send reply"));
+      toast.error(err.message || (isAr ? "فشل إرسال الرد" : (isDe ? "Antwort konnte nicht gesendet werden" : "Failed to send reply")));
     } finally {
       setReplying(false);
     }
@@ -186,9 +187,9 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
 
   const getPriorityLabel = (pri: string) => {
     const map: Record<string, string> = {
-      high: isAr ? "عالي" : "High",
-      medium: isAr ? "متوسط" : "Medium",
-      low: isAr ? "منخفض" : "Low",
+      high: isAr ? "عالي" : (isDe ? "Hoch" : "High"),
+      medium: isAr ? "متوسط" : (isDe ? "Mittel" : "Medium"),
+      low: isAr ? "منخفض" : (isDe ? "Niedrig" : "Low"),
     };
     return map[pri] || pri;
   };
@@ -201,11 +202,11 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
 
   const getStatusLabel = (status: string) => {
     const map: Record<string, string> = {
-      pending: isAr ? "معلق" : "Pending",
-      open: isAr ? "مفتوح" : "Open",
-      answered: isAr ? "تم الرد" : "Answered",
-      closed: isAr ? "مغلق" : "Closed",
-      rejected: isAr ? "مرفوض" : "Rejected",
+      pending: isAr ? "معلق" : (isDe ? "Ausstehend" : "Pending"),
+      open: isAr ? "مفتوح" : (isDe ? "Offen" : "Open"),
+      answered: isAr ? "تم الرد" : (isDe ? "Beantwortet" : "Answered"),
+      closed: isAr ? "مغلق" : (isDe ? "Geschlossen" : "Closed"),
+      rejected: isAr ? "مرفوض" : (isDe ? "Abgelehnt" : "Rejected"),
     };
     return map[status] || status;
   };
@@ -216,7 +217,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
   };
 
   const formatLastReply = (dateStr?: string) => {
-    if (!dateStr) return isAr ? "منذ فترة" : "some time ago";
+    if (!dateStr) return isAr ? "منذ فترة" : (isDe ? "vor einiger Zeit" : "some time ago");
     try {
       const diffMs = Date.now() - new Date(dateStr).getTime();
       const diffMins = Math.floor(diffMs / (1000 * 60));
@@ -224,24 +225,24 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
       if (diffMins < 60) {
-        return isAr ? `منذ ${diffMins} دقيقة` : `${diffMins} minutes ago`;
+        return isAr ? `منذ ${diffMins} دقيقة` : (isDe ? `vor ${diffMins} Minuten` : `${diffMins} minutes ago`);
       }
       if (diffHours < 24) {
-        return isAr ? `منذ ${diffHours} ساعة` : `${diffHours} hours ago`;
+        return isAr ? `منذ ${diffHours} ساعة` : (isDe ? `vor ${diffHours} Stunden` : `${diffHours} hours ago`);
       }
       if (diffDays < 30) {
-        return isAr ? `منذ ${diffDays} يوم` : `${diffDays} days ago`;
+        return isAr ? `منذ ${diffDays} يوم` : (isDe ? `vor ${diffDays} Tagen` : `${diffDays} days ago`);
       }
-      return isAr ? "منذ شهر" : "1 month ago";
+      return isAr ? "منذ شهر" : (isDe ? "vor 1 Monat" : "1 month ago");
     } catch {
-      return isAr ? "منذ شهر" : "1 month ago";
+      return isAr ? "منذ شهر" : (isDe ? "vor 1 Monat" : "1 month ago");
     }
   };
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "";
     try {
-      return new Date(dateStr).toLocaleDateString(isAr ? "ar-SA" : "en-GB", {
+      return new Date(dateStr).toLocaleDateString(isAr ? "ar-SA" : (isDe ? "de-DE" : "en-GB"), {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -281,8 +282,8 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
 
   return (
     <DashboardPageShell
-      title={isAr ? "الدعم الفني والتذاكر" : "Tickets & Support"}
-      description={isAr ? "تابع تذاكر الدعم الفني الخاصة بشركتك واستفساراتك التجارية" : "Track your company's support tickets and business inquiries"}
+      title={isAr ? "الدعم الفني والتذاكر" : (isDe ? "Support-Tickets" : "Tickets & Support")}
+      description={isAr ? "تابع تذاكر الدعم الفني الخاصة بشركتك واستفساراتك التجارية" : (isDe ? "Verfolgen Sie die Support-Tickets und geschäftlichen Anfragen Ihres Unternehmens" : "Track your company's support tickets and business inquiries")}
       isRTL={isAr}
       action={
         <PrimaryButton
@@ -290,7 +291,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
           className="h-9 rounded-lg px-4 w-auto text-sm"
         >
           <span className="text-[16px] font-bold me-1">+</span>
-          <span>{isAr ? "تذكرة جديدة" : "New Ticket"}</span>
+          <span>{isAr ? "تذكرة جديدة" : (isDe ? "Neues Ticket" : "New Ticket")}</span>
         </PrimaryButton>
       }
     >
@@ -300,10 +301,10 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
       <div className="flex flex-wrap gap-2">
         {(["all", "pending", "open", "closed"] as const).map((status) => {
           const labels: Record<string, string> = {
-            all: isAr ? "الكل" : "All",
-            pending: isAr ? "معلق" : "Pending",
-            open: isAr ? "مفتوح" : "Open",
-            closed: isAr ? "مغلق" : "Closed",
+            all: isAr ? "الكل" : (isDe ? "Alle" : "All"),
+            pending: isAr ? "معلق" : (isDe ? "Ausstehend" : "Pending"),
+            open: isAr ? "مفتوح" : (isDe ? "Offen" : "Open"),
+            closed: isAr ? "مغلق" : (isDe ? "Geschlossen" : "Closed"),
           };
           const count = statusCounts[status];
           const isActive = statusFilter === status;
@@ -354,7 +355,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 font-medium">
-                      {isAr ? "آخر تحديث:" : "Last Update:"} {formatLastReply(lastUpdated)}
+                      {isAr ? "آخر تحديث:" : (isDe ? "Letzte Aktualisierung:" : "Last Update:")} {formatLastReply(lastUpdated)}
                     </p>
                   </div>
 
@@ -389,7 +390,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                     <span />
                   )}
                   <span className="text-xs text-[#40A0CA] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                    {isAr ? "عرض التفاصيل →" : "View Details →"}
+                    {isAr ? "عرض التفاصيل →" : (isDe ? "Details anzeigen →" : "View Details →")}
                   </span>
                 </div>
               </div>
@@ -400,8 +401,8 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
             <img src="/portfolio/drop.svg" alt="Empty" className="w-16 h-16 mx-auto opacity-40 mb-4" />
             <p className="text-gray-500 font-medium">
               {statusFilter === "all"
-                ? (isAr ? "لا توجد تذاكر دعم فني مفتوحة حالياً للشركة" : "No corporate support tickets open at the moment")
-                : (isAr ? "لا توجد تذاكر بهذه الحالة" : "No tickets with this status")}
+                ? (isAr ? "لا توجد تذاكر دعم فني مفتوحة حالياً للشركة" : (isDe ? "Derzeit sind keine Support-Tickets für das Unternehmen geöffnet" : "No corporate support tickets open at the moment"))
+                : (isAr ? "لا توجد تذاكر بهذه الحالة" : (isDe ? "Keine Tickets mit diesem Status" : "No tickets with this status"))}
             </p>
           </div>
         )}
@@ -454,7 +455,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                 {/* Original message */}
                 <div className="rounded-[12px] bg-[#F4FAFF] border border-[#E0F0FF] p-4">
                   <p className="text-xs font-semibold text-[#006EA8] mb-2">
-                    {isAr ? "الرسالة الأصلية" : "Original Message"}
+                    {isAr ? "الرسالة الأصلية" : (isDe ? "Original-Nachricht" : "Original Message")}
                   </p>
                   <p className="text-[14px] text-[#032C44] leading-relaxed whitespace-pre-wrap">
                     {selectedTicket.message}
@@ -481,7 +482,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                 {selectedTicket.replies && selectedTicket.replies.length > 0 && (
                   <div className="space-y-3">
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      {isAr ? "الردود" : "Replies"} ({selectedTicket.replies.length})
+                      {isAr ? "الردود" : (isDe ? "Antworten" : "Replies")} ({selectedTicket.replies.length})
                     </p>
                     {selectedTicket.replies.map((reply: any, idx: number) => (
                       <div
@@ -496,8 +497,8 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-[13px] font-bold text-[#032C44]">
                             {reply.user?.name || (reply.is_admin || reply.user?.role === "admin"
-                              ? (isAr ? "فريق الدعم" : "Support Team")
-                              : (isAr ? "أنت" : "You"))}
+                              ? (isAr ? "فريق الدعم" : (isDe ? "Support-Team" : "Support Team"))
+                              : (isAr ? "أنت" : (isDe ? "Du" : "You")))}
                           </span>
                           <span className="text-[11px] text-gray-400">
                             {formatDate(reply.created_at)}
@@ -525,7 +526,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                     rows={3}
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
-                    placeholder={isAr ? "اكتب ردك هنا..." : "Type your reply here..."}
+                    placeholder={isAr ? "اكتب ردك هنا..." : (isDe ? "Schreiben Sie Ihre Antwort hier..." : "Type your reply here...")}
                     className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none resize-none"
                   />
                   <div className="flex justify-end">
@@ -535,8 +536,8 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                       className="px-6 w-auto cursor-pointer"
                     >
                       {replying
-                        ? (isAr ? "جاري الإرسال..." : "Sending...")
-                        : (isAr ? "إرسال الرد" : "Send Reply")}
+                        ? (isAr ? "جاري الإرسال..." : (isDe ? "Wird gesendet..." : "Sending..."))
+                        : (isAr ? "إرسال الرد" : (isDe ? "Antwort senden" : "Send Reply"))}
                     </PrimaryButton>
                   </div>
                 </div>
@@ -553,7 +554,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
         <DialogContent className="max-w-[550px] p-6 rounded-[20px] bg-white border-0 shadow-lg max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-5">
             <DialogTitle className={gradientTitleClasses}>
-              {isAr ? "تذكرة جديدة" : "New Ticket"}
+              {isAr ? "تذكرة جديدة" : (isDe ? "Neues Ticket" : "New Ticket")}
             </DialogTitle>
             <button
               onClick={() => setShowNewTicketModal(false)}
@@ -568,20 +569,20 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-[14px] font-bold text-[#032C44]">
-                  {isAr ? "الموضوع *" : "Subject *"}
+                  {isAr ? "الموضوع *" : (isDe ? "Betreff *" : "Subject *")}
                 </label>
                 <Input
                   type="text"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder={isAr ? "موضوع التذكرة" : "Ticket Subject"}
+                  placeholder={isAr ? "موضوع التذكرة" : (isDe ? "Ticket-Betreff" : "Ticket Subject")}
                   className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none"
                 />
               </div>
 
               <div className="space-y-1">
                 <label className="text-[14px] font-bold text-[#032C44]">
-                  {isAr ? "الأولوية *" : "Priority *"}
+                  {isAr ? "الأولوية *" : (isDe ? "Priorität *" : "Priority *")}
                 </label>
                 <div className="relative">
                   <select
@@ -589,9 +590,9 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                     onChange={(e) => setPriority(e.target.value as any)}
                     className="appearance-none border border-[#E5E7EB] focus:border-[#40A0CA] bg-white rounded-[8px] px-3 py-2 pr-8 text-sm w-full outline-none text-[#032C44]"
                   >
-                    <option value="high">{isAr ? "عالي" : "High"}</option>
-                    <option value="medium">{isAr ? "متوسط" : "Medium"}</option>
-                    <option value="low">{isAr ? "منخفض" : "Low"}</option>
+                    <option value="high">{isAr ? "عالي" : (isDe ? "Hoch" : "High")}</option>
+                    <option value="medium">{isAr ? "متوسط" : (isDe ? "Mittel" : "Medium")}</option>
+                    <option value="low">{isAr ? "منخفض" : (isDe ? "Niedrig" : "Low")}</option>
                   </select>
                   <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                     <img src="/portfolio/arrow-down.svg" alt="Select" className="w-3.5 h-3.5" />
@@ -603,13 +604,13 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
             {/* Message Body */}
             <div className="space-y-1">
               <label className="text-[14px] font-bold text-[#032C44]">
-                {isAr ? "نص الرسالة *" : "Message *"}
+                {isAr ? "نص الرسالة *" : (isDe ? "Nachricht *" : "Message *")}
               </label>
               <Textarea
                 rows={5}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder={isAr ? "اكتب تفاصيل الاستفسار التجاري هنا..." : "Write details about your corporate inquiry here..."}
+                placeholder={isAr ? "اكتب تفاصيل الاستفسار التجاري هنا..." : (isDe ? "Schreiben Sie hier Details zu Ihrer geschäftlichen Anfrage..." : "Write details about your corporate inquiry here...")}
                 className="border border-[#E5E7EB] focus:border-[#40A0CA] rounded-[8px] px-3 py-2 text-sm w-full outline-none resize-none"
               />
             </div>
@@ -617,7 +618,7 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
             {/* File Drag and Drop Zone */}
             <div className="space-y-1">
               <label className="text-[14px] font-bold text-[#032C44]">
-                {isAr ? "المرفقات" : "Attachments"}
+                {isAr ? "المرفقات" : (isDe ? "Anhänge" : "Attachments")}
               </label>
               <div
                 onClick={triggerFileSelect}
@@ -636,6 +637,8 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                     <span className="text-[#006EA8]">{attachmentFile.name}</span>
                   ) : isAr ? (
                     <>قم بسحب الملف هنا، أو <span className="text-[#006EA8] underline">تصفح</span></>
+                  ) : isDe ? (
+                    <>Datei hierher ziehen oder <span className="text-[#006EA8] underline">durchsuchen</span></>
                   ) : (
                     <>Drop a file, or <span className="text-[#006EA8] underline">browse</span></>
                   )}
@@ -643,7 +646,9 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                 <p className="text-[#6B7280] text-[10px] mt-1.5">
                   {isAr
                     ? "حجم الملف أقل من 10MB وصيغ الملفات المقبولة pdf, png, jpg, jpeg"
-                    : "File size should be less than 10MB and file type should be jpg, jpeg, png, pdf"}
+                    : isDe
+                      ? "Die Dateigröße sollte weniger als 10 MB betragen und zulässige Formate sind pdf, png, jpg, jpeg"
+                      : "File size should be less than 10MB and file type should be jpg, jpeg, png, pdf"}
                 </p>
               </div>
             </div>
@@ -655,14 +660,14 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                 onClick={() => setShowNewTicketModal(false)}
                 className="px-10 h-[44px] border border-[#006EA8] text-[#006EA8] bg-white hover:bg-[#F0F9FF] font-bold rounded-[12px] text-[15px] transition cursor-pointer"
               >
-                {isAr ? "إلغاء" : "Cancel"}
+                {isAr ? "إلغاء" : (isDe ? "Abbrechen" : "Cancel")}
               </button>
               <PrimaryButton
                 type="submit"
                 disabled={submitting}
                 className="px-10 w-auto cursor-pointer"
               >
-                {isAr ? "إرسال التذكرة" : "Submit"}
+                {isAr ? "إرسال التذكرة" : (isDe ? "Absenden" : "Submit")}
               </PrimaryButton>
             </div>
           </form>

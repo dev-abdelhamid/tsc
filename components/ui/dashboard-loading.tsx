@@ -24,10 +24,14 @@ export default function DashboardLoading({ message, minHeightClass = "min-h-[360
         </div>
         <div className="mt-2 space-y-1">
           <p className="text-[15px] font-semibold text-[#032C44]">
-            {message ?? t("loading")}
+            {message ?? (() => {
+              try { return t("loading") } catch { return "Loading..." }
+            })()}
           </p>
           <p className="text-[13px] text-gray-400">
-            {t("pleaseWait") ?? "Please wait..."}
+            {(() => {
+              try { return t("pleaseWait") } catch { return "Please wait..." }
+            })()}
           </p>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 import {
   deleteCompanyJobAction,
   stopCompanyJobAction,
+  activateCompanyJobAction,
 } from "@/features/company-jobs/actions/job-actions"
 
 export function CompanyJobRowActions({
@@ -38,6 +39,14 @@ export function CompanyJobRowActions({
     })
   }
 
+  const runActivate = () => {
+    startTransition(async () => {
+      const result = await activateCompanyJobAction(jobId, locale)
+      if (result.ok) router.refresh()
+      else alert(result.message)
+    })
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button
@@ -48,7 +57,7 @@ export function CompanyJobRowActions({
       >
         {t("applications")}
       </button>
-      {status === "approved" ? (
+      {status === "approved" || status === "active" ? (
         <button
           type="button"
           disabled={pending}
@@ -56,6 +65,15 @@ export function CompanyJobRowActions({
           className="text-sm text-amber-700 hover:underline disabled:opacity-50"
         >
           {t("stop")}
+        </button>
+      ) : status === "stopped" ? (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={runActivate}
+          className="text-sm text-[#006EA8] hover:underline disabled:opacity-50"
+        >
+          {t("menu.activate")}
         </button>
       ) : null}
       <button

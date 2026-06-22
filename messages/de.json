@@ -607,8 +607,9 @@
     },
     "menu": {
       "applications": "Bewerbungen",
-      "review": "Vorschau",
+      "review": "Anzeigen",
       "stop": "Stoppen",
+      "activate": "Aktivieren",
       "delete": "Löschen"
     },
     "review": {
