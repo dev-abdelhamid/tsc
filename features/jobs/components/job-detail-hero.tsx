@@ -3,22 +3,30 @@ import type { Job } from "@/lib/api/types"
 import { resolveJobImageUrl } from "@/features/jobs/lib/resolve-job-image"
 
 import { useLocale } from "next-intl"
-import { getLocalizedName, getCompanyLogo } from "@/features/jobs/lib/job-display"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { getLocalizedName } from "@/features/jobs/lib/job-display"
+import { resolveCompanyLogoForDisplay } from "@/features/company-profile/lib/profile-logo"
+import { CompanyAvatar } from "@/features/company-profile/components/company-avatar"
 
 type JobDetailHeroProps = {
   job: Job
   companyName: string
   industryFallback: string
+  /** Live logo from /auth/profile — overrides stale job.company.logo */
+  companyLogoOverride?: string | null
 }
 
-export function JobDetailHero({ job, companyName, industryFallback }: JobDetailHeroProps) {
+export function JobDetailHero({
+  job,
+  companyName,
+  industryFallback,
+  companyLogoOverride,
+}: JobDetailHeroProps) {
   const locale = useLocale()
   const industry =
     getLocalizedName(job.company?.company_type?.name || job.category?.name, locale) || industryFallback
   const bannerSrc = resolveJobImageUrl(job.image) ?? "/home/hero/hero-bg-image.png"
   const displayCompany = job.company?.name ?? companyName
-  const companyLogo = getCompanyLogo(job.company)
+  const companyLogo = resolveCompanyLogoForDisplay(job.company, companyLogoOverride)
 
   return (
     <div className="bg-white pt-6 sm:pt-8">
@@ -39,19 +47,14 @@ export function JobDetailHero({ job, companyName, industryFallback }: JobDetailH
 
           {/* Logo overlapping the banner bottom border */}
           <div className="absolute start-6 -bottom-10 z-20 size-[88px] overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_8px_24px_rgba(0,43,70,0.12)] sm:size-[104px] sm:-bottom-12">
-            <Avatar size="lg" className="absolute inset-0">
-              {companyLogo ? (
-                <AvatarImage
-                  src={companyLogo as string}
-                  alt={displayCompany}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              ) : (
-                <AvatarFallback className="absolute inset-0 grid place-items-center bg-[#e8f2ff] text-[18px] font-bold text-[#006EA8]">
-                  {displayCompany.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              )}
-            </Avatar>
+            <CompanyAvatar
+              logo={companyLogo}
+              name={displayCompany}
+              fill
+              className="size-full"
+              imageClassName="size-full"
+              fallbackClassName="text-[18px]"
+            />
           </div>
         </div>
 

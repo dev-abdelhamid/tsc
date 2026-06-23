@@ -2,8 +2,10 @@ import { notFound } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 import { getCompanyJob } from "@/lib/api/services/company.service"
+import { getProfile } from "@/lib/api/services/auth.service"
 import { localizedField } from "@/features/company-jobs/lib/localized-field"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
+import { getProfileCompanyLogo } from "@/features/company-profile/lib/profile-logo"
 import { JobDetailHero } from "@/features/jobs/components/job-detail-hero"
 import { JobDetailSidebar } from "@/features/jobs/components/job-detail-sidebar"
 import { JobDetailShare } from "@/features/jobs/components/job-detail-share"
@@ -36,8 +38,13 @@ export async function CompanyJobReviewPage({
   const t = await getTranslations("CompanyJobs")
   const jobsT = await getTranslations("Landing.jobsPage")
 
-  const job = await getCompanyJob(jobId, accessToken, locale)
+  const [job, profile] = await Promise.all([
+    getCompanyJob(jobId, accessToken, locale),
+    getProfile(accessToken, locale).catch(() => null),
+  ])
   if (!job) notFound()
+
+  const profileLogo = profile ? getProfileCompanyLogo(profile) : undefined
 
   const title = getJobTitle(job, locale)
   const description = localizedField(job.description, locale)
@@ -62,6 +69,7 @@ export async function CompanyJobReviewPage({
           job={job}
           companyName={companyName}
           industryFallback={job.category?.name ?? t("review.industryFallback")}
+          companyLogoOverride={profileLogo}
         />
 
         <div className="px-4 pb-10 pt-8 sm:px-8 lg:px-10">

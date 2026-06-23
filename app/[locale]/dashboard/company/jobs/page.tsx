@@ -1,29 +1,26 @@
 import { redirect } from "next/navigation"
-import Image from "next/image"
 import { getTranslations, setRequestLocale } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 import { getSession } from "@/lib/auth-token"
 import { normalizeRole } from "@/lib/auth-token"
 import { enrichJobsWithApplicationCounts, getCompanyJobs } from "@/lib/api/services/company.service"
+import { getProfile } from "@/lib/api/services/auth.service"
 import type { Job } from "@/lib/api/types"
 import { CompanyJobActionsMenu } from "@/features/company-jobs/components/company-job-actions-menu"
-import ActivateJobButton from "@/features/company-jobs/components/activate-job-button.client"
+import { mapCompanyJobBadgeStatus } from "@/features/company-jobs/lib/job-status"
 import { formatApplicationDeadline, resolveJobApplicationDeadline } from "@/features/jobs/lib/job-display"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
-import { getCompanyLogo } from "@/features/jobs/lib/job-display"
-import { Avatar, AvatarImage } from "@/components/ui/avatar"
+import {
+  getProfileCompanyLogo,
+  getProfileCompanyName,
+  resolveCompanyLogoForDisplay,
+} from "@/features/company-profile/lib/profile-logo"
+import { CompanyAvatar } from "@/features/company-profile/components/company-avatar"
 import { DashboardStatusBadge } from "@/features/dashboard/components/dashboard-status-badge"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
 import { ApiError } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
-
-function mapJobStatus(status: string): "pending" | "approved" | "rejected" | "stopped" {
-  if (status === "approved" || status === "active") return "approved"
-  if (status === "rejected") return "rejected"
-  if (status === "stopped") return "stopped"
-  return "pending"
-}
 
 export default async function CompanyJobsPage({
   params,
@@ -63,11 +60,16 @@ export default async function CompanyJobsPage({
   const statusLabels: Record<string, string> = {
     pending: t("status.pending"),
     approved: t("status.approved"),
+    active: t("status.approved"),
     rejected: t("status.rejected"),
     stopped: t("status.stopped"),
+    closed: t("status.stopped"),
   }
 
   let jobs: Awaited<ReturnType<typeof getCompanyJobs>>["data"] | null = null
+  let profileLogo: string | undefined
+  let profileCompanyName = ""
+
   try {
     const token = session.accessToken as string | undefined
     // If impersonating in dev, return mocked jobs without calling upstream
@@ -81,8 +83,13 @@ export default async function CompanyJobsPage({
       ] as Job[]
     } else {
       if (!token) redirect(`/${locale}/sign-in`)
-      const res = await getCompanyJobs(token, 1, locale)
-      jobs = await enrichJobsWithApplicationCounts(res.data, token, locale)
+      const [jobsRes, profile] = await Promise.all([
+        getCompanyJobs(token, 1, locale),
+        getProfile(token, locale).catch(() => null),
+      ])
+      jobs = await enrichJobsWithApplicationCounts(jobsRes.data, token, locale)
+      profileLogo = profile ? getProfileCompanyLogo(profile) : undefined
+      profileCompanyName = profile ? getProfileCompanyName(profile, locale) : ""
     }
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
@@ -157,7 +164,7 @@ export default async function CompanyJobsPage({
             {/* Table body - تدرج معكوس في RTL للصفوف المخططة */}
             <div className="min-w-[914px] rounded-b-[8px] border border-t-0 border-[#E8F2FF]">
               {jobs.map((job, index) => {
-                const badgeStatus = mapJobStatus(job.status)
+                const badgeStatus = mapCompanyJobBadgeStatus(job.status)
                 const rawDeadline = resolveJobApplicationDeadline(job)
                 const deadline = formatApplicationDeadline(rawDeadline, locale)
 
@@ -173,24 +180,27 @@ export default async function CompanyJobsPage({
                           : "bg-gradient-to-l from-[#032C44]/10 to-[#41A0CA]/10" // LTR: تدرج عادي
                     )}
                   >
-                    <div className={cn("flex w-[30%] shrink-0 items-center gap-2 px-2 py-3 text-base font-medium text-[#262626]")}>
+                    <div
+                      className={cn("flex w-[30%] shrink-0 items-center gap-2 px-2 py-3 text-base font-medium text-[#262626]")}
+                    >
                       {(() => {
-                        const logo = getCompanyLogo(job.company)
-                        return logo ? (
-                          <Avatar size="sm" className="overflow-hidden">
-                            <AvatarImage src={logo} alt={getJobTitle(job, locale)} />
-                          </Avatar>
-                        ) : (
-                          <Image
-                            src="/dashboard/jobs.svg"
-                            alt=""
-                            width={16}
-                            height={16}
-                            className="h-4 w-4 shrink-0"
-                            aria-hidden
+                        const logo = resolveCompanyLogoForDisplay(job.company, profileLogo)
+                        const companyNameFromApi =
+                          job.company?.name ??
+                          (profileCompanyName ||
+                            (job as Job & { company_name?: string; companyName?: string }).company_name ||
+                            (job as Job & { company_name?: string; companyName?: string }).companyName ||
+                            "")
+
+                        return (
+                          <CompanyAvatar
+                            logo={logo}
+                            name={companyNameFromApi}
+                            size="sm"
                           />
                         )
                       })()}
+
                       <Link
                         locale={locale}
                         href={`/dashboard/company/jobs/${job.id}`}
@@ -214,7 +224,8 @@ export default async function CompanyJobsPage({
                     <div className="flex w-[18%] justify-center px-2 py-3">
                       <DashboardStatusBadge
                         status={badgeStatus}
-                        label={statusLabels[job.status] ?? job.status}
+                        label={statusLabels[job.status] ?? statusLabels[badgeStatus]}
+                        locale={locale}
                       />
                     </div>
                     <div className={"flex flex-1 px-2 py-3 justify-center gap-2 items-center "}>
@@ -223,13 +234,6 @@ export default async function CompanyJobsPage({
                         locale={locale}
                         status={job.status}
                       />
-                      {/* Show activate button for stopped/closed jobs for faster action */}
-                      {(() => {
-                        const s = String(job.status)
-                        return (s === "stopped" || s === "closed") ? (
-                          <ActivateJobButton jobId={job.id} locale={locale} />
-                        ) : null
-                      })()}
                     </div>
                   </div>
                 )

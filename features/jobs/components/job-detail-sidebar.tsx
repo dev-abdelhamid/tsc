@@ -71,7 +71,7 @@ export function JobDetailSidebar({
   const showEmployment = Boolean(employment)
   const showVacancy = job.vacancy != null
   const showGender = Boolean(genderLabel)
-  const showAge = Boolean(ageRange)
+  const showAge = ageRange !== "—"
   const showDeadline = Boolean(rawDeadline && String(rawDeadline).trim())
 
   const hasDetails =

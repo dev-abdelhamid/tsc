@@ -13,8 +13,12 @@ import { DashboardStatCard } from "@/features/dashboard/components/dashboard-sta
 import { DashboardJobsTable } from "@/features/dashboard/components/dashboard-jobs-table"
 import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
 import type { Job } from "@/lib/api/types"
+import { getProfile } from "@/lib/api/services/auth.service"
+import { getProfileCompanyLogo, getProfileCompanyName, resolveCompanyLogoForDisplay } from "@/features/company-profile/lib/profile-logo"
+import type { DashboardJobRow } from "@/features/dashboard/components/dashboard-jobs-table"
+import { mapCompanyJobBadgeStatus } from "@/features/company-jobs/lib/job-status"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
-import { getCompanyLogo, resolveJobApplicationDeadline } from "@/features/jobs/lib/job-display"
+import { resolveJobApplicationDeadline } from "@/features/jobs/lib/job-display"
 import { formatApplicationDeadline } from "@/features/jobs/lib/job-display"
 import { ApiError } from "@/lib/api/client"
 
@@ -57,6 +61,8 @@ export default async function CompanyDashboardPage({
   let stats = { total_jobs: 0, total_applications: 0, pending_applications: 0 }
   let jobs: Job[] = []
   let totalTickets = 0
+  let profileLogo: string | undefined
+  let profileCompanyName = ""
 
   try {
     // If impersonating in dev, return mocked data without calling upstream
@@ -80,8 +86,18 @@ export default async function CompanyDashboardPage({
       const jobsPromise = getCompanyJobs(token as string, 1, locale as "ar" | "en" | "de")
       const ticketsPromise = getTickets(token as string, 1, locale as "ar" | "en" | "de")
       const statsPromise = getCompanyStats(token as string, locale as "ar" | "en" | "de")
+      const profilePromise = getProfile(token as string, locale as "ar" | "en" | "de").catch(() => null)
 
-      const [jobsResult, ticketsResult] = await Promise.allSettled([jobsPromise, ticketsPromise])
+      const [jobsResult, ticketsResult, profile] = await Promise.allSettled([
+        jobsPromise,
+        ticketsPromise,
+        profilePromise,
+      ])
+
+      if (profile.status === "fulfilled" && profile.value) {
+        profileLogo = getProfileCompanyLogo(profile.value)
+        profileCompanyName = getProfileCompanyName(profile.value, locale)
+      }
 
       if (jobsResult.status === "fulfilled") {
         const rawJobs = jobsResult.value.data ?? []
@@ -128,15 +144,8 @@ export default async function CompanyDashboardPage({
     }
   }
 
-  const tableRows = jobs.slice(0, 7).map((job) => {
-    const status =
-      job.status === "approved" || job.status === "active"
-        ? ("approved" as const)
-        : job.status === "rejected"
-          ? ("rejected" as const)
-          : job.status === "stopped" || job.status === "closed"
-            ? ("stopped" as const)
-            : ("pending" as const)
+  const tableRows: DashboardJobRow[] = jobs.slice(0, 7).map((job) => {
+    const status = mapCompanyJobBadgeStatus(job.status)
     const rawDeadline = resolveJobApplicationDeadline(job)
     const deadlineLabel = formatApplicationDeadline(rawDeadline, locale)
     return {
@@ -144,8 +153,10 @@ export default async function CompanyDashboardPage({
       title: getJobTitle(job, locale),
       column2: Number(job.applications_count) || 0,
       deadline: deadlineLabel,
-      logo: getCompanyLogo(job.company),
+      logo: resolveCompanyLogoForDisplay(job.company, profileLogo),
+      companyName: job.company?.name ?? profileCompanyName,
       status,
+      rawStatus: job.status,
       detailsHref: `/dashboard/company/jobs/${job.id}`,
     }
   })

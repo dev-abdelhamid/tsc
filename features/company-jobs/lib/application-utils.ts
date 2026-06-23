@@ -93,7 +93,10 @@ export function normalizeCompanyApplication(item: unknown): CompanyApplication {
   const rawProfile =
     (user.Userprofile && typeof user.Userprofile === "object" ? user.Userprofile : null) ||
     (user.userprofile && typeof user.userprofile === "object" ? user.userprofile : null) ||
-    (user.profile && typeof user.profile === "object" ? user.profile : null)
+    (user.user_profile && typeof user.user_profile === "object" ? user.user_profile : null) ||
+    (user.profile && typeof user.profile === "object" ? user.profile : null) ||
+    (row.user_profile && typeof row.user_profile === "object" ? row.user_profile : null) ||
+    (row.profile && typeof row.profile === "object" ? row.profile : null)
 
   const profileRecord = (rawProfile || {}) as Record<string, unknown>
 
@@ -148,7 +151,7 @@ export function normalizeCompanyApplication(item: unknown): CompanyApplication {
     ) || undefined
 
   let resolvedName =
-    String(user.name ?? row.applicant_name ?? row.candidate_name ?? "").trim()
+    String(user.name ?? row.user_name ?? row.userName ?? row.applicant_name ?? row.candidate_name ?? "").trim()
 
   // Try reconstructing from first/last name present in user/profile/portfolio
   if (
@@ -175,14 +178,12 @@ export function normalizeCompanyApplication(item: unknown): CompanyApplication {
   // Do NOT derive applicant name from CV filename. Keep only server-provided
   // name fields (do not enrich or synthesize from attachments).
 
-  const maskedName = resolvedName ? maskName(resolvedName) : ""
-
   return {
     id: Number(row.id ?? row.applicationId ?? row.application_id ?? 0),
     job: row.job as JobApplication["job"],
     user: {
       id: Number(user.id ?? 0),
-      name: maskedName,
+      name: resolvedName,
       email: String(user.email ?? ""),
       avatar: user.avatar as string | undefined,
       phone: user.phone as string | undefined,

@@ -17,6 +17,8 @@ import { cn, resolveImageUrl } from "@/lib/utils"
 import type { User } from "@/lib/api/types"
 import { SharedSidebar } from "./shared-sidebar"
 import { getDashboardPath, normalizeRole } from "@/lib/auth-token"
+import { fetchUnreadCountClient, invalidateUnreadCountCache } from "@/lib/notifications/unread-count-client"
+import { resolveNotificationUrl } from "@/lib/notifications/resolve-notification-url"
 
 type NavItemKey = "home" | "about" | "services" | "jobs" | "news" | "contact"
 
@@ -260,29 +262,15 @@ export function SiteHeader({
     return () => { document.removeEventListener("mousedown", handleClickOutside) }
   }, [showAvatarMenu])
 
-  // Fetch unread count once when logged in
+  // Fetch unread count once when logged in (deduped module cache)
   React.useEffect(() => {
+    if (!isLoggedIn) return
     let mounted = true
-    async function fetchUnread() {
-      try {
-        const res = await fetch("/api/notifications/unread-count", {
-          credentials: "include",
-          cache: "no-store",
-        })
-        if (!res.ok) return
-        const data = await res.json()
-        const countVal = data?.unread_count ?? data?.count
-        if (mounted && countVal !== undefined && countVal !== null) {
-          const count = typeof countVal === "number" ? countVal : Number(countVal)
-          if (!isNaN(count)) {
-            setUnreadCount(count)
-          }
-        }
-      } catch {
-        // Silently handle unread count fetch errors
-      }
-    }
-    if (isLoggedIn) fetchUnread()
+    fetchUnreadCountClient()
+      .then((count) => {
+        if (mounted) setUnreadCount(count)
+      })
+      .catch(() => {})
     return () => { mounted = false }
   }, [isLoggedIn])
 
@@ -319,9 +307,9 @@ export function SiteHeader({
             is_read?: boolean
             data?: Record<string, unknown>
           }) => {
-            // Extract a navigation URL from the notification data payload if present
             const nData = n.data ?? {}
             const actionUrl =
+              resolveNotificationUrl(nData, displayUserRole) ||
               (nData.url as string) ||
               (nData.link as string) ||
               (nData.action_url as string) ||
@@ -350,7 +338,7 @@ export function SiteHeader({
 
     fetchNotifications()
     return () => { mounted = false }
-  }, [isLoggedIn, showNotifications, currentLocale])
+  }, [isLoggedIn, showNotifications, currentLocale, displayUserRole])
 
   const handleNotificationClick = async (notification: Notification) => {
     // Optimistically mark as read in UI
@@ -359,46 +347,45 @@ export function SiteHeader({
       setUnreadCount((prev) => Math.max(0, prev - 1))
       try {
         await fetch(`/api/notifications/${notification.id}/read`, { method: "PUT", credentials: "include" })
+        invalidateUnreadCountCache()
       } catch {
         // Silently handle read error
       }
     }
 
     // Navigate to action URL if present, then close panel
-    if (notification.actionUrl) {
-      setShowNotifications(false)
-      let targetPath = notification.actionUrl
+    setShowNotifications(false)
 
-      // Handle absolute URLs matching current site origin
-      if (targetPath.startsWith("http://") || targetPath.startsWith("https://")) {
-        try {
-          const parsedUrl = new URL(targetPath)
-          if (typeof window !== "undefined" && parsedUrl.host === window.location.host) {
-            targetPath = parsedUrl.pathname + parsedUrl.search + parsedUrl.hash
-          } else {
-            // External link - navigate directly
-            if (typeof window !== "undefined") {
-              window.location.href = targetPath
-            }
-            return
-          }
-        } catch {
-          // ignore parsing error, navigate directly
+    let targetPath = notification.actionUrl
+    if (!targetPath) {
+      targetPath = getDashboardPath(displayUserRole)
+    }
+
+    if (targetPath.startsWith("http://") || targetPath.startsWith("https://")) {
+      try {
+        const parsedUrl = new URL(targetPath)
+        if (typeof window !== "undefined" && parsedUrl.host === window.location.host) {
+          targetPath = parsedUrl.pathname + parsedUrl.search + parsedUrl.hash
+        } else {
           if (typeof window !== "undefined") {
             window.location.href = targetPath
           }
           return
         }
+      } catch {
+        if (typeof window !== "undefined") {
+          window.location.href = targetPath
+        }
+        return
       }
-
-      // Check if it already has a locale prefix (e.g. /ar/, /en/, /de/)
-      const hasLocalePrefix = /^\/(ar|en|de)(\/|$)/.test(targetPath)
-      const finalUrl = hasLocalePrefix
-        ? targetPath
-        : `/${currentLocale}${targetPath.startsWith("/") ? targetPath : `/${targetPath}`}`
-
-      router.push(finalUrl)
     }
+
+    const hasLocalePrefix = /^\/(ar|en|de)(\/|$)/.test(targetPath)
+    const finalUrl = hasLocalePrefix
+      ? targetPath
+      : `/${currentLocale}${targetPath.startsWith("/") ? targetPath : `/${targetPath}`}`
+
+    router.push(finalUrl)
   }
 
   const closePublicMobileMenu = React.useCallback(() => {
@@ -471,7 +458,11 @@ export function SiteHeader({
 
             {showNotifications && (
               <div
-                className="absolute top-full mt-2 z-[200] max-h-[min(75vh,500px)] w-[min(96vw,380px)] flex flex-col overflow-hidden rounded-[16px] border border-gray-100 bg-white shadow-2xl pointer-events-auto ltr:right-0 rtl:left-0"
+                className={cn(
+                  "z-[200] flex max-h-[min(75vh,500px)] w-[min(calc(100vw-24px),380px)] flex-col overflow-hidden rounded-[16px] border border-gray-100 bg-white shadow-2xl pointer-events-auto",
+                  "fixed start-3 end-3 top-[96px] sm:absolute sm:start-auto sm:end-auto sm:top-full sm:mt-2 sm:w-[380px]",
+                  isRTL ? "sm:left-0" : "sm:right-0"
+                )}
               >
                   <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gradient-to-r from-[#006EA8]/5 to-[#005685]/5 flex-row shrink-0">
                     <h3 className="font-bold text-gray-900 text-[15px] sm:text-base">
@@ -486,6 +477,7 @@ export function SiteHeader({
                               setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
                               setUnreadCount(0)
                               await fetch("/api/notifications/read-all", { method: "POST", credentials: "include" })
+                              invalidateUnreadCountCache()
                             } catch {}
                           }}
                           className="text-xs text-[#006EA8] hover:underline font-semibold cursor-pointer shrink-0"
@@ -516,11 +508,11 @@ export function SiteHeader({
                             : "cursor-default hover:bg-gray-50/50"
                         )}
                         onClick={() => handleNotificationClick(notification)}
-                        role={notification.actionUrl ? "button" : undefined}
-                        tabIndex={notification.actionUrl ? 0 : undefined}
-                        onKeyDown={notification.actionUrl ? (e) => {
+                        role={notification.actionUrl ? "button" : "button"}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") handleNotificationClick(notification)
-                        } : undefined}
+                        }}
                       >
                         <div className="flex gap-3">
                           <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", notification.read ? "bg-gray-100" : "bg-gradient-to-br from-[#006EA8] to-[#005685]")}> 
@@ -609,14 +601,14 @@ export function SiteHeader({
                   aria-expanded={showAvatarMenu}
                 >
                   <div className="h-10 w-10 cursor-pointer rounded-full bg-gradient-to-br from-[#006EA8] to-[#005685] p-0.5 shadow-[0px_42px_107px_rgba(123,190,255,0.34)] lg:h-[44px] lg:w-[44px] hover:scale-105 transition-transform duration-150">
-                    <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white p-0.5">
+                    <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white">
                       {displayAvatar ? (
                         <Image
                           src={resolveImageUrl(displayAvatar)}
                           alt={displayUser?.name || "User"}
                           width={44}
                           height={44}
-                          className="h-full w-full rounded-full object-cover"
+                          className="size-full rounded-full object-cover object-center"
                           unoptimized={displayAvatar.startsWith("http") || displayAvatar.startsWith("blob")}
                         />
                       ) : (

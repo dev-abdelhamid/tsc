@@ -3,18 +3,20 @@
 import Image from "next/image"
 import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
+import { CompanyAvatar } from "@/features/company-profile/components/company-avatar"
 import { DashboardStatusBadge } from "./dashboard-status-badge"
 import { CompanyJobActionsMenu } from "@/features/company-jobs/components/company-job-actions-menu"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 export type DashboardJobRow = {
   id: number
   title: string
   column2: string | number
   deadline: string
-  status: "approved" | "rejected" | "pending" | "accepted" | "reviewed" | "stopped"
+  status: "approved" | "rejected" | "pending" | "accepted" | "reviewed" | "stopped" | "active" | "closed"
   logo?: string | null
+  companyName?: string
   detailsHref: string
+  rawStatus?: string
 }
 
 type DashboardJobsTableProps = {
@@ -83,34 +85,22 @@ export function DashboardJobsTable({
             <p className="bg-white px-4 py-12 text-center text-sm text-gray-500">{emptyMessage}</p>
           ) : (
             rows.map((row, index) => (
-              <Link
+              <div
                 key={row.id}
-                href={row.detailsHref}
                 className={cn(
-                  "flex items-center border-b border-gray-50 last:border-0 hover:opacity-80 transition cursor-pointer",
-                  index % 2 === 0 
-                    ? "bg-white" 
+                  "flex items-center border-b border-gray-50 last:border-0",
+                  index % 2 === 0
+                    ? "bg-white"
                     : isRTL
-                      ? "bg-gradient-to-r from-[#032C44]/10 to-[#41A0CA]/10" // RTL: عكس التدرج
-                      : "bg-gradient-to-l from-[#032C44]/10 to-[#41A0CA]/10" // LTR: التدرج الأصلي
+                      ? "bg-gradient-to-r from-[#032C44]/10 to-[#41A0CA]/10"
+                      : "bg-gradient-to-l from-[#032C44]/10 to-[#41A0CA]/10"
                 )}
               >
                 <div className={"flex w-[28%] shrink-0 items-center gap-2 px-2 py-3 text-base font-medium text-[#262626]"}>
-                  {row.logo ? (
-                    <Avatar size="sm" className="overflow-hidden">
-                      <AvatarImage src={row.logo} alt={row.title} />
-                    </Avatar>
-                  ) : (
-                    <Image
-                      src="/dashboard/jobs.svg"
-                      alt=""
-                      width={16}
-                      height={16}
-                      className="h-4 w-4 shrink-0 opacity-100 [filter:brightness(0)_saturate(100%)_invert(50%)_sepia(10%)_saturate(500%)_hue-rotate(176deg)]"
-                      aria-hidden
-                    />
-                  )}
-                  <span className="truncate">{row.title}</span>
+                  <CompanyAvatar logo={row.logo} name={row.companyName ?? row.title} size="sm" />
+                  <Link href={row.detailsHref} className="truncate hover:text-[#006EA8] hover:underline">
+                    {row.title}
+                  </Link>
                 </div>
                 <div className="flex flex-1 justify-center px-2 py-3 text-base text-[#262626]">
                   {row.column2}
@@ -121,16 +111,24 @@ export function DashboardJobsTable({
                 <div className="flex flex-1 justify-center px-2 py-3">
                   <DashboardStatusBadge status={row.status} locale={locale} />
                 </div>
-                <div className={"flex flex-1 px-2 py-3 justify-center items-center gap-2 "}>
-                  <CompanyJobActionsMenu jobId={row.id} locale={locale ?? "en"} status={row.status as string} />
-                  <div
+                <div
+                  className={"flex flex-1 px-2 py-3 justify-center items-center gap-2"}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Link
+                    href={row.detailsHref}
                     className="inline-flex items-center gap-2 rounded-[8px] bg-gradient-to-b from-[#006EA8] to-[#005685] px-4 py-2 text-xs font-normal text-white shadow-[inset_0_1px_18px_2px_#E8F2FF,inset_0_1px_4px_2px_#C2DDFF] hover:opacity-95"
                   >
                     <Image src="/dashboard/jobs.svg" alt="" width={16} height={16} className="h-4 w-4 brightness-0 invert" />
                     {detailsLabel}
-                  </div>
+                  </Link>
+                  <CompanyJobActionsMenu
+                    jobId={row.id}
+                    locale={locale ?? "en"}
+                    status={row.rawStatus ?? row.status}
+                  />
                 </div>
-              </Link>
+              </div>
             ))
           )}
         </div>

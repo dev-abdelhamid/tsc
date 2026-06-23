@@ -123,21 +123,54 @@ export function formatDetailEmployment(
   return null
 }
 
+function parseApiDate(value: string): Date {
+  const trimmed = value.trim()
+  if (!trimmed) return new Date(NaN)
+
+  // Backend often returns "YYYY-MM-DD HH:mm:ss" without timezone — treat as UTC.
+  if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(trimmed) && !/(Z|[+-]\d{2}:?\d{2})$/i.test(trimmed)) {
+    return new Date(trimmed.replace(" ", "T") + "Z")
+  }
+
+  return new Date(trimmed)
+}
+
+/** Resolve job created/published timestamp from multiple API shapes. */
+export function resolveJobCreatedAt(job: unknown): string | undefined {
+  if (!job || typeof job !== "object") return undefined
+  const row = job as UnknownJob
+  const candidates = [
+    row["created_at"],
+    row["createdAt"],
+    row["published_at"],
+    row["publishedAt"],
+    row["posted_at"],
+    row["postedAt"],
+  ]
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string" || !candidate.trim()) continue
+    const parsed = parseApiDate(candidate)
+    if (!Number.isNaN(parsed.getTime())) return candidate.trim()
+  }
+
+  return undefined
+}
+
 export function formatPostedLabel(
-  job: Pick<Job, "created_at" | "created_at_human">,
+  job: Pick<Job, "created_at" | "created_at_human"> | UnknownJob,
   locale: string,
   relativeFallback: string
 ): string {
-  if (job.created_at) {
-    const computed = formatPostedAgo(job.created_at, locale, relativeFallback)
-    if (computed && computed !== relativeFallback) {
-      return computed
-    }
+  const createdAt = resolveJobCreatedAt(job)
+  if (createdAt) {
+    return formatPostedAgo(createdAt, locale, relativeFallback)
   }
-  if (job.created_at_human?.trim()) {
-    return job.created_at_human.trim()
-  }
-  return formatPostedAgo(job.created_at, locale, relativeFallback)
+
+  const human = (job as Job).created_at_human?.trim()
+  if (human) return human
+
+  return relativeFallback
 }
 
 export function formatJobType(
@@ -160,12 +193,32 @@ export function formatGenderForDetail(gender?: string, locale = "ar"): string {
   return fallback
 }
 
-export function formatAgeRange(
-  job: Pick<Job, "age_from" | "age_to">,
-  locale = "ar"
-): string {
-  const from = job.age_from && job.age_from > 0 ? job.age_from : null
-  const to = job.age_to && job.age_to > 0 ? job.age_to : null
+function toPositiveAge(value: unknown): number | null {
+  if (value == null || value === "") return null
+  const num = Number(value)
+  return Number.isFinite(num) && num > 0 ? num : null
+}
+
+/** Resolve age from flat (`age_from`/`age_to`) or nested Postman shape (`age.from`/`age.to`). */
+export function resolveJobAge(job: unknown): { from: number | null; to: number | null } {
+  if (!job || typeof job !== "object") return { from: null, to: null }
+
+  const row = job as UnknownJob
+  let from = toPositiveAge(row["age_from"] ?? row["ageFrom"])
+  let to = toPositiveAge(row["age_to"] ?? row["ageTo"])
+
+  const ageObj = row["age"]
+  if (ageObj && typeof ageObj === "object") {
+    const nested = ageObj as UnknownJob
+    from = from ?? toPositiveAge(nested["from"] ?? nested["min"])
+    to = to ?? toPositiveAge(nested["to"] ?? nested["max"])
+  }
+
+  return { from, to }
+}
+
+export function formatAgeRange(job: unknown, locale = "ar"): string {
+  const { from, to } = resolveJobAge(job)
   const suffix = locale === "ar" ? " سنة" : locale === "de" ? " Jahre" : " years"
   if (from != null && to != null) return `${from} - ${to}${suffix}`
   if (from != null) return `+${from}${suffix}`
@@ -221,7 +274,7 @@ export function formatPostedAgo(
   fallback: string
 ): string {
   if (!createdAt) return fallback
-  const date = new Date(createdAt)
+  const date = parseApiDate(createdAt)
   if (Number.isNaN(date.getTime())) return fallback
 
   const now = Date.now()

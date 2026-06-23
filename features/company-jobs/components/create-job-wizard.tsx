@@ -10,6 +10,7 @@ import { GERMAN_STATES, JOB_GENDERS, JOB_TYPES } from "@/features/company-jobs/l
 import { buildJobFormData } from "@/features/company-jobs/lib/build-job-form-data"
 import { CreateJobStepper } from "@/features/company-jobs/components/create-job-stepper"
 import { JobImageUpload } from "@/features/company-jobs/components/job-image-upload"
+import { CompanyAvatar } from "@/features/company-profile/components/company-avatar"
 import {
   JobFieldGroup,
   JobUnderlineInput,
@@ -102,9 +103,13 @@ function GradientOutlineButton({
 export function CreateJobWizard({
   categories,
   locale,
+  companyLogo,
+  companyName,
 }: {
   categories: Category[]
   locale: string
+  companyLogo?: string | null
+  companyName?: string
 }) {
   const t = useTranslations("CompanyJobs")
   const router = useRouter()
@@ -357,6 +362,24 @@ export function CreateJobWizard({
       </div>
 
       <CreateJobStepper currentStep={step} labels={stepLabels} isRtl={isRtl} />
+
+      {(companyLogo || companyName) && (
+        <div className="flex w-full items-center gap-3 rounded-lg border border-[#E8F2FF] bg-[#F8FBFF] px-4 py-3">
+          <CompanyAvatar logo={companyLogo} name={companyName} size="default" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-[#262626]">
+              {companyName || t("review.companyFallback")}
+            </p>
+            <p className="text-xs text-[#525252]">
+              {isRtl
+                ? "سيظهر لوجو شركتك الحالي مع هذه الوظيفة"
+                : locale === "de"
+                  ? "Ihr aktuelles Firmenlogo wird mit dieser Stelle angezeigt"
+                  : "Your current company logo will appear with this job"}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex w-full flex-col gap-4">
         {step === 1 && (

@@ -115,7 +115,10 @@ export async function getNews(
       const parsed = parseNewsResponse(response, locale)
       if (parsed.data.length > 0) return parsed
     } catch (err) {
-      console.error(err)
+      const message = err instanceof Error ? err.message : String(err)
+      if (!message.includes("404") && !message.includes("could not be found")) {
+        console.error(err)
+      }
     }
   }
 
@@ -182,7 +185,10 @@ export async function getNewsItem(slug: string, locale = "ar"): Promise<News | n
       const normalized = normalizeNews(item, 0, locale)
       if (normalized) return normalized
     } catch (err) {
-      console.error(err)
+      const message = err instanceof Error ? err.message : String(err)
+      if (!message.includes("404") && !message.includes("could not be found")) {
+        console.error(err)
+      }
     }
   }
 
