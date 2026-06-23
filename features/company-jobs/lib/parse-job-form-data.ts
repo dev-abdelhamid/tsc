@@ -29,6 +29,11 @@ export function parseJobFormData(formData: FormData): CreateJobPayload | null {
   const gender = readString(formData, "gender") as CreateJobPayload["gender"]
   if (gender !== "Male" && gender !== "Female" && gender !== "All") return null
 
+  // Read employment type and accept known values; default to Full-time when missing/invalid
+  const rawEmployment = readString(formData, "employment_type")
+  const employment_type: CreateJobPayload["employment_type"] =
+    rawEmployment === "Full-time" || rawEmployment === "Part-time" ? (rawEmployment as CreateJobPayload["employment_type"]) : "Full-time"
+
   return {
     title: readLocalized(formData, "title"),
     category_id: readNumber(formData, "category_id"),
@@ -44,6 +49,7 @@ export function parseJobFormData(formData: FormData): CreateJobPayload | null {
     description: readLocalized(formData, "description"),
     responsibilities: readLocalized(formData, "responsibilities"),
     requirements: readLocalized(formData, "requirements"),
+    employment_type,
     image: imageEntry,
   }
 }

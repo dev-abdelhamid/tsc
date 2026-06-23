@@ -128,6 +128,11 @@ export function SiteHeader({
   const [showLocaleMenu, setShowLocaleMenu] = React.useState(false)
   const [showAvatarMenu, setShowAvatarMenu] = React.useState(false)
   const [publicMobileMenuOpen, setPublicMobileMenuOpen] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
   const notificationsRef = React.useRef<HTMLDivElement>(null)
   const buttonRef = React.useRef<HTMLButtonElement>(null)
   const localeMenuRef = React.useRef<HTMLDivElement>(null)
@@ -184,13 +189,15 @@ export function SiteHeader({
   // Resolve correct display avatar prioritizing company logo for companies.
   // Use session.user as the freshest source for avatar (it updates after re-fetch);
   // fall back to authState.user if session hasn't loaded yet.
-  const effectiveUser = session.user ?? user
-  const userRole = effectiveUser ? normalizeRole(effectiveUser) : (user ? normalizeRole(user) : "user")
-  const cp = effectiveUser?.companyProfile || (effectiveUser as any)?.company_profile || (effectiveUser as any)?.company
+  // To avoid hydration mismatch, use user (authState.user, which matches server-rendered state)
+  // during the first render, and only switch to the client-cached session.user after mounting.
+  const displayUser = mounted ? (session.user ?? user) : user
+  const displayUserRole = displayUser ? normalizeRole(displayUser) : (user ? normalizeRole(user) : "user")
+  const cp = displayUser?.companyProfile || (displayUser as any)?.company_profile || (displayUser as any)?.company
   const companyLogo = cp?.logoUrl || cp?.logo || cp?.logo_url || cp?.avatar || cp?.avatar_url
-  const displayAvatar = (userRole === "company" && companyLogo)
+  const displayAvatar = (displayUserRole === "company" && companyLogo)
     ? companyLogo
-    : ((effectiveUser as any)?.avatar || (effectiveUser as any)?.avatar_url || user?.avatar || (user as any)?.avatar_url)
+    : ((displayUser as any)?.avatar || (displayUser as any)?.avatar_url || user?.avatar || (user as any)?.avatar_url)
 
   const effectiveIsDashboard = Boolean(isDashboard)
 
@@ -606,7 +613,7 @@ export function SiteHeader({
                       {displayAvatar ? (
                         <Image
                           src={resolveImageUrl(displayAvatar)}
-                          alt={user.name || "User"}
+                          alt={displayUser?.name || "User"}
                           width={44}
                           height={44}
                           className="h-full w-full rounded-full object-cover"
@@ -626,15 +633,15 @@ export function SiteHeader({
                     {/* User Profile Summary */}
                     <div className="px-3 py-2.5 border-b border-gray-100 text-start">
                       <p className="text-sm font-semibold text-gray-900 truncate">
-                        {user?.name || (isRTL ? "مستخدم" : "User")}
+                        {displayUser?.name || (isRTL ? "مستخدم" : "User")}
                       </p>
                       <p className="text-xs text-gray-500 truncate mt-0.5">
-                        {user?.email || ""}
+                        {displayUser?.email || ""}
                       </p>
                       <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-[#006EA8] mt-1.5 capitalize">
                         {isRTL 
-                          ? (normalizeRole(user) === "company" ? "شركة" : normalizeRole(user) === "admin" ? "مدير" : "باحث عن عمل")
-                          : normalizeRole(user)}
+                          ? (displayUserRole === "company" ? "شركة" : displayUserRole === "admin" ? "مدير" : "باحث عن عمل")
+                          : displayUserRole}
                       </span>
                     </div>
 
@@ -642,7 +649,7 @@ export function SiteHeader({
                     <div className="py-1">
                       <Link
                         locale={currentLocale}
-                        href={user ? getDashboardPath(normalizeRole(user)) : "/dashboard"}
+                        href={displayUser ? getDashboardPath(displayUserRole) : "/dashboard"}
                         onClick={() => setShowAvatarMenu(false)}
                         className={cn(
                           "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#f0f9ff] hover:text-[#006EA8] transition-colors duration-100",
@@ -655,7 +662,7 @@ export function SiteHeader({
 
                       <Link
                         locale={currentLocale}
-                        href={user ? `/dashboard/${normalizeRole(user)}/profile` : "/dashboard"}
+                        href={displayUser ? `/dashboard/${displayUserRole}/profile` : "/dashboard"}
                         onClick={() => setShowAvatarMenu(false)}
                         className={cn(
                           "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#f0f9ff] hover:text-[#006EA8] transition-colors duration-100",

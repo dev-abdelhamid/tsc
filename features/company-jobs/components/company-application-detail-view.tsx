@@ -146,6 +146,17 @@ export function CompanyApplicationDetailView({
     .filter(Boolean)
     .join(isAr ? "، " : ", ")
 
+  const getFilenameFromUrl = (url?: string | null) => {
+    if (!url) return ""
+    try {
+      const filename = String(url).split("/").pop() || String(url)
+      const decoded = decodeURIComponent(filename)
+      return decoded.replace(/[-_]+/g, " ")
+    } catch {
+      return String(url)
+    }
+  }
+
   return (
     <div className="flex w-full flex-col gap-6" dir={isAr ? "rtl" : "ltr"}>
       <div className="flex items-center gap-4">
@@ -271,14 +282,17 @@ export function CompanyApplicationDetailView({
                       </div>
                     </div>
                     {edu.attachment ? (
-                      <a
-                        href={String(edu.attachment)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#006EA8] hover:underline"
-                      >
-                        {isAr ? "عرض المرفق" : "View attachment"}
-                      </a>
+                      <div className="mt-3 flex items-center gap-1.5 text-sm text-[#006EA8]">
+                        <img src="/portfolio/pdf.svg" alt="attachment" className="w-5 h-5 shrink-0" />
+                        <a
+                          href={String(edu.attachment)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold hover:underline truncate max-w-[280px]"
+                        >
+                          {getFilenameFromUrl(String(edu.attachment))}
+                        </a>
+                      </div>
                     ) : null}
                   </div>
                 ))
@@ -310,14 +324,17 @@ export function CompanyApplicationDetailView({
                         </p>
                       ) : null}
                       {exp.attachment ? (
-                        <a
-                          href={String(exp.attachment)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#006EA8] hover:underline"
-                        >
-                          {isAr ? "عرض المرفق" : "View attachment"}
-                        </a>
+                        <div className="mt-3 flex items-center gap-1.5 text-sm text-[#006EA8]">
+                          <img src="/portfolio/pdf.svg" alt="attachment" className="w-5 h-5 shrink-0" />
+                          <a
+                            href={String(exp.attachment)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-semibold hover:underline truncate max-w-[280px]"
+                          >
+                            {getFilenameFromUrl(String(exp.attachment))}
+                          </a>
+                        </div>
                       ) : null}
                     </div>
                   ))
@@ -330,14 +347,29 @@ export function CompanyApplicationDetailView({
                   <p className="text-sm text-[#6B7280]">{labels.noSkills}</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {portfolio.skills.map((skill: Record<string, unknown>, index: number) => (
-                      <span
-                        key={index}
-                        className="rounded-full border border-[#cfe7f7] bg-[#EBF5FB] px-3 py-1.5 text-xs font-bold text-[#006EA8]"
-                      >
-                        {String(skill.skill_name || skill.name || "—")}
-                      </span>
-                    ))}
+                    {portfolio.skills.map((skill: Record<string, unknown>, index: number) => {
+                      const attachment = String(skill.attachment || "").trim() || null
+                      const name = String(skill.skill_name || skill.name || "—")
+                      return (
+                        <div key={index} className="flex items-center gap-2">
+                          <span className="rounded-full border border-[#cfe7f7] bg-[#EBF5FB] px-3 py-1.5 text-xs font-bold text-[#006EA8]">
+                            {name}
+                          </span>
+                          {attachment ? (
+                            <a
+                              href={attachment}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-medium text-[#006EA8] hover:underline max-w-[200px] truncate"
+                              aria-label={isAr ? `فتح المرفق ${name}` : `Open attachment for ${name}`}
+                            >
+                              <img src="/portfolio/pdf.svg" alt="attachment" className="w-4 h-4 shrink-0" />
+                              {getFilenameFromUrl(attachment)}
+                            </a>
+                          ) : null}
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>

@@ -50,7 +50,7 @@ export async function HeroSection({ title: titleOverride, description: descripti
     <SectionShell
       id="home"
       stagger={false}
-      className="relative min-h-[640px] overflow-hidden bg-[#001222] pb-16 pt-4 sm:min-h-[760px] lg:h-auto lg:min-h-0 lg:pb-0 lg:pt-0 lg:py-24"
+      className="relative min-h-[720px] overflow-hidden bg-[#001222] pb-16 pt-4 sm:min-h-[880px] lg:h-auto lg:min-h-0 lg:pb-0 lg:pt-0 lg:py-24"
     >
       {/* Background Bars */}
       <div
@@ -70,7 +70,7 @@ export async function HeroSection({ title: titleOverride, description: descripti
 
       {/* Bottom Glow / Spotlight Arc */}
       <div 
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[160%] h-[400px] sm:h-[450px] lg:hidden rounded-[100%] bg-gradient-to-t from-[#40a0ca]/70 via-[#006ea8]/30 to-transparent blur-[50px] sm:blur-[75px] pointer-events-none z-[1]"
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[160%] h-[480px] sm:h-[560px] lg:hidden rounded-[100%] bg-gradient-to-t from-[#40a0ca]/70 via-[#006ea8]/30 to-transparent blur-[60px] sm:blur-[90px] pointer-events-none z-[1]"
         style={{
           transform: "translateX(-50%) translateY(50%)",
         }}

@@ -1,12 +1,20 @@
-import type { Job } from "@/lib/api/types"
+import type { Job, CompanyProfile } from "@/lib/api/types"
+type UnknownJob = Record<string, unknown>
+import { resolveImageUrl } from "@/lib/utils"
 
-export function getLocalizedName(value: any, locale: string): string {
+export function getLocalizedName(value: unknown, locale: string): string {
   if (!value) return ""
   if (typeof value === "string") {
     if (value.startsWith("{") && value.endsWith("}")) {
       try {
         const parsed = JSON.parse(value)
-        return parsed[locale] || parsed.ar || parsed.en || parsed.de || value
+        const p = parsed as Record<string, unknown>
+        const v = p[locale]
+        if (typeof v === "string") return v
+        if (typeof p.ar === "string") return p.ar
+        if (typeof p.en === "string") return p.en
+        if (typeof p.de === "string") return p.de
+        return value
       } catch {
         return value
       }
@@ -14,7 +22,13 @@ export function getLocalizedName(value: any, locale: string): string {
     return value
   }
   if (value && typeof value === "object") {
-    return value[locale] || value.ar || value.en || value.de || ""
+    const obj = value as Record<string, unknown>
+    const v = obj[locale]
+    if (typeof v === "string") return v
+    if (typeof obj.ar === "string") return obj.ar
+    if (typeof obj.en === "string") return obj.en
+    if (typeof obj.de === "string") return obj.de
+    return ""
   }
   return String(value)
 }
@@ -44,14 +58,24 @@ function isGenderOnlyValue(value: string): boolean {
 }
 
 export function formatJobSalary(
-  job: Pick<Job, "salary_from" | "salary_to">,
+  job: Job | UnknownJob | undefined,
   periodLabel: string,
   isRTL = false
 ): string {
-  const from = job.salary_from
-  const to = job.salary_to
+  // Support multiple API shapes: nested `salary.from/to` or top-level `salary_from`/`salary_to`
+  const j = job as UnknownJob | undefined
+  const salaryObj = j && typeof j === "object" ? (j["salary"] as UnknownJob | undefined) : undefined
+  const fromRaw = salaryObj && typeof salaryObj === "object"
+    ? (salaryObj["from"] ?? salaryObj["min"]) : (j ? (j["salary_from"] ?? j["from"] ?? j["salaryFrom"]) : undefined)
+  const toRaw = salaryObj && typeof salaryObj === "object"
+    ? (salaryObj["to"] ?? salaryObj["max"]) : (j ? (j["salary_to"] ?? j["to"] ?? j["salaryTo"]) : undefined)
+  const from = fromRaw != null ? Number(String(fromRaw)) : undefined
+  const to = toRaw != null ? Number(String(toRaw)) : undefined
   if (from != null && to != null) {
-    return isRTL ? `$${to} – $${from}${periodLabel}` : `$${from} – $${to}${periodLabel}`
+    const min = Math.min(from, to)
+    const max = Math.max(from, to)
+    // Show numbers in logical order but flip visual order for RTL locales
+    return isRTL ? `$${max} – $${min}${periodLabel}` : `$${min} – $${max}${periodLabel}`
   }
   if (from != null) return `$${from}${periodLabel}`
   if (to != null) return `$${to}${periodLabel}`
@@ -59,11 +83,21 @@ export function formatJobSalary(
 }
 
 /** Sidebar / hero salary block — e.g. "$1000 - $1200" */
-export function formatJobSalaryRange(job: Pick<Job, "salary_from" | "salary_to">, isRTL = false): string {
-  const from = job.salary_from
-  const to = job.salary_to
+export function formatJobSalaryRange(job: Job | UnknownJob | undefined, isRTL = false): string {
+  // Support nested `salary` object or flat fields
+  const j = job as UnknownJob | undefined
+  const salaryObj = j && typeof j === "object" ? (j["salary"] as UnknownJob | undefined) : undefined
+  const fromRaw = salaryObj && typeof salaryObj === "object"
+    ? (salaryObj["from"] ?? salaryObj["min"]) : (j ? (j["salary_from"] ?? j["from"] ?? j["salaryFrom"]) : undefined)
+  const toRaw = salaryObj && typeof salaryObj === "object"
+    ? (salaryObj["to"] ?? salaryObj["max"]) : (j ? (j["salary_to"] ?? j["to"] ?? j["salaryTo"]) : undefined)
+  const from = fromRaw != null ? Number(String(fromRaw)) : undefined
+  const to = toRaw != null ? Number(String(toRaw)) : undefined
   if (from != null && to != null) {
-    return isRTL ? `$${to} - $${from}` : `$${from} - $${to}`
+    const min = Math.min(from, to)
+    const max = Math.max(from, to)
+    // Respect RTL when requested: show max - min visually on RTL pages
+    return isRTL ? `$${max} - $${min}` : `$${min} - $${max}`
   }
   if (from != null) return `$${from}`
   if (to != null) return `$${to}`
@@ -80,8 +114,7 @@ export function formatJobEmploymentForCard(
 }
 
 export function formatDetailEmployment(
-  job: Pick<Job, "employment_type" | "gender">,
-  locale = "ar"
+  job: Pick<Job, "employment_type" | "gender">
 ): string | null {
   if (job.employment_type?.trim()) return job.employment_type.trim()
   if (job.gender?.trim() && !isGenderOnlyValue(job.gender)) {
@@ -95,6 +128,12 @@ export function formatPostedLabel(
   locale: string,
   relativeFallback: string
 ): string {
+  if (job.created_at) {
+    const computed = formatPostedAgo(job.created_at, locale, relativeFallback)
+    if (computed && computed !== relativeFallback) {
+      return computed
+    }
+  }
   if (job.created_at_human?.trim()) {
     return job.created_at_human.trim()
   }
@@ -148,6 +187,28 @@ export function formatApplicationDeadline(
   }).format(date)
 }
 
+/**
+ * Resolve application deadline from a job payload supporting multiple shapes.
+ * Returns a string (raw) or undefined.
+ */
+export function resolveJobApplicationDeadline(job: Job | UnknownJob | undefined): string | undefined {
+  if (!job || typeof job !== "object") return undefined
+  const anyJob = job as UnknownJob
+  const candidates: Array<string | undefined> = [
+    anyJob["application_deadline"] as string | undefined,
+    anyJob["applicationDeadline"] as string | undefined,
+    anyJob["application_deadline_date"] as string | undefined,
+    anyJob["deadline"] as string | undefined,
+  ]
+  // nested object: application_deadline?.date
+  const nested = anyJob["application_deadline"]
+  if (nested && typeof nested === "object") candidates.push((nested as UnknownJob)["date"] as string | undefined)
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim()) return c.trim()
+  }
+  return undefined
+}
+
 const RELATIVE_LOCALE: Record<string, string> = {
   ar: "ar",
   en: "en",
@@ -170,18 +231,18 @@ export function formatPostedAgo(
 
   const intlLocale = RELATIVE_LOCALE[locale] ?? "en"
   if (diffHours < 1) {
-    return new Intl.RelativeTimeFormat(intlLocale, { numeric: "auto" }).format(
+    return new Intl.RelativeTimeFormat(intlLocale, { numeric: "always" }).format(
       -Math.max(1, Math.floor(diffMs / (1000 * 60))),
       "minute"
     )
   }
   if (diffHours < 48) {
-    return new Intl.RelativeTimeFormat(intlLocale, { numeric: "auto" }).format(
+    return new Intl.RelativeTimeFormat(intlLocale, { numeric: "always" }).format(
       -diffHours,
       "hour"
     )
   }
-  return new Intl.RelativeTimeFormat(intlLocale, { numeric: "auto" }).format(
+  return new Intl.RelativeTimeFormat(intlLocale, { numeric: "always" }).format(
     -diffDays,
     "day"
   )
@@ -286,4 +347,70 @@ export function getLocalizedStateName(state: string, locale: string): string {
     return match[locale] || match.en || state
   }
   return state
+}
+
+/**
+ * Resolve a company logo from many possible fields the API or legacy backends may provide.
+ * Returns an absolute URL (via `resolveImageUrl`) or `undefined` when none found.
+ */
+export function getCompanyLogo(company?: CompanyProfile | UnknownJob): string | undefined {
+  if (!company) return undefined
+
+  const c = company as UnknownJob
+  const candidates: string[] = []
+  const pushIfString = (v: unknown) => {
+    if (typeof v === "string" && v.trim()) candidates.push(v.trim())
+  }
+
+  pushIfString(c["logo"])
+  pushIfString(c["logoUrl"])
+  pushIfString(c["logo_url"])
+  pushIfString(c["avatar"])
+  pushIfString(c["avatar_url"])
+  pushIfString(c["image"])
+  pushIfString(c["image_url"])
+  pushIfString(c["picture"])
+  pushIfString(c["picture_url"])
+  pushIfString(c["photo"])
+  pushIfString(c["photo_url"])
+  pushIfString(c["profile_image"])
+  pushIfString(c["profile_image_url"])
+  pushIfString(c["profile_picture"])
+  pushIfString(c["profile_picture_url"])
+  pushIfString(c["logo_image"])
+  pushIfString(c["logo_image_url"])
+
+  const cp = c["company_profile"]
+  if (cp && typeof cp === "object") {
+    const cpObj = cp as UnknownJob
+    pushIfString(cpObj["logo"])
+    pushIfString(cpObj["logo_url"])
+    pushIfString(cpObj["image"])
+    pushIfString(cpObj["image_url"])
+  }
+
+  const cp2 = c["companyProfile"]
+  if (cp2 && typeof cp2 === "object") {
+    const cpObj = cp2 as UnknownJob
+    pushIfString(cpObj["logoUrl"])
+    pushIfString(cpObj["logo"])
+    pushIfString(cpObj["image"])
+  }
+
+  const profile = c["profile"]
+  if (profile && typeof profile === "object") {
+    const p = profile as UnknownJob
+    pushIfString(p["logo"])
+    pushIfString(p["logo_url"])
+    pushIfString(p["image"])
+    pushIfString(p["photo"])
+  }
+
+  const found = candidates.length > 0 ? candidates[0] : undefined
+  if (!found) return undefined
+  try {
+    return resolveImageUrl(found)
+  } catch {
+    return found
+  }
 }

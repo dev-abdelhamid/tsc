@@ -1,7 +1,15 @@
 import { CheckCircle, Clock, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-type JobStatus = "approved" | "rejected" | "pending" | "accepted" | "reviewed" | "stopped"
+type JobStatus =
+  | "approved"
+  | "rejected"
+  | "pending"
+  | "accepted"
+  | "reviewed"
+  | "stopped"
+  | "closed"
+  | "active"
 
 type StatusConfig = {
   label: { ar: string; en: string; de: string }
@@ -39,6 +47,16 @@ const CONFIG: Record<JobStatus, StatusConfig> = {
     label: { ar: "موقوفة", en: "Stopped", de: "Gestoppt" },
     className: "bg-[#F3F4F6] border-[#D1D5DB] text-[#4B5563]",
     icon: XCircle,
+  },
+  closed: {
+    label: { ar: "مغلقة", en: "Closed", de: "Geschlossen" },
+    className: "bg-[#F3F4F6] border-[#D1D5DB] text-[#4B5563]",
+    icon: XCircle,
+  },
+  active: {
+    label: { ar: "نشطة", en: "Active", de: "Aktiv" },
+    className: "bg-[#E7D7FA] border-[#B66FED] text-[#9333CD]",
+    icon: CheckCircle,
   },
 }
 

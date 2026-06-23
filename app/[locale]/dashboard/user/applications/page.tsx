@@ -68,7 +68,7 @@ export default async function UserApplicationsPage({
 
   const statusCounts = applications.reduce(
     (acc, app) => {
-      if (app.status === "accepted") acc.accepted += 1
+      if (app.status === "accepted" || app.status === "approved") acc.accepted += 1
       else if (app.status === "rejected") acc.rejected += 1
       else acc.pending += 1
       return acc
@@ -99,32 +99,24 @@ export default async function UserApplicationsPage({
             iconSrc="/dashboard/jobs.svg"
             title={labels.total}
             value={totalApplications}
-            viewAllHref="/dashboard/user/applications"
-            viewAllLabel={labels.viewAll}
             isRTL={isAr}
           />
           <DashboardStatCard
             iconSrc="/dashboard/favourites.svg"
             title={labels.pending}
             value={statusCounts.pending}
-            viewAllHref="/dashboard/user/applications"
-            viewAllLabel={labels.viewAll}
             isRTL={isAr}
           />
           <DashboardStatCard
             iconSrc="/dashboard/tickets.svg"
             title={labels.accepted}
             value={statusCounts.accepted}
-            viewAllHref="/dashboard/user/applications"
-            viewAllLabel={labels.viewAll}
             isRTL={isAr}
           />
           <DashboardStatCard
             iconSrc="/dashboard/jobs.svg"
             title={labels.rejected}
             value={statusCounts.rejected}
-            viewAllHref="/dashboard/user/applications"
-            viewAllLabel={labels.viewAll}
             isRTL={isAr}
           />
         </div>

@@ -6,8 +6,7 @@ import { Link, useRouter } from "@/i18n/navigation"
 import { X } from "lucide-react"
 import type { Category } from "@/lib/api/types"
 import type { CreateJobPayload } from "@/lib/api/services/company.service"
-import { toLocalizedText } from "@/features/company-jobs/lib/build-job-form-data"
-import { GERMAN_STATES, JOB_GENDERS } from "@/features/company-jobs/lib/constants"
+import { GERMAN_STATES, JOB_GENDERS, JOB_TYPES } from "@/features/company-jobs/lib/constants"
 import { buildJobFormData } from "@/features/company-jobs/lib/build-job-form-data"
 import { CreateJobStepper } from "@/features/company-jobs/components/create-job-stepper"
 import { JobImageUpload } from "@/features/company-jobs/components/job-image-upload"
@@ -22,37 +21,55 @@ import { PrimaryButton } from "@/components/ui/primary-button"
 import { cn } from "@/lib/utils"
 
 type FormState = {
-  title: string
+  title_ar: string
+  title_en: string
+  title_de: string
   category_id: string
   sub_category_id: string
   state: string
   vacancy: string
   gender: string
+  employment_type: string
   application_deadline: string
   salary_from: string
   salary_to: string
   age_from: string
   age_to: string
-  description: string
-  responsibilities: string
-  requirements: string
+  description_ar: string
+  description_en: string
+  description_de: string
+  responsibilities_ar: string
+  responsibilities_en: string
+  responsibilities_de: string
+  requirements_ar: string
+  requirements_en: string
+  requirements_de: string
 }
 
 const initialForm: FormState = {
-  title: "",
+  title_ar: "",
+  title_en: "",
+  title_de: "",
   category_id: "",
   sub_category_id: "",
   state: "",
   vacancy: "",
   gender: "",
+  employment_type: "",
   application_deadline: "",
   salary_from: "",
   salary_to: "",
   age_from: "",
   age_to: "",
-  description: "",
-  responsibilities: "",
-  requirements: "",
+  description_ar: "",
+  description_en: "",
+  description_de: "",
+  responsibilities_ar: "",
+  responsibilities_en: "",
+  responsibilities_de: "",
+  requirements_ar: "",
+  requirements_en: "",
+  requirements_de: "",
 }
 
 function GradientOutlineButton({
@@ -121,7 +138,6 @@ export function CreateJobWizard({
       })
       .catch((err) => {
         console.warn(err)
-        // keep empty state + server message
       })
 
     return () => {
@@ -148,6 +164,10 @@ export function CreateJobWizard({
     setError(null)
   }
 
+  const [editingLocale, setEditingLocale] = useState<"ar" | "en" | "de">(
+    (locale === "ar" || locale === "en" || locale === "de") ? (locale as "ar" | "en" | "de") : "ar"
+  )
+
   const setImage = (file: File | null, preview: string | null) => {
     if (imagePreview && imagePreview !== preview) {
       URL.revokeObjectURL(imagePreview)
@@ -162,11 +182,17 @@ export function CreateJobWizard({
     label: t(`gender.${g}`),
   }))
 
+  const jobTypeOptions = JOB_TYPES.map((jt) => ({
+    value: jt,
+    label: t(`jobType.${jt}`),
+  }))
+
   const stateOptions = GERMAN_STATES.map((s) => ({ value: s, label: s }))
 
   const validateStep = (s: number): boolean => {
     if (s === 1) {
-      if (!form.title.trim()) {
+      const hasTitle = [form.title_ar, form.title_en, form.title_de].some((v) => v && v.trim())
+      if (!hasTitle) {
         setError(t("errors.title"))
         return false
       }
@@ -196,6 +222,10 @@ export function CreateJobWizard({
         setError(t("errors.gender"))
         return false
       }
+      if (!form.employment_type) {
+        setError(t("errors.employmentType"))
+        return false
+      }
       if (!form.application_deadline) {
         setError(t("errors.deadline"))
         return false
@@ -218,15 +248,18 @@ export function CreateJobWizard({
       }
     }
     if (s === 3) {
-      if (!form.description.trim()) {
+      const hasDescription = [form.description_ar, form.description_en, form.description_de].some((v) => v && v.trim())
+      const hasResponsibilities = [form.responsibilities_ar, form.responsibilities_en, form.responsibilities_de].some((v) => v && v.trim())
+      const hasRequirements = [form.requirements_ar, form.requirements_en, form.requirements_de].some((v) => v && v.trim())
+      if (!hasDescription) {
         setError(t("errors.description"))
         return false
       }
-      if (!form.responsibilities.trim()) {
+      if (!hasResponsibilities) {
         setError(t("errors.responsibilities"))
         return false
       }
-      if (!form.requirements.trim()) {
+      if (!hasRequirements) {
         setError(t("errors.requirements"))
         return false
       }
@@ -236,20 +269,21 @@ export function CreateJobWizard({
   }
 
   const buildPayload = (): CreateJobPayload => ({
-    title: toLocalizedText(form.title),
+    title: { ar: form.title_ar.trim(), en: form.title_en.trim(), de: form.title_de.trim() },
     category_id: Number(form.category_id),
     sub_category_id: Number(form.sub_category_id || form.category_id),
     state: form.state,
     vacancy: Number(form.vacancy),
     gender: form.gender as CreateJobPayload["gender"],
+    employment_type: form.employment_type as CreateJobPayload["employment_type"],
     application_deadline: form.application_deadline,
     salary_from: Number(form.salary_from),
     salary_to: Number(form.salary_to),
     age_from: Number(form.age_from),
     age_to: Number(form.age_to),
-    description: toLocalizedText(form.description),
-    responsibilities: toLocalizedText(form.responsibilities),
-    requirements: toLocalizedText(form.requirements),
+    description: { ar: form.description_ar.trim(), en: form.description_en.trim(), de: form.description_de.trim() },
+    responsibilities: { ar: form.responsibilities_ar.trim(), en: form.responsibilities_en.trim(), de: form.responsibilities_de.trim() },
+    requirements: { ar: form.requirements_ar.trim(), en: form.requirements_en.trim(), de: form.requirements_de.trim() },
     image: imageFile!,
   })
 
@@ -294,19 +328,20 @@ export function CreateJobWizard({
   ]
 
   return (
+    /* تم مسح الاختصار max-w-[920px] هنا وأصبحت w-full ممتدة بالكامل دون أي قيود */
     <div
       dir={isRtl ? "rtl" : "ltr"}
       className={cn(
-        "relative flex w-full max-w-[920px] flex-col items-stretch gap-6 rounded-lg bg-white p-6 shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)] sm:gap-8 sm:p-8",
+        "relative flex w-full flex-col items-stretch gap-4 rounded-lg bg-white p-4 shadow-[0_32px_64px_-12px_rgba(16,24,40,0.14)] sm:gap-5 sm:p-6",
         pending && "pointer-events-none opacity-80"
       )}
     >
-      <div className="w-full flex flex-col items-center gap-4">
+      <div className="w-full flex flex-col items-center gap-2">
         <h1 className={cn(
-          "w-full text-center bg-clip-text text-[28px] font-bold leading-[1.05] text-transparent sm:text-[36px]",
+          "w-full text-center bg-clip-text text-[24px] font-bold leading-[1.3] text-transparent sm:text-[32px] py-1",
           isRtl ? "bg-gradient-to-r" : "bg-gradient-to-l",
           "from-[#032C44] to-[#41A0CA]"
-        )} style={{ marginTop: 4 }}>
+        )}>
           {t("title")}
         </h1>
         <div className="absolute top-3 end-3">
@@ -321,20 +356,36 @@ export function CreateJobWizard({
         </div>
       </div>
 
-      <CreateJobStepper currentStep={step} labels={stepLabels} />
+      <CreateJobStepper currentStep={step} labels={stepLabels} isRtl={isRtl} />
 
-      <div className="flex w-full flex-col gap-6">
+      <div className="flex w-full flex-col gap-4">
         {step === 1 && (
           <>
             <JobFieldGroup label={t("fields.title")} required>
+              <div className="mb-2 flex gap-2">
+                {(["ar", "en", "de"] as const).map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    onClick={() => setEditingLocale(l)}
+                    className={cn(
+                      "rounded-md px-2 py-1 text-xs font-medium",
+                      editingLocale === l ? "bg-[#E6F6FF] text-[#006EA8]" : "bg-white border"
+                    )}
+                  >
+                    {l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
               <JobUnderlineInput
-                value={form.title}
-                onChange={(v) => set("title", v)}
+                value={(form as any)[`title_${editingLocale}`]}
+                onChange={(v) => set((`title_${editingLocale}` as unknown) as keyof FormState, v)}
                 placeholder={t("placeholders.title")}
               />
             </JobFieldGroup>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <JobFieldGroup label={t("fields.category")} required>
                 <JobUnderlineSelect
                   value={form.category_id}
@@ -368,7 +419,7 @@ export function CreateJobWizard({
               </JobFieldGroup>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <JobFieldGroup label={t("fields.state")} required>
                 <JobUnderlineSelect
                   value={form.state}
@@ -409,7 +460,7 @@ export function CreateJobWizard({
 
         {step === 2 && (
           <>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <JobFieldGroup label={t("fields.gender")} required>
                 <JobUnderlineSelect
                   value={form.gender}
@@ -419,16 +470,25 @@ export function CreateJobWizard({
                 />
               </JobFieldGroup>
 
-              <JobFieldGroup label={t("fields.deadline")} required>
-                <JobUnderlineDate
-                  value={form.application_deadline}
-                  onChange={(v) => set("application_deadline", v)}
+              <JobFieldGroup label={t("fields.employmentType")} required>
+                <JobUnderlineSelect
+                  value={form.employment_type}
+                  onChange={(v) => set("employment_type", v)}
+                  placeholder={t("placeholders.select")}
+                  options={jobTypeOptions}
                 />
               </JobFieldGroup>
             </div>
 
+            <JobFieldGroup label={t("fields.deadline")} required>
+              <JobUnderlineDate
+                value={form.application_deadline}
+                onChange={(v) => set("application_deadline", v)}
+              />
+            </JobFieldGroup>
+
             <JobFieldGroup label={t("fields.salary")} required>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <JobUnderlineInput
                   type="number"
                   min={0}
@@ -447,7 +507,7 @@ export function CreateJobWizard({
             </JobFieldGroup>
 
             <JobFieldGroup label={t("fields.age")} required>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <JobUnderlineInput
                   type="number"
                   min={18}
@@ -470,23 +530,39 @@ export function CreateJobWizard({
         {step === 3 && (
           <>
             <JobFieldGroup label={t("fields.description")} required>
+              <div className="mb-2 flex gap-2">
+                {(["ar", "en", "de"] as const).map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    onClick={() => setEditingLocale(l)}
+                    className={cn(
+                      "rounded-md px-2 py-1 text-xs font-medium",
+                      editingLocale === l ? "bg-[#E6F6FF] text-[#006EA8]" : "bg-white border"
+                    )}
+                  >
+                    {l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
               <JobUnderlineTextarea
-                value={form.description}
-                onChange={(v) => set("description", v)}
+                value={(form as any)[`description_${editingLocale}`]}
+                onChange={(v) => set((`description_${editingLocale}` as unknown) as keyof FormState, v)}
                 rows={4}
               />
             </JobFieldGroup>
             <JobFieldGroup label={t("fields.responsibilities")} required>
               <JobUnderlineTextarea
-                value={form.responsibilities}
-                onChange={(v) => set("responsibilities", v)}
+                value={(form as any)[`responsibilities_${editingLocale}`]}
+                onChange={(v) => set((`responsibilities_${editingLocale}` as unknown) as keyof FormState, v)}
                 rows={4}
               />
             </JobFieldGroup>
             <JobFieldGroup label={t("fields.requirements")} required>
               <JobUnderlineTextarea
-                value={form.requirements}
-                onChange={(v) => set("requirements", v)}
+                value={(form as any)[`requirements_${editingLocale}`]}
+                onChange={(v) => set((`requirements_${editingLocale}` as unknown) as keyof FormState, v)}
                 rows={4}
               />
             </JobFieldGroup>
@@ -506,7 +582,7 @@ export function CreateJobWizard({
         ) : null}
       </div>
 
-      <div className="flex w-full max-w-[256px] flex-wrap items-center justify-center gap-4 sm:flex-nowrap">
+      <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:flex-nowrap">
         {step === 1 ? (
           <GradientOutlineButton onClick={() => router.push("/dashboard/company/jobs") }>
             {t("cancel")}

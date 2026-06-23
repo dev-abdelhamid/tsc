@@ -14,6 +14,8 @@ import { DashboardJobsTable } from "@/features/dashboard/components/dashboard-jo
 import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell"
 import type { Job } from "@/lib/api/types"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
+import { getCompanyLogo, resolveJobApplicationDeadline } from "@/features/jobs/lib/job-display"
+import { formatApplicationDeadline } from "@/features/jobs/lib/job-display"
 import { ApiError } from "@/lib/api/client"
 
 export default async function CompanyDashboardPage({
@@ -128,27 +130,21 @@ export default async function CompanyDashboardPage({
 
   const tableRows = jobs.slice(0, 7).map((job) => {
     const status =
-      job.status === "approved"
+      job.status === "approved" || job.status === "active"
         ? ("approved" as const)
         : job.status === "rejected"
           ? ("rejected" as const)
-          : ("pending" as const)
-    const deadline = job.application_deadline
-    const deadlineLabel = (() => {
-      if (!deadline) return "—"
-      try {
-        const d = new Date(deadline)
-        if (Number.isNaN(d.getTime())) return "—"
-        return d.toLocaleDateString(isAr ? "ar-EG" : "en-GB")
-      } catch {
-        return "—"
-      }
-    })()
+          : job.status === "stopped" || job.status === "closed"
+            ? ("stopped" as const)
+            : ("pending" as const)
+    const rawDeadline = resolveJobApplicationDeadline(job)
+    const deadlineLabel = formatApplicationDeadline(rawDeadline, locale)
     return {
       id: job.id,
       title: getJobTitle(job, locale),
       column2: Number(job.applications_count) || 0,
       deadline: deadlineLabel,
+      logo: getCompanyLogo(job.company),
       status,
       detailsHref: `/dashboard/company/jobs/${job.id}`,
     }

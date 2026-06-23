@@ -14,7 +14,6 @@ import {
   unwrapCompanyStats,
   type CompanyApplication,
 } from "@/features/company-jobs/lib/application-utils"
-import { normalizeJob } from "./jobs.service"
 
 export type LocalizedText = { ar: string; en: string; de: string }
 
@@ -25,6 +24,7 @@ export interface CreateJobPayload {
   state: string
   vacancy: number
   gender: "Male" | "Female" | "All"
+  employment_type: "Full-time" | "Part-time"
   application_deadline: string
   salary_from: number
   salary_to: number
@@ -42,14 +42,40 @@ export async function getCompanyJob(
   locale = "ar"
 ): Promise<Job | null> {
   try {
-    const response = await api.get<ApiResponse<Job>>(`/jobs/${id}`, { token, locale, next: { revalidate: 60 } })
+    const endpoints = [`/company/jobs/${id}`, `/jobs/${id}`]
+    let response: any = null
+
+    for (const endpoint of endpoints) {
+      try {
+        response = await api.get<ApiResponse<Job>>(endpoint, { token, locale, next: { revalidate: 60 } })
+        break
+      } catch (err) {
+        // try next endpoint
+      }
+    }
+
+    try {
+      // eslint-disable-next-line no-console
+      console.info(`[debug] getCompanyJob - fetched id=${id} responsePresent=${Boolean(response)}`)
+    } catch {}
+
     // API may return { data: { job: {...}, related: [...] } } or { data: { id, ... } }
     const payload = (response as any)?.data ?? response
     const rawJob =
       payload && typeof payload === "object" && !Array.isArray(payload) && "job" in payload
         ? (payload as any).job
         : payload
-    return normalizeJob(rawJob, locale)
+
+    if (!rawJob) {
+      try {
+        // eslint-disable-next-line no-console
+        console.warn(`[debug] getCompanyJob - no job found for id=${id} (payload keys: ${response && typeof response === 'object' ? Object.keys(response as any).join(',') : typeof response})`)
+      } catch {}
+      return null
+    }
+
+    // Return server-provided job payload 그대로 (no normalization/enrichment)
+    return rawJob as Job
   } catch {
     return null
   }
@@ -61,37 +87,48 @@ export async function getCompanyJobs(
   page = 1,
   locale = "ar"
 ): Promise<{ data: Job[]; meta: PaginationMeta }> {
-  const response = await api.get<unknown>(`/jobs?page=${page}`, { token, locale, cache: "no-store" })
-  const typedResponse = response as
-    | { data?: unknown[]; meta?: PaginationMeta }
-    | unknown[]
-    | undefined
+  const endpoints = [`/company/jobs?page=${page}`, `/jobs?page=${page}`]
 
-  const rawData = Array.isArray(typedResponse)
-    ? typedResponse
-    : Array.isArray(typedResponse?.data)
-      ? typedResponse.data
-      : []
+  for (const endpoint of endpoints) {
+    try {
+      const response = await api.get<unknown>(endpoint, { token, locale, cache: "no-store" })
+      const typedResponse = response as
+        | { data?: unknown[]; meta?: PaginationMeta }
+        | unknown[]
+        | undefined
 
-  const data: Job[] = (rawData as unknown[])
-    .map((item) => normalizeJob(item, locale))
-    .filter((j): j is Job => j != null)
+      const rawData = Array.isArray(typedResponse)
+        ? typedResponse
+        : Array.isArray(typedResponse?.data)
+          ? typedResponse.data
+          : []
 
-  const meta = Array.isArray(typedResponse)
-    ? {
-        current_page: page,
-        last_page: 1,
-        per_page: 10,
-        total: data.length,
-      }
-    : typedResponse?.meta || {
-        current_page: page,
-        last_page: 1,
-        per_page: 10,
-        total: data.length,
-      }
+      const data: Job[] = (rawData as unknown[])
+        .map((item) => item as Job)
+        .filter((j): j is Job => j != null)
 
-  return { data, meta }
+      const meta = Array.isArray(typedResponse)
+        ? {
+            current_page: page,
+            last_page: 1,
+            per_page: 10,
+            total: data.length,
+          }
+        : typedResponse?.meta || {
+            current_page: page,
+            last_page: 1,
+            per_page: 10,
+            total: data.length,
+          }
+
+      return { data, meta }
+    } catch (err) {
+      // try next endpoint
+    }
+  }
+
+  // If all endpoints failed, return empty list
+  return { data: [], meta: { current_page: page, last_page: 1, per_page: 10, total: 0 } }
 }
 
 export async function enrichJobsWithApplicationCounts(
@@ -127,7 +164,8 @@ export async function createJob(
 ): Promise<Job> {
   const formData = buildJobFormData(payload)
   const response = await api.post<ApiResponse<Job>>("/jobs", formData, { token, locale })
-  return response.data ?? (response as unknown as Job)
+  const payloadResp = (response as any)?.data ?? response
+  return payloadResp as Job
 }
 
 export async function updateJob(
@@ -153,11 +191,20 @@ export async function updateJob(
     requirements: payload.requirements ?? { ar: "", en: "", de: "" },
     image: payload.image,
   })
-  const response = await api.post<ApiResponse<Job>>(`/jobs/${id}`, formData, {
-    token,
-    locale,
-  })
-  return response.data ?? (response as unknown as Job)
+  const endpoints = [`/company/jobs/${id}`, `/jobs/${id}`]
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await api.post<ApiResponse<Job>>(endpoint, formData, { token, locale })
+      const payload = (response as any)?.data ?? response
+      return payload as Job
+    } catch (err) {
+      // try next endpoint
+    }
+  }
+
+  // If all endpoints failed, throw
+  throw new Error("Failed to update job")
 }
 
 export async function deleteJob(
@@ -165,7 +212,16 @@ export async function deleteJob(
   token: string,
   locale = "ar"
 ): Promise<void> {
-  await api.delete(`/jobs/${id}`, { token, locale })
+  const endpoints = [`/company/jobs/${id}`, `/jobs/${id}`]
+  for (const endpoint of endpoints) {
+    try {
+      await api.delete(endpoint, { token, locale })
+      return
+    } catch (err) {
+      // try next
+    }
+  }
+  throw new Error("Failed to delete job")
 }
 
 export async function stopJob(
@@ -173,11 +229,18 @@ export async function stopJob(
   token: string,
   locale = "ar"
 ): Promise<Job> {
-  const response = await api.patch<ApiResponse<Job>>(`/jobs/${id}/stop`, undefined, {
-    token,
-    locale,
-  })
-  return response.data ?? (response as unknown as Job)
+  const endpoints = [`/company/jobs/${id}/stop`, `/jobs/${id}/stop`]
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await api.patch<ApiResponse<Job>>(endpoint, undefined, { token, locale })
+      const payload = (response as any)?.data ?? response
+      return payload as Job
+    } catch (err) {
+      // try next
+    }
+  }
+  throw new Error("Failed to stop job")
 }
 
 export async function activateJob(
@@ -185,11 +248,18 @@ export async function activateJob(
   token: string,
   locale = "ar"
 ): Promise<Job> {
-  const response = await api.patch<ApiResponse<Job>>(`/jobs/${id}/activate`, undefined, {
-    token,
-    locale,
-  })
-  return response.data ?? (response as unknown as Job)
+  const endpoints = [`/company/jobs/${id}/activate`, `/jobs/${id}/activate`]
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await api.patch<ApiResponse<Job>>(endpoint, undefined, { token, locale })
+      const payload = (response as any)?.data ?? response
+      return payload as Job
+    } catch (err) {
+      // try next
+    }
+  }
+  throw new Error("Failed to activate job")
 }
 
 export async function getJobApplications(

@@ -54,7 +54,6 @@ export async function CompanyJobReviewPage({
         href="/dashboard/company/jobs"
         className="inline-flex items-center gap-2 text-[14px] font-medium text-[#006EA8] hover:underline"
       >
-        <span aria-hidden>{isRtl ? "→" : "←"}</span>
         {t("review.backToJobs")}
       </Link>
 

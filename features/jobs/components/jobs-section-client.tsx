@@ -169,7 +169,7 @@ export function JobsSectionClient({ jobs, categories, title, description }: Jobs
                     department: "—",
                     postedAgo: "",
                     salaryPeriod: t("salaryPeriod") || "/month",
-                    employmentDefault: "Full-time",
+                    employmentDefault: locale === "ar" ? "دوام كامل" : locale === "de" ? "Vollzeit" : "Full-time",
                     companyName: "—",
                     companySubLabel: "",
                     moreDetails: t("moreDetails"),

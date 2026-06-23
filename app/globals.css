@@ -5,9 +5,22 @@
 
 @custom-variant dark (&:is(.dark *));
 
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --info-foreground: #ffffff;
   --info-soft: #e7d7fa;
   --border: #dadada;
@@ -280,14 +293,21 @@
     opacity: 1;
   }
 
-  /* Prevent the yellow autofill background in Chromium-based browsers and keep text color */
+  /* Prevent the yellow/white autofill background — use the actual dark card colour */
   input.auth-input:-webkit-autofill,
+  input.auth-input:-webkit-autofill:hover,
   input.auth-input:-webkit-autofill:focus,
+  input.auth-input:-webkit-autofill:active,
   textarea.auth-input:-webkit-autofill,
-  select.auth-input:-webkit-autofill {
-    -webkit-box-shadow: 0 0 0px 1000px var(--card, #002b46) inset !important;
-    box-shadow: 0 0 0px 1000px var(--card, #002b46) inset !important;
+  textarea.auth-input:-webkit-autofill:hover,
+  textarea.auth-input:-webkit-autofill:focus,
+  select.auth-input:-webkit-autofill,
+  select.auth-input:-webkit-autofill:hover,
+  select.auth-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px #01223b inset !important;
+    box-shadow: 0 0 0px 1000px #01223b inset !important;
     -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
     transition: background-color 5000s ease-in-out 0s;
   }
 
@@ -367,21 +387,29 @@
     opacity: 1;
   }
 
-  /* Autofill fixes for WebKit and Firefox */
+  /* Autofill fixes for WebKit and Firefox — hardcoded dark auth colour */
   input.auth-input:-webkit-autofill,
+  input.auth-input:-webkit-autofill:hover,
   input.auth-input:-webkit-autofill:focus,
+  input.auth-input:-webkit-autofill:active,
   textarea.auth-input:-webkit-autofill,
-  select.auth-input:-webkit-autofill {
-    -webkit-box-shadow: 0 0 0px 1000px var(--card, #002b46) inset !important;
-    box-shadow: 0 0 0px 1000px var(--card, #002b46) inset !important;
+  textarea.auth-input:-webkit-autofill:hover,
+  textarea.auth-input:-webkit-autofill:focus,
+  select.auth-input:-webkit-autofill,
+  select.auth-input:-webkit-autofill:hover,
+  select.auth-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px #01223b inset !important;
+    box-shadow: 0 0 0px 1000px #01223b inset !important;
     -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
     transition: background-color 5000s ease-in-out 0s;
   }
 
   input.auth-input:-moz-autofill,
   textarea.auth-input:-moz-autofill {
-    box-shadow: 0 0 0px 1000px var(--card, #002b46) inset !important;
+    box-shadow: 0 0 0px 1000px #01223b inset !important;
     -moz-text-fill-color: #ffffff !important;
+    filter: none !important;
   }
 
   /* Make the password toggle easier to target/focus */
@@ -392,22 +420,22 @@
   }
 }
 
-/* ==================== CUSTOM PREMIUM SONNER TOAST STYLING ==================== */
-/* Shift toast containers below the sticky website header (88px on mobile, 128px on desktop) */
-section[data-sonner-toaster] {
-  top: 104px !important; /* Mobile: 88px header + 16px padding */
-  left: 50% !important;
-  right: auto !important;
-  transform: translateX(-50%) !important;
-  width: calc(100% - 32px) !important;
-  max-width: 420px !important;
+html body [data-sonner-toaster], html body .toaster {
+  top: 90px !important; /* Mobile: 88px header + 2px */
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  transform: none !important;
   z-index: 999999 !important;
-  pointer-events: auto !important;
+  pointer-events: none !important;
+  display: flex !important;
+  justify-content: center !important;
 }
 
 @media (min-width: 1024px) {
-  section[data-sonner-toaster] {
-    top: 144px !important; /* Desktop: 128px header + 16px padding */
+  html body [data-sonner-toaster], html body .toaster {
+    top: 130px !important; /* Desktop: 128px header + 2px */
   }
 }
 
@@ -422,8 +450,10 @@ section[data-sonner-toaster] [data-toast] {
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
-  width: 100% !important;
-  border: 1px solid #e5e7eb !important;
+  width: calc(100% - 32px) !important;
+  max-width: 420px !important;
+  border: none !important;
+  pointer-events: auto !important;
   
   /* Force SOLID background to fix transparency issues */
   background-color: #ffffff !important;
@@ -433,12 +463,18 @@ section[data-sonner-toaster] [data-toast] {
   transition: transform 0.2s ease, opacity 0.2s ease !important;
 }
 
+@media (max-width: 640px) {
+  section[data-sonner-toaster] [data-toast] {
+    justify-content: center !important;
+  }
+}
+
 /* Dark mode fallback override */
 .dark section[data-sonner-toaster] [data-toast] {
   background-color: #002b46 !important;
   background: #002b46 !important;
   color: #f5f5f5 !important;
-  border-color: #1e4d6b !important;
+  border: none !important;
 }
 
 /* Loading State Toast - Force opaque background so it is visible */
@@ -446,7 +482,7 @@ section[data-sonner-toaster] [data-toast][data-type="loading"] {
   background-color: #EFF6FF !important;
   background: #EFF6FF !important;
   color: #1E3A8A !important;
-  border-color: #BFDBFE !important;
+  border: none !important;
   opacity: 1 !important;
 }
 
@@ -454,7 +490,7 @@ section[data-sonner-toaster] [data-toast][data-type="loading"] {
   background-color: #002b46 !important;
   background: #002b46 !important;
   color: #f5f5f5 !important;
-  border-color: #1e4d6b !important;
+  border: none !important;
 }
 
 /* Loading / Icon container styling */
@@ -478,7 +514,7 @@ section[data-sonner-toaster] [data-toast][data-type="success"] {
   background-color: #ECFDF5 !important;
   background: #ECFDF5 !important;
   color: #065F46 !important;
-  border-color: #A7F3D0 !important;
+  border: none !important;
 }
 section[data-sonner-toaster] [data-toast][data-type="success"] svg {
   color: #059669 !important;
@@ -491,7 +527,7 @@ section[data-sonner-toaster] [data-toast][data-type="error"] {
   background-color: #FEF2F2 !important;
   background: #FEF2F2 !important;
   color: #991B1B !important;
-  border-color: #FCA5A5 !important;
+  border: none !important;
 }
 section[data-sonner-toaster] [data-toast][data-type="error"] svg {
   color: #DC2626 !important;
@@ -504,7 +540,7 @@ section[data-sonner-toaster] [data-toast][data-type="info"] {
   background-color: #EFF6FF !important;
   background: #EFF6FF !important;
   color: #1E3A8A !important;
-  border-color: #BFDBFE !important;
+  border: none !important;
 }
 section[data-sonner-toaster] [data-toast][data-type="info"] svg {
   color: #2563EB !important;
@@ -517,7 +553,7 @@ section[data-sonner-toaster] [data-toast][data-type="warning"] {
   background-color: #FFFBEB !important;
   background: #FFFBEB !important;
   color: #78350F !important;
-  border-color: #FDE68A !important;
+  border: none !important;
 }
 section[data-sonner-toaster] [data-toast][data-type="warning"] svg {
   color: #D97706 !important;

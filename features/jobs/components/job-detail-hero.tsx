@@ -3,7 +3,8 @@ import type { Job } from "@/lib/api/types"
 import { resolveJobImageUrl } from "@/features/jobs/lib/resolve-job-image"
 
 import { useLocale } from "next-intl"
-import { getLocalizedName } from "@/features/jobs/lib/job-display"
+import { getLocalizedName, getCompanyLogo } from "@/features/jobs/lib/job-display"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 type JobDetailHeroProps = {
   job: Job
@@ -17,13 +18,14 @@ export function JobDetailHero({ job, companyName, industryFallback }: JobDetailH
     getLocalizedName(job.company?.company_type?.name || job.category?.name, locale) || industryFallback
   const bannerSrc = resolveJobImageUrl(job.image) ?? "/home/hero/hero-bg-image.png"
   const displayCompany = job.company?.name ?? companyName
+  const companyLogo = getCompanyLogo(job.company)
 
   return (
     <div className="bg-white pt-6 sm:pt-8">
       <div className="mx-auto max-w-[1312px] px-4 sm:px-6 lg:px-8">
         <div className="relative">
           {/* Banner cover image */}
-          <div className="relative h-[220px] overflow-hidden rounded-[16px] sm:h-[300px] lg:h-[378px]">
+          <div className="relative h-[280px] overflow-hidden rounded-[16px] sm:h-[360px] lg:h-[440px]">
             <Image
               src={bannerSrc}
               alt=""
@@ -36,18 +38,20 @@ export function JobDetailHero({ job, companyName, industryFallback }: JobDetailH
           </div>
 
           {/* Logo overlapping the banner bottom border */}
-          <div className="absolute start-6 -bottom-9 z-20 size-[72px] overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_8px_24px_rgba(0,43,70,0.12)] sm:size-[88px] sm:-bottom-11">
-            {job.company?.logo ? (
-              <img
-                src={job.company.logo}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            ) : (
-              <span className="absolute inset-0 grid place-items-center bg-[#e8f2ff] text-[18px] font-bold text-[#006EA8]">
-                {displayCompany.slice(0, 2).toUpperCase()}
-              </span>
-            )}
+          <div className="absolute start-6 -bottom-10 z-20 size-[88px] overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_8px_24px_rgba(0,43,70,0.12)] sm:size-[104px] sm:-bottom-12">
+            <Avatar size="lg" className="absolute inset-0">
+              {companyLogo ? (
+                <AvatarImage
+                  src={companyLogo as string}
+                  alt={displayCompany}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <AvatarFallback className="absolute inset-0 grid place-items-center bg-[#e8f2ff] text-[18px] font-bold text-[#006EA8]">
+                  {displayCompany.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              )}
+            </Avatar>
           </div>
         </div>
 

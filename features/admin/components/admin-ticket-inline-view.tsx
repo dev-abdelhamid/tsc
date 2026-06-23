@@ -267,7 +267,23 @@ export function AdminTicketInlineView({ initialTicket, ticketId, locale }: Props
             {repliesExpanded && (
               <div className="p-4 space-y-3">
                 {ticket.replies.map((reply: any, idx: number) => {
-                  const isSenderAdmin = reply.user?.role === "admin" || reply.is_admin || reply.by === "admin"
+                  const isSenderAdmin =
+                          reply.is_admin === true ||
+                          reply.is_admin === 1 ||
+                          reply.is_admin === "1" ||
+                          (reply.user &&
+                            typeof reply.user === "object" &&
+                            (reply.user.role === "admin" ||
+                              reply.user.role === "talent-seeker" ||
+                              (Array.isArray(reply.user.roles) && reply.user.roles.includes("admin")) ||
+                              reply.user.name === "talent-seeker" ||
+                              reply.user.email?.includes("admin") ||
+                              reply.user.email === "info@talent-sc.com")) ||
+                          (typeof reply.user === "string" &&
+                            (reply.user.toLowerCase() === "talent-seeker" ||
+                              reply.user.toLowerCase() === "admin" ||
+                              reply.user.toLowerCase().includes("support"))) ||
+                          reply.by === "admin"
                   return (
                     <div
                       key={reply.id || idx}

@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Link } from "@/i18n/navigation"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import Image from "next/image"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { MoveUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Job } from "@/lib/api/types"
@@ -12,6 +13,7 @@ import {
   formatJobSalaryRange,
   getJobTitle,
   getLocalizedName,
+  getCompanyLogo,
 } from "@/features/jobs/lib/job-display"
 
 const CARD_HOVER_SHADOW =
@@ -61,24 +63,19 @@ export function JobCard({ job, locale, isRtl, labels }: JobCardProps) {
           </p>
         </div>
         <p className="text-start text-[16px] font-medium leading-[1.16] text-[#40A0CA] group-hover:text-[#E8F2FF] flex items-center gap-1">
-          <span dir="ltr">{formatJobSalaryRange(job)}</span>
+          <span dir="ltr">{formatJobSalaryRange(job, isRtl)}</span>
           <span>{labels.salaryPeriod}</span>
         </p>
         <div className="flex items-center gap-2">
           <div className="grid size-8 shrink-0 place-items-center rounded-full border border-[#78A3BE] group-hover:border-white/60">
-            {job.company?.logo ? (
-              <img
-                src={job.company.logo}
-                alt=""
-                width={32}
-                height={32}
-                className="rounded-full object-cover size-8"
-              />
-            ) : (
-              <span className="text-[10px] font-semibold text-[#006EA8] group-hover:text-white/80">
+            <Avatar className="size-8">
+              {getCompanyLogo(job.company) && (
+                <AvatarImage src={getCompanyLogo(job.company)!} alt={job.company?.name ?? labels.companyName} />
+              )}
+              <AvatarFallback className="text-[10px] font-semibold text-[#006EA8] group-hover:text-white/80">
                 {(job.company?.name ?? labels.companyName).slice(0, 2).toUpperCase()}
-              </span>
-            )}
+              </AvatarFallback>
+            </Avatar>
           </div>
           <p className="text-start text-[14px] leading-[1.16] text-[#525252] group-hover:text-[#e8f2ff] sm:text-[16px]">
             {job.company?.name ?? labels.companyName}

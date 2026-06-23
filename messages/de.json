@@ -583,7 +583,8 @@
       "description": "Beschreibung",
       "responsibilities": "Aufgaben",
       "requirements": "Anforderungen",
-      "image": "Stellen-Bannerbild"
+      "image": "Stellen-Bannerbild",
+      "employmentType": "Beschäftigungsart"
     },
     "placeholders": {
       "title": "Stellentitel",
@@ -598,6 +599,10 @@
       "Male": "Männlich",
       "Female": "Weiblich",
       "All": "Alle"
+    },
+    "jobType": {
+      "Full-time": "Vollzeit",
+      "Part-time": "Teilzeit"
     },
     "status": {
       "pending": "Ausstehend",
@@ -666,7 +671,8 @@
       "requirements": "Anforderungen eingeben",
       "image": "Bitte ein Bannerbild hochladen",
       "imageSize": "Bild darf maximal 12 MB groß sein",
-      "imageCompress": "Bild konnte nicht verarbeitet werden. Bitte andere Datei wählen."
+      "imageCompress": "Bild konnte nicht verarbeitet werden. Bitte andere Datei wählen.",
+      "employmentType": "Beschäftigungsart wählen"
     },
     "removeImage": "Entfernen"
   },
@@ -1058,6 +1064,11 @@
       "goToPrevious": "Zur vorherigen Seite",
       "goToNext": "Zur nächsten Seite",
       "morePages": "Weitere Seiten"
+    },
+    "common": {
+      "loading": "Wird geladen...",
+      "pleaseWait": "Bitte warten...",
+      "openTicket": "Ticket erstellen"
     }
   }
 }

@@ -484,31 +484,50 @@ export default function CompanyTicketsClient({ locale, initialTickets }: Props) 
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       {isAr ? "الردود" : (isDe ? "Antworten" : "Replies")} ({selectedTicket.replies.length})
                     </p>
-                    {selectedTicket.replies.map((reply: any, idx: number) => (
-                      <div
-                        key={reply.id || idx}
-                        className={cn(
-                          "rounded-[12px] p-4 border",
-                          reply.user?.role === "admin" || reply.is_admin
-                            ? "bg-[#FFF9F0] border-[#FFE5C2]"
-                            : "bg-white border-[#E5E7EB]"
-                        )}
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-[13px] font-bold text-[#032C44]">
-                            {reply.user?.name || (reply.is_admin || reply.user?.role === "admin"
-                              ? (isAr ? "فريق الدعم" : (isDe ? "Support-Team" : "Support Team"))
-                              : (isAr ? "أنت" : (isDe ? "Du" : "You")))}
-                          </span>
-                          <span className="text-[11px] text-gray-400">
-                            {formatDate(reply.created_at)}
-                          </span>
+                    {selectedTicket.replies.map((reply: any, idx: number) => {
+                      const isSupport =
+                        reply.is_admin === true ||
+                        reply.is_admin === 1 ||
+                        reply.is_admin === "1" ||
+                        (reply.user &&
+                          typeof reply.user === "object" &&
+                          (reply.user.role === "admin" ||
+                            reply.user.role === "talent-seeker" ||
+                            (Array.isArray(reply.user.roles) && reply.user.roles.includes("admin")) ||
+                            reply.user.name === "talent-seeker" ||
+                            reply.user.email?.includes("admin") ||
+                            reply.user.email === "info@talent-sc.com")) ||
+                        (typeof reply.user === "string" &&
+                          (reply.user.toLowerCase() === "talent-seeker" ||
+                            reply.user.toLowerCase() === "admin" ||
+                            reply.user.toLowerCase().includes("support")));
+
+                      return (
+                        <div
+                          key={reply.id || idx}
+                          className={cn(
+                            "rounded-[12px] p-4 border",
+                            isSupport
+                              ? "bg-[#FFF9F0] border-[#FFE5C2]"
+                              : "bg-white border-[#E5E7EB]"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-[13px] font-bold text-[#032C44]">
+                              {isSupport
+                                ? (isAr ? "الدعم الفني" : (isDe ? "Technischer Support" : "Technical Support"))
+                                : (isAr ? "أنت" : (isDe ? "Sie" : "You"))}
+                            </span>
+                            <span className="text-[11px] text-gray-400">
+                              {formatDate(reply.created_at)}
+                            </span>
+                          </div>
+                          <p className="text-[14px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                            {reply.message || reply.body || reply.content}
+                          </p>
                         </div>
-                        <p className="text-[14px] text-gray-600 leading-relaxed whitespace-pre-wrap">
-                          {reply.message || reply.body || reply.content}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 

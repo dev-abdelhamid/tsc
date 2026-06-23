@@ -8,15 +8,11 @@ import { PrimaryButton } from "@/components/ui/primary-button";
 import { Trash2, Briefcase } from "lucide-react";
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Props = {
   locale: string;
@@ -59,7 +55,7 @@ export default function FavouritesClient({ locale, initialJobs }: Props) {
   };
 
   const getCompanyLogo = (logoUrl?: string | null) => {
-    if (!logoUrl) return "/portfolio/job-placeholder.png";
+    if (!logoUrl) return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23006EA8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="background:%23E0F2FE;width:100%;height:100%;padding:25%;box-sizing:border-box;border-radius:50%"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`;
     if (logoUrl.startsWith("http")) return logoUrl;
     return logoUrl;
   };
@@ -80,47 +76,64 @@ export default function FavouritesClient({ locale, initialJobs }: Props) {
             {jobs.map((job) => {
               const companyName = job.company?.name || "—";
               const categoryName = job.category?.name || job.company?.company_type?.name || "—";
-              const location = job.location || "—";
               const logo = getCompanyLogo(job.company?.logo);
+              const salaryFrom = job.salary_from;
+              const salaryTo = job.salary_to;
+              const salaryLabel = salaryFrom != null && salaryTo != null
+                ? `$${salaryFrom} - $${salaryTo}`
+                : salaryFrom != null ? `$${salaryFrom}` : salaryTo != null ? `$${salaryTo}` : null;
+              const employmentType = job.employment_type || (isAr ? "دوام كامل" : isDe ? "Vollzeit" : "Full-time");
+              const salaryPeriod = isAr ? "/شهرياً" : isDe ? "/Monat" : "/month";
+              const companySubLabel = job.category?.name || job.company?.company_type?.name || "";
 
               return (
                 <div
                   key={job.id}
-                  className="rounded-[16px] border border-[#E5E7EB] bg-white p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between h-full space-y-6"
+                  className="rounded-[16px] border border-[#78A3BE]/40 bg-white p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full"
                 >
-                  <div className="space-y-4">
-                    {/* Top: title and category */}
-                    <div className="flex items-start justify-between gap-4">
-                      <h3 className="text-[18px] font-bold text-[#032C44] line-clamp-1">
-                        {job.title}
+                  <div className="space-y-3">
+                    {/* Title + category badge */}
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-[17px] font-bold text-[#032C44] leading-snug line-clamp-2">
+                        {typeof job.title === "object" ? (job.title[locale] || job.title.en || job.title.ar || "") : job.title}
                       </h3>
-                      <span className="rounded-full bg-[#006EA8]/10 px-3 py-1 text-xs font-bold text-[#006EA8] shrink-0">
+                      <span className="rounded-full bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] px-3 py-1 text-[11px] font-semibold text-white shrink-0">
                         {categoryName}
                       </span>
                     </div>
 
-                    {/* Middle: company info and logo */}
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center overflow-hidden shrink-0">
+                    {/* Employment type + salary */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[13px] font-medium text-[#002B46]">{employmentType}</span>
+                      {salaryLabel && (
+                        <p className="text-[14px] font-medium text-[#40A0CA]">
+                          <span dir="ltr">{salaryLabel}</span>
+                          <span className="text-[12px]">{salaryPeriod}</span>
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Company info */}
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 bg-gray-50 border border-[#78A3BE]/30 rounded-full flex items-center justify-center overflow-hidden shrink-0">
                         <img
                           src={logo}
                           alt={companyName}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.currentTarget.src = "/portfolio/job-placeholder.png";
+                            e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23006EA8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="background:%23E0F2FE;width:100%;height:100%;padding:25%;box-sizing:border-box;border-radius:50%"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`;
                           }}
                         />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-[#032C44]">{companyName}</p>
-                        <p className="text-xs text-gray-500">{location}</p>
+                        <p className="text-[14px] font-semibold text-[#032C44]">{companyName}</p>
+                        {companySubLabel && <p className="text-[12px] text-gray-500">{companySubLabel}</p>}
                       </div>
                     </div>
                   </div>
 
-                  {/* Bottom: actions */}
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 items-center">
-                    {/* Delete button */}
+                  {/* Actions */}
+                  <div className="grid grid-cols-2 gap-3 pt-4 mt-4 border-t border-gray-100 items-center">
                     <button
                       onClick={() => setDeleteTargetId(job.id)}
                       disabled={loading}
@@ -130,7 +143,6 @@ export default function FavouritesClient({ locale, initialJobs }: Props) {
                       <span>{isAr ? "حذف" : isDe ? "Löschen" : "Delete"}</span>
                     </button>
 
-                    {/* Details button */}
                     <Link href={`/jobs/${job.id}`} className="w-full flex-1">
                       <PrimaryButton
                         type="button"
@@ -161,37 +173,44 @@ export default function FavouritesClient({ locale, initialJobs }: Props) {
         )}
       </div>
 
-      <AlertDialog open={deleteTargetId !== null} onOpenChange={(open) => { if (!open) setDeleteTargetId(null) }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {isAr ? "تأكيد الحذف" : isDe ? "Löschen bestätigen" : "Confirm Deletion"}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
+      <Dialog open={deleteTargetId !== null} onOpenChange={(open) => { if (!open) setDeleteTargetId(null) }}>
+        <DialogContent className="max-w-[400px] p-6 rounded-[20px] bg-white border-0 shadow-lg text-start" dir={isAr ? "rtl" : "ltr"}>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-s-4 border-[#FF5B5C] ps-3 -ms-6">
+              <DialogTitle className="text-[18px] font-bold text-[#032C44]">
+                {isAr ? "تأكيد الحذف" : isDe ? "Löschen bestätigen" : "Confirm Deletion"}
+              </DialogTitle>
+            </div>
+            
+            <DialogDescription className="text-[14px] text-gray-600 leading-relaxed">
               {isAr
                 ? "هل أنت متأكد أنك تريد حذف هذه الوظيفة من قائمة المفضلة؟"
                 : isDe ? "Sind Sie sicher, dass Sie diesen Job aus Ihren Favoriten löschen möchten?" : "Are you sure you want to delete this job from your favorites?"}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>
-              {isAr ? "إلغاء" : isDe ? "Abbrechen" : "Cancel"}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              disabled={loading}
-              onClick={(e) => {
-                e.preventDefault();
-                if (deleteTargetId !== null) {
-                  handleDelete(deleteTargetId);
-                }
-              }}
-              className="bg-[#FF5B5C] hover:bg-[#E04F50] text-white"
-            >
-              {loading ? (isAr ? "جاري الحذف..." : isDe ? "Wird gelöscht..." : "Deleting...") : (isAr ? "تأكيد" : isDe ? "Bestätigen" : "Confirm")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </DialogDescription>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+              <button
+                disabled={loading}
+                onClick={() => setDeleteTargetId(null)}
+                className="px-4 py-2 border border-gray-200 text-gray-600 rounded-[10px] text-sm font-semibold hover:bg-gray-50 transition cursor-pointer disabled:opacity-60"
+              >
+                {isAr ? "إلغاء" : isDe ? "Abbrechen" : "Cancel"}
+              </button>
+              <button
+                disabled={loading}
+                onClick={() => {
+                  if (deleteTargetId !== null) {
+                    handleDelete(deleteTargetId);
+                  }
+                }}
+                className="px-5 py-2 bg-[#FF5B5C] hover:bg-[#E04F50] text-white rounded-[10px] text-sm font-semibold transition cursor-pointer disabled:opacity-60 shadow-[0_4px_12px_rgba(255,91,92,0.2)]"
+              >
+                {loading ? (isAr ? "جاري الحذف..." : isDe ? "Wird gelöscht..." : "Deleting...") : (isAr ? "تأكيد" : isDe ? "Bestätigen" : "Confirm")}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

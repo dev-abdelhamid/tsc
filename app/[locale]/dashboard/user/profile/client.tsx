@@ -318,48 +318,32 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
     <div className="w-full flex flex-col gap-6" dir={isAr ? "rtl" : "ltr"}>
       {/* Hide native date picker across all browsers — our SVG is the trigger */}
       <style dangerouslySetInnerHTML={{__html: `
-        /* Chrome, Safari, Edge, Opera */
+        /* Hide default calendar indicator in Chrome, Safari, Edge, Opera */
         .custom-date-input::-webkit-calendar-picker-indicator {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          opacity: 0;
-          cursor: pointer;
-          z-index: 2;
-        }
-        /* Firefox */
-        .custom-date-input::-moz-calendar-picker-indicator {
           display: none !important;
+          -webkit-appearance: none !important;
+        }
+        /* Hide default calendar indicator/styles in Firefox and other standard inputs */
+        .custom-date-input {
+          -moz-appearance: textfield !important;
+          appearance: none !important;
         }
         .custom-date-input[type="date"]::-webkit-inner-spin-button,
         .custom-date-input[type="date"]::-webkit-clear-button {
-          display: none;
-          -webkit-appearance: none;
+          display: none !important;
+          -webkit-appearance: none !important;
         }
         /* IE / Edge Legacy */
         .custom-date-input::-ms-clear,
         .custom-date-input::-ms-reveal {
-          display: none;
-        }
-        /* Remove default calendar icon in all Webkit browsers */
-        .custom-date-input {
-          -webkit-appearance: none;
-          -moz-appearance: none;
-          appearance: none;
+          display: none !important;
         }
       `}} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ==================== CARD: BASIC INFO ==================== */}
         <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
-          <div className="px-8 pt-8 pb-4">
-            <h2 className="text-xl font-bold text-[#006EA8]">
-              {isAr ? "البيانات الأساسية" : (isDe ? "Basisdaten" : "Basic Info")}
-            </h2>
-          </div>
-
-          <div className="px-8 pb-8">
+          <div className="px-8 pt-8 pb-8">
             {/* Avatar */}
             <div className="flex flex-col items-center mb-8">
               <div className="relative">
@@ -449,22 +433,29 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                 <label className="text-sm font-medium text-[#262626]">
                   {isAr ? "تاريخ الميلاد" : (isDe ? "Geburtsdatum" : "Date Of Birth")}
                 </label>
-                {/* Wrapper: relative so our SVG overlays the input and the
-                    webkit-calendar-picker-indicator (made fully transparent +
-                    full-size) sits above everything as the click target */}
                 <div className="relative w-full">
                   <input
                     type="date"
                     name="dob"
                     value={profile.dob || ""}
                     onChange={handleChange}
-                    className={`${fieldBase} custom-date-input`}
-                    style={{ paddingInlineEnd: "2.25rem" }}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0 z-10 [color-scheme:light]"
+                    onClick={(e) => {
+                      try {
+                        e.currentTarget.showPicker();
+                      } catch {}
+                    }}
                   />
-                  {/* Our custom calendar SVG — purely decorative, pointer-events-none.
-                      The transparent webkit indicator on top is the real click target. */}
-                  <div className="absolute end-2 top-1/2 -translate-y-1/2 pointer-events-none z-0">
-                    <Image src="/portfolio/calender.svg" alt="" width={20} height={20} className="h-5 w-5" />
+                  <div className={`${fieldBase} flex items-center justify-between pointer-events-none`}>
+                    <span className={`text-sm ${!profile.dob ? "text-[#A3A3A3]" : "text-[#525252]"}`}>
+                      {profile.dob
+                        ? (() => {
+                            const parts = profile.dob.split("-")
+                            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : profile.dob
+                          })()
+                        : (isAr ? "يوم / شهر / سنة" : "dd / mm / yyyy")}
+                    </span>
+                    <Image src="/portfolio/calender.svg" alt="" width={20} height={20} className="h-5 w-5 opacity-70 shrink-0" />
                   </div>
                 </div>
               </div>
@@ -485,27 +476,16 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                 </div>
               </div>
 
-              {/* Phone — dial-code selector on the RIGHT in RTL, LEFT in LTR */}
+              {/* Phone — dial-code selector on the START side, number fills the rest */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#262626]">
                   {isAr ? "رقم الهاتف" : (isDe ? "Telefonnummer" : "Phone")}
                 </label>
                 <div
                   className="flex items-center border-b border-[#D4D4D4] py-2.5 focus-within:border-[#40A0CA] transition-colors"
-                  dir="ltr"
                 >
-                  {/* Number digits — always LTR, fills space */}
-                  <input
-                    type="tel"
-                    dir="ltr"
-                    value={profile.phone_raw || ""}
-                    onChange={(e) => setProfile((s) => ({ ...s, phone_raw: e.target.value }))}
-                    placeholder="1003630088"
-                    className="w-full min-w-0 bg-transparent text-sm text-[#525252] outline-none"
-                  />
-
-                  {/* Dial-code selector — always on the RIGHT (end of ltr row = right) */}
-                  <div className="relative flex items-center shrink-0 ps-2 ms-2 border-s border-[#D4D4D4] h-6">
+                  {/* Dial-code selector — start side (right in RTL, left in LTR) */}
+                  <div className="relative flex items-center shrink-0 pe-2 me-2 border-e border-[#D4D4D4] h-6">
                     <select
                       aria-label="phone-code"
                       value={selectedDialCode}
@@ -519,9 +499,19 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                       ))}
                     </select>
                     <span className="text-base me-1">{activeDialObj.flag}</span>
-                    <span className="text-sm text-[#525252] font-medium">{activeDialObj.dialCode}</span>
+                    <span className="text-sm text-[#525252] font-medium" dir="ltr">{activeDialObj.dialCode}</span>
                     <Image src="/portfolio/arrow-down.svg" alt="arrow" width={16} height={16} className="h-4 w-4 ms-1 pointer-events-none" />
                   </div>
+
+                  {/* Number digits — always LTR digits, flex fills remaining space */}
+                  <input
+                    type="tel"
+                    dir="ltr"
+                    value={profile.phone_raw || ""}
+                    onChange={(e) => setProfile((s) => ({ ...s, phone_raw: e.target.value }))}
+                    placeholder="1003630088"
+                    className="w-full min-w-0 bg-transparent text-sm text-[#525252] outline-none text-right"
+                  />
                 </div>
               </div>
 
@@ -677,6 +667,7 @@ export default function UserProfileClient({ locale, initialProfile }: Props) {
                   </button>
                 </div>
                 <input
+                  key={activeSocial}
                   type="url"
                   name={activeSocial}
                   value={profile[activeSocial] || ""}

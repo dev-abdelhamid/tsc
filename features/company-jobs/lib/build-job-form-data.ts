@@ -23,6 +23,7 @@ function appendJobFields(
   formData.append("state", payload.state)
   formData.append("vacancy", String(payload.vacancy))
   formData.append("gender", payload.gender)
+  formData.append("employment_type", payload.employment_type)
   formData.append("application_deadline", payload.application_deadline)
   formData.append("salary_from", String(payload.salary_from))
   formData.append("salary_to", String(payload.salary_to))

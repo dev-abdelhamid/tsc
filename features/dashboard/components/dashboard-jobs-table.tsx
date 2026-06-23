@@ -4,13 +4,16 @@ import Image from "next/image"
 import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import { DashboardStatusBadge } from "./dashboard-status-badge"
+import { CompanyJobActionsMenu } from "@/features/company-jobs/components/company-job-actions-menu"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 export type DashboardJobRow = {
   id: number
   title: string
   column2: string | number
   deadline: string
-  status: "approved" | "rejected" | "pending" | "accepted" | "reviewed"
+  status: "approved" | "rejected" | "pending" | "accepted" | "reviewed" | "stopped"
+  logo?: string | null
   detailsHref: string
 }
 
@@ -93,14 +96,20 @@ export function DashboardJobsTable({
                 )}
               >
                 <div className={"flex w-[28%] shrink-0 items-center gap-2 px-2 py-3 text-base font-medium text-[#262626]"}>
-                  <Image
-                    src="/dashboard/jobs.svg"
-                    alt=""
-                    width={16}
-                    height={16}
-                    className="h-4 w-4 shrink-0 opacity-100 [filter:brightness(0)_saturate(100%)_invert(50%)_sepia(10%)_saturate(500%)_hue-rotate(176deg)]"
-                    aria-hidden
-                  />
+                  {row.logo ? (
+                    <Avatar size="sm" className="overflow-hidden">
+                      <AvatarImage src={row.logo} alt={row.title} />
+                    </Avatar>
+                  ) : (
+                    <Image
+                      src="/dashboard/jobs.svg"
+                      alt=""
+                      width={16}
+                      height={16}
+                      className="h-4 w-4 shrink-0 opacity-100 [filter:brightness(0)_saturate(100%)_invert(50%)_sepia(10%)_saturate(500%)_hue-rotate(176deg)]"
+                      aria-hidden
+                    />
+                  )}
                   <span className="truncate">{row.title}</span>
                 </div>
                 <div className="flex flex-1 justify-center px-2 py-3 text-base text-[#262626]">
@@ -112,7 +121,8 @@ export function DashboardJobsTable({
                 <div className="flex flex-1 justify-center px-2 py-3">
                   <DashboardStatusBadge status={row.status} locale={locale} />
                 </div>
-                <div className={"flex flex-1 px-2 py-3 justify-center "}>
+                <div className={"flex flex-1 px-2 py-3 justify-center items-center gap-2 "}>
+                  <CompanyJobActionsMenu jobId={row.id} locale={locale ?? "en"} status={row.status as string} />
                   <div
                     className="inline-flex items-center gap-2 rounded-[8px] bg-gradient-to-b from-[#006EA8] to-[#005685] px-4 py-2 text-xs font-normal text-white shadow-[inset_0_1px_18px_2px_#E8F2FF,inset_0_1px_4px_2px_#C2DDFF] hover:opacity-95"
                   >

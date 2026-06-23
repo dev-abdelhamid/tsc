@@ -1,4 +1,6 @@
 import Image from "next/image"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { getCompanyLogo } from "@/features/jobs/lib/job-display"
 import { Link } from "@/i18n/navigation"
 import type { Job } from "@/lib/api/types"
 import { formatPostedLabel, getJobTitle, getLocalizedName } from "@/features/jobs/lib/job-display"
@@ -33,14 +35,15 @@ export function RelatedJobCard({
       </div>
 
       <div className="mt-6 flex items-center gap-2">
-        <div className="relative size-[38px] shrink-0 overflow-hidden rounded-full border border-[#e8f2ff] bg-[#e8f2ff]">
-          {job.company?.logo ? (
-            <img src={job.company.logo} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          ) : (
-            <span className="absolute inset-0 grid place-items-center text-[10px] font-bold text-[#006EA8]">
+        <div className="relative">
+          <Avatar className="size-[38px] shrink-0 overflow-hidden rounded-full border border-[#e8f2ff] bg-[#e8f2ff]">
+            {getCompanyLogo(job.company) && (
+              <AvatarImage src={getCompanyLogo(job.company)!} alt={job.company?.name ?? "?"} />
+            )}
+            <AvatarFallback className="text-[10px] font-bold text-[#006EA8]">
               {(job.company?.name ?? "?").slice(0, 2).toUpperCase()}
-            </span>
-          )}
+            </AvatarFallback>
+          </Avatar>
         </div>
         <div className="min-w-0 text-start">
           <p className="truncate text-[16px] font-bold leading-[1.16] text-[#262626]">

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
+import AdminApplicationRowClient from "@/features/admin/components/admin-application-row.client"
 import { getAdminJobApplications, getAdminJobById } from "@/lib/api/services/admin.service"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
 import { DashboardStatusBadge } from "@/features/dashboard/components/dashboard-status-badge"
@@ -116,50 +117,22 @@ export async function AdminJobApplicationsPage({
                   : null
 
                 return (
-                  <Link
+                  <AdminApplicationRowClient
                     key={application.id ?? `application-${index}`}
+                    applicationId={application.id}
+                    candidateName={candidateName ?? application.user?.name ?? safeT("applicationsPage.unknownCandidate", "Unknown")}
+                    appStatus={appStatus}
+                    statusLabels={statusLabels}
+                    appliedAt={formatAppliedAt(application.applied_at)}
+                    email={application.user?.email}
+                    cvUrl={cvUrl}
+                    jobId={jobId}
+                    index={index}
                     locale={locale}
-                    href={`/dashboard/admin/jobs/${jobId}/applications/${application.id}`}
-                    className={cn(
-                      "flex items-center border-b border-[#F0F4F8] last:border-0 cursor-pointer transition-colors duration-150 hover:bg-[#F0F9FF]",
-                      index % 2 === 0 ? "bg-white" : "bg-[#F9FBFD]"
-                    )}
-                  >
-                    <div className="w-[25%] px-4 py-4 text-sm font-semibold text-[#111827]">
-                      {candidateName ?? application.user?.name ?? safeT("applicationsPage.unknownCandidate", "Unknown")}
-                    </div>
-                    <div className="w-[18%] px-4 py-4 text-center">
-                      <DashboardStatusBadge status={appStatus} label={statusLabels[appStatus]} />
-                    </div>
-                    <div className="w-[20%] px-4 py-4 text-sm text-[#4B5563]">
-                      {formatAppliedAt(application.applied_at)}
-                    </div>
-                    <div className="w-[20%] px-4 py-4 text-sm text-[#4B5563]">
-                      {application.user?.email ?? "—"}
-                    </div>
-                    <div className="flex-1 flex items-center justify-center gap-2 px-4 py-4">
-                      {cvUrl ? (
-                        <span
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex"
-                        >
-                          <a
-                            href={cvUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 rounded-lg bg-[#D1FAE5] px-3 py-1.5 text-xs font-semibold text-[#065F46] hover:bg-[#A7F3D0]"
-                          >
-                            📄 {safeT("applicationsPage.viewCv", "View CV")}
-                          </a>
-                        </span>
-                      ) : (
-                        <span className="text-xs text-[#9CA3AF]">—</span>
-                      )}
-                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#78A3BE] bg-white px-3 py-1.5 text-xs font-semibold text-[#006EA8] hover:bg-[#F5F9FC]">
-                        {isRtl ? "عرض" : "Show"}
-                      </span>
-                    </div>
-                  </Link>
+                    isRtl={isRtl}
+                    viewCvLabel={safeT("applicationsPage.viewCv", "View CV")}
+                    showLabel={isRtl ? "عرض" : "Show"}
+                  />
                 )
               })
             )}

@@ -610,7 +610,8 @@
       "description": "الوصف",
       "responsibilities": "المسؤوليات",
       "requirements": "المتطلبات",
-      "image": "صورة بانر الوظيفة"
+      "image": "صورة بانر الوظيفة",
+      "employmentType": "نوع الدوام"
     },
     "placeholders": {
       "title": "عنوان الوظيفة",
@@ -625,6 +626,10 @@
       "Male": "ذكر",
       "Female": "أنثى",
       "All": "الجميع"
+    },
+    "jobType": {
+      "Full-time": "دوام كامل",
+      "Part-time": "دوام جزئي"
     },
     "status": {
       "pending": "قيد المراجعة",
@@ -693,7 +698,8 @@
       "requirements": "أدخل المتطلبات",
       "image": "ارفع صورة بانر للوظيفة",
       "imageSize": "حجم الصورة يجب ألا يتجاوز 12 ميجابايت",
-      "imageCompress": "تعذّر معالجة الصورة. جرّب ملفًا آخر."
+      "imageCompress": "تعذّر معالجة الصورة. جرّب ملفًا آخر.",
+      "employmentType": "اختر نوع الدوام"
     },
     "removeImage": "إزالة"
   },
@@ -1085,6 +1091,11 @@
       "goToPrevious": "الانتقال إلى الصفحة السابقة",
       "goToNext": "الانتقال إلى الصفحة التالية",
       "morePages": "المزيد من الصفحات"
+    },
+    "common": {
+      "loading": "جاري التحميل...",
+      "pleaseWait": "يرجى الانتظار...",
+      "openTicket": "فتح تذكرة"
     }
   }
 }

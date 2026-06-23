@@ -3,11 +3,12 @@
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DashboardPageShell } from "@/features/dashboard/components/dashboard-page-shell";
+import { Trash2 } from "lucide-react";
 
 type Props = {
   locale: string;
@@ -28,6 +29,10 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Delete state
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Form states
   const [subject, setSubject] = useState("");
@@ -185,6 +190,33 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
     }
   };
 
+  // ── Delete ticket ──
+  const handleDeleteTicket = async (ticketId: number) => {
+    try {
+      setDeleting(true);
+      const res = await fetch(`/api/user/tickets/${ticketId}`, {
+        method: "DELETE",
+        headers: { "Accept-Language": locale },
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to delete ticket");
+      }
+
+      toast.success(isAr ? "تم حذف التذكرة بنجاح" : isDe ? "Ticket erfolgreich gelöscht" : "Ticket deleted successfully");
+      setShowDetailModal(false);
+      setSelectedTicket(null);
+      setDeleteTargetId(null);
+      setTickets((prev) => prev.filter((t) => t.id !== ticketId));
+    } catch (err: any) {
+      console.error("[Delete ticket error]", err);
+      toast.error(err.message || (isAr ? "فشل حذف التذكرة" : isDe ? "Fehler beim Löschen des Tickets" : "Failed to delete ticket"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const getPriorityLabel = (pri: string) => {
     const map: Record<string, string> = {
       high: isAr ? "عالي" : isDe ? "Hoch" : "High",
@@ -225,17 +257,25 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
       if (diffMins < 60) {
-        return isAr ? `منذ ${diffMins} دقيقة` : isDe ? `vor ${diffMins} Minuten` : `${diffMins} minutes ago`;
+        if (isAr) return `منذ ${diffMins} دقيقة`;
+        return isDe ? `vor ${diffMins} Minuten` : `${diffMins} minutes ago`;
       }
       if (diffHours < 24) {
-        return isAr ? `منذ ${diffHours} ساعة` : isDe ? `vor ${diffHours} Stunden` : `${diffHours} hours ago`;
+        if (isAr) return `منذ ${diffHours} ساعة`;
+        return isDe ? `vor ${diffHours} Stunden` : `${diffHours} hours ago`;
       }
       if (diffDays < 30) {
-        return isAr ? `منذ ${diffDays} يوم` : isDe ? `vor ${diffDays} Tagen` : `${diffDays} days ago`;
+        if (isAr) {
+          if (diffDays === 1) return "منذ يوم واحد";
+          if (diffDays === 2) return "منذ يومين";
+          if (diffDays >= 3 && diffDays <= 10) return `منذ ${diffDays} أيام`;
+          return `منذ ${diffDays} يومًا`;
+        }
+        return isDe ? `vor ${diffDays} Tagen` : `${diffDays} days ago`;
       }
-      return isAr ? "منذ شهر" : isDe ? "vor 1 Monat" : "1 month ago";
+      return isAr ? "منذ أكثر من شهر" : isDe ? "vor über 1 Monat" : "over 1 month ago";
     } catch {
-      return isAr ? "منذ شهر" : isDe ? "vor 1 Monat" : "1 month ago";
+      return isAr ? "منذ فترة" : isDe ? "vor einiger Zeit" : "some time ago";
     }
   };
 
@@ -410,7 +450,7 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
 
         {/* ── TICKET DETAIL / REPLY MODAL ── */}
         <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-          <DialogContent className="max-w-[600px] p-0 rounded-[20px] bg-white border-0 shadow-lg max-h-[90vh] overflow-hidden flex flex-col text-start">
+          <DialogContent className="max-w-[600px] lg:max-w-[750px] p-0 rounded-[20px] bg-white border-0 shadow-lg max-h-[90vh] overflow-hidden flex flex-col text-start">
             {selectedTicket && (
               <>
                 {/* Header */}
@@ -440,12 +480,21 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setShowDetailModal(false)}
-                    className="p-1 hover:bg-gray-100 rounded-full transition cursor-pointer shrink-0"
-                  >
-                    <img src="/portfolio/close-circle.svg" alt="Close" className="w-7 h-7" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDeleteTargetId(selectedTicket.id); }}
+                      className="p-1.5 hover:bg-red-50 rounded-full transition cursor-pointer group/del"
+                      title={isAr ? "حذف التذكرة" : isDe ? "Ticket löschen" : "Delete ticket"}
+                    >
+                      <Trash2 className="w-5 h-5 text-gray-400 group-hover/del:text-[#FF5B5C] transition-colors" />
+                    </button>
+                    <button
+                      onClick={() => setShowDetailModal(false)}
+                      className="p-1 hover:bg-gray-100 rounded-full transition cursor-pointer shrink-0"
+                    >
+                      <img src="/portfolio/close-circle.svg" alt="Close" className="w-7 h-7" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Scrollable body */}
@@ -482,31 +531,50 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         {isAr ? "الردود" : isDe ? "Antworten" : "Replies"} ({selectedTicket.replies.length})
                       </p>
-                      {selectedTicket.replies.map((reply: any, idx: number) => (
-                        <div
-                          key={reply.id || idx}
-                          className={cn(
-                            "rounded-[12px] p-4 border",
-                            reply.user?.role === "admin" || reply.is_admin
-                              ? "bg-[#FFF9F0] border-[#FFE5C2]"
-                              : "bg-white border-[#E5E7EB]"
-                          )}
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-[13px] font-bold text-[#032C44]">
-                              {reply.user?.name || (reply.is_admin || reply.user?.role === "admin"
-                                ? (isAr ? "فريق الدعم" : isDe ? "Support-Team" : "Support Team")
-                                : (isAr ? "أنت" : isDe ? "Sie" : "You"))}
-                            </span>
-                            <span className="text-[11px] text-gray-400">
-                              {formatDate(reply.created_at)}
-                            </span>
+                      {selectedTicket.replies.map((reply: any, idx: number) => {
+                        const isSupport =
+                          reply.is_admin === true ||
+                          reply.is_admin === 1 ||
+                          reply.is_admin === "1" ||
+                          (reply.user &&
+                            typeof reply.user === "object" &&
+                            (reply.user.role === "admin" ||
+                              reply.user.role === "talent-seeker" ||
+                              (Array.isArray(reply.user.roles) && reply.user.roles.includes("admin")) ||
+                              reply.user.name === "talent-seeker" ||
+                              reply.user.email?.includes("admin") ||
+                              reply.user.email === "info@talent-sc.com")) ||
+                          (typeof reply.user === "string" &&
+                            (reply.user.toLowerCase() === "talent-seeker" ||
+                              reply.user.toLowerCase() === "admin" ||
+                              reply.user.toLowerCase().includes("support")));
+
+                        return (
+                          <div
+                            key={reply.id || idx}
+                            className={cn(
+                              "rounded-[12px] p-4 border",
+                              isSupport
+                                ? "bg-[#FFF9F0] border-[#FFE5C2]"
+                                : "bg-white border-[#E5E7EB]"
+                            )}
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-[13px] font-bold text-[#032C44]">
+                                {isSupport
+                                  ? (isAr ? "الدعم الفني" : isDe ? "Technischer Support" : "Technical Support")
+                                  : (isAr ? "أنت" : isDe ? "Sie" : "You")}
+                              </span>
+                              <span className="text-[11px] text-gray-400">
+                                {formatDate(reply.created_at)}
+                              </span>
+                            </div>
+                            <p className="text-[14px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                              {reply.message || reply.body || reply.content}
+                            </p>
                           </div>
-                          <p className="text-[14px] text-gray-600 leading-relaxed whitespace-pre-wrap">
-                            {reply.message || reply.body || reply.content}
-                          </p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
@@ -665,6 +733,41 @@ export default function TicketsClient({ locale, initialTickets }: Props) {
                 </PrimaryButton>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── DELETE TICKET CONFIRMATION ── */}
+        <Dialog open={deleteTargetId !== null} onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}>
+          <DialogContent className="max-w-[400px] p-6 rounded-[20px] bg-white border-0 shadow-lg text-start" dir={isAr ? "rtl" : "ltr"}>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 border-s-4 border-[#FF5B5C] ps-3 -ms-6">
+                <DialogTitle className="text-[18px] font-bold text-[#032C44]">
+                  {isAr ? "حذف التذكرة" : isDe ? "Ticket löschen" : "Delete Ticket"}
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-[14px] text-gray-600 leading-relaxed">
+                {isAr
+                  ? "هل أنت متأكد أنك تريد حذف هذه التذكرة؟ لا يمكن التراجع عن هذا الإجراء."
+                  : isDe ? "Sind Sie sicher, dass Sie dieses Ticket löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+                  : "Are you sure you want to delete this ticket? This action cannot be undone."}
+              </DialogDescription>
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <button
+                  disabled={deleting}
+                  onClick={() => setDeleteTargetId(null)}
+                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-[10px] text-sm font-semibold hover:bg-gray-50 transition cursor-pointer disabled:opacity-60"
+                >
+                  {isAr ? "إلغاء" : isDe ? "Abbrechen" : "Cancel"}
+                </button>
+                <button
+                  disabled={deleting}
+                  onClick={() => { if (deleteTargetId !== null) handleDeleteTicket(deleteTargetId); }}
+                  className="px-5 py-2 bg-[#FF5B5C] hover:bg-[#E04F50] text-white rounded-[10px] text-sm font-semibold transition cursor-pointer disabled:opacity-60 shadow-[0_4px_12px_rgba(255,91,92,0.2)]"
+                >
+                  {deleting ? (isAr ? "جاري الحذف..." : isDe ? "Wird gelöscht..." : "Deleting...") : (isAr ? "تأكيد الحذف" : isDe ? "Löschen bestätigen" : "Confirm Delete")}
+                </button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

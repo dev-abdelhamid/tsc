@@ -9,6 +9,8 @@ import {
 type JobsTranslator = (key: string) => string
 
 export function shouldUseJobsSeedData(): boolean {
+  // Only use seed data when explicitly opted-in via NEXT_PUBLIC_USE_JOBS_SEED_DATA.
+  // This forces the app to use the live upstream API by default, including in dev.
   return process.env.NEXT_PUBLIC_USE_JOBS_SEED_DATA === "true"
 }
 
@@ -51,6 +53,12 @@ export async function getJobsForLocale(
   t: JobsTranslator,
   filter: JobsFilter = { per_page: 12 }
 ): Promise<{ jobs: Job[]; total: number; fromApi: boolean }> {
+  // If explicitly opted-in to seed data, prefer it immediately for local testing.
+  if (process.env.NEXT_PUBLIC_USE_JOBS_SEED_DATA === "true") {
+    const fallback = buildFallbackJobs(t)
+    return { jobs: fallback, total: fallback.length, fromApi: false }
+  }
+
   try {
     const { data, meta } = await getPublicJobs(filter, locale)
     if (data.length > 0) {
@@ -62,7 +70,7 @@ export async function getJobsForLocale(
     }
   } catch (err) {
     console.error(err)
-    // fall through
+    // fall through to fallback when enabled
   }
 
   if (!shouldUseJobsSeedData()) {

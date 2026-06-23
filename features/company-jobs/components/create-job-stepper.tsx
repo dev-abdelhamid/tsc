@@ -6,15 +6,17 @@ import { cn } from "@/lib/utils"
 export function CreateJobStepper({
   currentStep,
   labels,
+  isRtl = false,
 }: {
   currentStep: number
   labels: [string, string, string]
+  isRtl?: boolean
 }) {
   const steps = [1, 2, 3] as const
 
   return (
-    <div className="flex w-full max-w-[639px] flex-col items-center gap-3 px-2 sm:px-0">
-      <div className="relative w-full max-w-[566px]">
+    <div className="mx-auto flex w-full max-w-[566px] flex-col items-stretch gap-3 px-2 sm:px-0">
+      <div className="relative w-full">
         <div
           className="absolute top-[15px] h-0.5 bg-[#E5E5E5] sm:top-[15.5px]"
           style={{ left: "15.5px", right: "15.5px" }}
@@ -23,7 +25,8 @@ export function CreateJobStepper({
         <div
           className="absolute top-[15px] h-0.5 bg-gradient-to-r from-[#006EA8] to-[#005685] transition-all duration-300 sm:top-[15.5px]"
           style={{
-            left: "15.5px",
+            left: isRtl ? "auto" : "15.5px",
+            right: isRtl ? "15.5px" : "auto",
             width:
               currentStep <= 1
                 ? "0%"
@@ -34,7 +37,7 @@ export function CreateJobStepper({
           aria-hidden
         />
 
-        <div className="relative grid grid-cols-3 items-start">
+        <div className="relative grid grid-cols-3 items-start justify-items-center">
           {steps.map((stepNum) => {
             const done = stepNum < currentStep
             const active = stepNum === currentStep
@@ -58,7 +61,7 @@ export function CreateJobStepper({
         </div>
       </div>
 
-      <div className="grid w-full max-w-[639px] grid-cols-3 gap-2 sm:gap-4">
+      <div className="grid w-full grid-cols-3 gap-2">
         {labels.map((label, index) => {
           const stepNum = index + 1
           const highlighted = stepNum <= currentStep

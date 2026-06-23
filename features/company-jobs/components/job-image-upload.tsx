@@ -89,7 +89,7 @@ export function JobImageUpload({
             disabled={compressing}
             onClick={() => inputRef.current?.click()}
             className={cn(
-              "group relative flex w-full h-[140px] items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#78A3BE] bg-white transition",
+              "group relative flex w-full h-[220px] items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#78A3BE] bg-white transition",
               "hover:border-[#40A0CA] hover:shadow-[0_8px_24px_rgba(0,110,168,0.08)]",
               previewUrl ? "border-solid border-[#D4D4D4]" : "py-6",
               compressing && "pointer-events-none opacity-70"

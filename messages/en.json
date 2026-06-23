@@ -583,7 +583,8 @@
       "description": "Description",
       "responsibilities": "Responsibilities",
       "requirements": "Requirements",
-      "image": "Job banner image"
+      "image": "Job banner image",
+      "employmentType": "Employment Type"
     },
     "placeholders": {
       "title": "Job title",
@@ -598,6 +599,10 @@
       "Male": "Male",
       "Female": "Female",
       "All": "All"
+    },
+    "jobType": {
+      "Full-time": "Full-time",
+      "Part-time": "Part-time"
     },
     "status": {
       "pending": "Pending",
@@ -666,7 +671,8 @@
       "requirements": "Enter requirements",
       "image": "Upload a job banner image",
       "imageSize": "Image must be 12MB or smaller",
-      "imageCompress": "Could not process this image. Try another file."
+      "imageCompress": "Could not process this image. Try another file.",
+      "employmentType": "Select employment type"
     },
     "removeImage": "Remove"
   },
@@ -1057,6 +1063,11 @@
       "goToPrevious": "Go to previous page",
       "goToNext": "Go to next page",
       "morePages": "More pages"
+    },
+    "common": {
+      "loading": "Loading...",
+      "pleaseWait": "Please wait...",
+      "openTicket": "Open Ticket"
     }
   }
 }

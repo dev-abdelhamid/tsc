@@ -6,6 +6,7 @@ import { getMyApplicationDetail } from "@/lib/api/services/user.service"
 import { getUserPortfolio } from "@/lib/api/services/portfolio.service"
 import { getProfile } from "@/lib/api/services/auth.service"
 import { getJobTitle } from "@/features/company-jobs/lib/job-title"
+import { getCompanyLogo } from "@/features/jobs/lib/job-display"
 import { Card } from "@/components/ui/card"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import { cn } from "@/lib/utils"
@@ -279,9 +280,9 @@ export default async function ApplicationDetailPage({
                 <div className="space-y-2">
                   <h2 className="text-[22px] font-bold text-[#032C44]">{jobTitle}</h2>
                   <div className="flex items-center gap-2">
-                    {application.job?.company?.logo && (
+                    {getCompanyLogo(application.job?.company) && (
                       <img
-                        src={application.job.company.logo}
+                        src={getCompanyLogo(application.job?.company)!}
                         alt=""
                         className="w-8 h-8 rounded-full object-cover border border-gray-100"
                       />
@@ -364,6 +365,19 @@ export default async function ApplicationDetailPage({
                         </span>
                       ) : null}
                     </div>
+                    {edu.document_url && (
+                      <div className="mt-3 flex items-center gap-1.5 text-xs text-[#006EA8]">
+                        <img src="/portfolio/pdf.svg" alt="PDF" className="w-5 h-5 shrink-0" />
+                        <a
+                          href={edu.document_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold hover:underline truncate max-w-[250px]"
+                        >
+                          {getFilenameFromUrl(edu.document_url)}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -390,6 +404,19 @@ export default async function ApplicationDetailPage({
                     <p className="text-xs text-gray-500 font-semibold mt-1">
                       {exp.start_date} - {exp.is_current || exp.currently_working ? (isAr ? "حتى الآن" : isDe ? "Gegenwart" : "Present") : exp.end_date || ""}
                     </p>
+                    {exp.document_url && (
+                      <div className="mt-3 flex items-center gap-1.5 text-xs text-[#006EA8]">
+                        <img src="/portfolio/pdf.svg" alt="PDF" className="w-5 h-5 shrink-0" />
+                        <a
+                          href={exp.document_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold hover:underline truncate max-w-[250px]"
+                        >
+                          {getFilenameFromUrl(exp.document_url)}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

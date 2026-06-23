@@ -110,7 +110,13 @@ export default async function LocaleLayout({ children, params }: Props) {
             <SiteChrome session={canonicalSessionData} footer={<SiteFooter />}>
               {children}
             </SiteChrome>
-            <Toaster position="top-center" richColors />
+            <Toaster
+              position="top-center"
+              richColors
+              offset={88}
+              duration={2500}
+              style={{ "--width": "clamp(340px, 90vw, 560px)" } as React.CSSProperties}
+            />
           </DirectionProvider>
         </NextIntlClientProvider>
       </body>

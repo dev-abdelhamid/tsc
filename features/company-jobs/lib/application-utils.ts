@@ -63,30 +63,16 @@ export function extractApplicationsMeta(response: unknown, page: number, dataLen
   }
 }
 
-export function extractNameFromCv(cvUrl?: string): string | null {
-  if (!cvUrl) return null
-  try {
-    const filename = cvUrl.split('/').pop() || ''
-    const decoded = decodeURIComponent(filename)
-    const cleanName = decoded
-      .replace(/[-_]CV/gi, '')
-      .replace(/\.pdf$/i, '')
-      .replace(/[-_]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-    if (cleanName && cleanName.length > 2 && !/^\d+$/.test(cleanName)) {
-      return cleanName
-    }
-  } catch {}
-  return null
-}
-
 export function maskName(name: string): string {
   const clean = name.trim()
   if (!clean) return ""
   const parts = clean.split(/\s+/)
   if (parts.length === 0 || !parts[0]) return ""
-  return parts[0] + " ****"
+  if (parts.length === 1) return parts[0]
+
+  // Mask all name parts after the first one. Limit each masked part to 4 stars
+  const maskedParts = parts.slice(1).map((p) => '*'.repeat(Math.min(4, p.length)))
+  return `${parts[0]} ${maskedParts.join(' ')}`
 }
 
 export function normalizeCompanyApplication(item: unknown): CompanyApplication {
@@ -111,10 +97,10 @@ export function normalizeCompanyApplication(item: unknown): CompanyApplication {
 
   const profileRecord = (rawProfile || {}) as Record<string, unknown>
 
-  // Build a normalized Userprofile that merges nested and flat user-level fields
+  // Build a normalized Userprofile that merges nested, flat user-level and portfolio fields
   const normalizedProfile: CompanyApplication["user"]["Userprofile"] = {
     gender: String(
-      profileRecord.gender ?? user.gender ?? row.gender ?? ""
+      profileRecord.gender ?? user.gender ?? row.gender ?? portfolioRecord.gender ?? portfolioRecord.sex ?? ""
     ) || null,
     dateOfBirth: String(
       profileRecord.dateOfBirth ??
@@ -123,6 +109,9 @@ export function normalizeCompanyApplication(item: unknown): CompanyApplication {
         user.birth_date ??
         user.date_of_birth ??
         user.dateOfBirth ??
+        portfolioRecord.dateOfBirth ??
+        portfolioRecord.date_of_birth ??
+        portfolioRecord.birth_date ??
         ""
     ) || null,
     maritalStatus: String(
@@ -130,18 +119,20 @@ export function normalizeCompanyApplication(item: unknown): CompanyApplication {
         profileRecord.marital_status ??
         user.marital_status ??
         user.maritalStatus ??
+        portfolioRecord.maritalStatus ??
+        portfolioRecord.marital_status ??
         ""
     ) || null,
-    firstName: String(profileRecord.firstName ?? profileRecord.first_name ?? user.first_name ?? "") || null,
-    lastName: String(profileRecord.lastName ?? profileRecord.last_name ?? user.last_name ?? "") || null,
+    firstName: String(profileRecord.firstName ?? profileRecord.first_name ?? user.first_name ?? null) || null,
+    lastName: String(profileRecord.lastName ?? profileRecord.last_name ?? user.last_name ?? null) || null,
     categoryId: Number(profileRecord.categoryId ?? profileRecord.category_id ?? user.category_id ?? 0) || null,
     subcategoryId: Number(profileRecord.subcategoryId ?? profileRecord.subcategory_id ?? user.subcategory_id ?? 0) || null,
     categoryName: String(profileRecord.categoryName ?? profileRecord.category_name ?? user.category_name ?? "") || null,
     subcategoryName: String(profileRecord.subcategoryName ?? profileRecord.subcategory_name ?? user.subcategory_name ?? "") || null,
-    facebook: String(profileRecord.facebook ?? user.facebook ?? "") || null,
-    linkedin: String(profileRecord.linkedin ?? user.linkedin ?? "") || null,
-    twitterX: String(profileRecord.twitterX ?? profileRecord.twitter_x ?? user.twitterX ?? "") || null,
-    pinterest: String(profileRecord.pinterest ?? user.pinterest ?? "") || null,
+    facebook: String(profileRecord.facebook ?? user.facebook ?? portfolioRecord.facebook ?? "") || null,
+    linkedin: String(profileRecord.linkedin ?? user.linkedin ?? portfolioRecord.linkedin ?? "") || null,
+    twitterX: String(profileRecord.twitterX ?? profileRecord.twitter_x ?? user.twitterX ?? portfolioRecord.twitterX ?? "") || null,
+    pinterest: String(profileRecord.pinterest ?? user.pinterest ?? portfolioRecord.pinterest ?? "") || null,
   }
 
   const cvUrl =
@@ -159,11 +150,30 @@ export function normalizeCompanyApplication(item: unknown): CompanyApplication {
   let resolvedName =
     String(user.name ?? row.applicant_name ?? row.candidate_name ?? "").trim()
 
-  if (!resolvedName && (user.first_name || profileRecord.firstName || profileRecord.first_name)) {
-    const f = String(user.first_name ?? profileRecord.firstName ?? profileRecord.first_name ?? "").trim()
-    const l = String(user.last_name ?? profileRecord.lastName ?? profileRecord.last_name ?? "").trim()
+  // Try reconstructing from first/last name present in user/profile/portfolio
+  if (
+    !resolvedName &&
+    (user.first_name || profileRecord.firstName || profileRecord.first_name || portfolioRecord.firstName || portfolioRecord.first_name)
+  ) {
+    const f = String(
+      user.first_name ?? profileRecord.firstName ?? profileRecord.first_name ?? portfolioRecord.firstName ?? portfolioRecord.first_name ?? ""
+    ).trim()
+    const l = String(
+      user.last_name ?? profileRecord.lastName ?? profileRecord.last_name ?? portfolioRecord.lastName ?? portfolioRecord.last_name ?? ""
+    ).trim()
     resolvedName = `${f} ${l}`.trim()
   }
+
+  // Fallback: try portfolio-level name fields
+  if (!resolvedName) {
+    const portfolioName = String(
+      portfolioRecord.name ?? portfolioRecord.full_name ?? portfolioRecord.fullName ?? ""
+    ).trim()
+    if (portfolioName) resolvedName = portfolioName
+  }
+
+  // Do NOT derive applicant name from CV filename. Keep only server-provided
+  // name fields (do not enrich or synthesize from attachments).
 
   const maskedName = resolvedName ? maskName(resolvedName) : ""
 
@@ -218,7 +228,16 @@ export function normalizePortfolioShape(portfolio: Record<string, unknown>) {
       graduation_year: String(item.graduation_year ?? item.graduationYear ?? ""),
       specialization: String(item.specialization ?? ""),
       final_grade: String(item.final_grade ?? item.finalGrade ?? item.grade ?? ""),
-      attachment: String(item.attachment ?? ""),
+      // Accept many possible keys for the document/attachment URL that may come from different backends
+      attachment: String(
+        item.attachment ??
+          item.document_url ??
+          item.documentUrl ??
+          item.document ??
+          item.file_url ??
+          item.file ??
+          ""
+      ),
     }
   })
 
@@ -236,7 +255,15 @@ export function normalizePortfolioShape(portfolio: Record<string, unknown>) {
           ? Boolean(item.currentlyWorking) 
           : false,
       responsibilities: String(item.responsibilities ?? ""),
-      attachment: String(item.attachment ?? ""),
+      attachment: String(
+        item.attachment ??
+          item.document_url ??
+          item.documentUrl ??
+          item.document ??
+          item.file_url ??
+          item.file ??
+          ""
+      ),
     }
   })
 
@@ -245,6 +272,8 @@ export function normalizePortfolioShape(portfolio: Record<string, unknown>) {
     return {
       id: Number(item.id ?? 0),
       skill_name: String(item.skill_name ?? item.skillName ?? item.name ?? ""),
+      // optional attachment on skill objects
+      attachment: String(item.attachment ?? item.document_url ?? item.documentUrl ?? item.file_url ?? item.file ?? ""),
     }
   })
 

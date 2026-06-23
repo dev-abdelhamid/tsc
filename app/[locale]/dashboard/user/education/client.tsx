@@ -1376,10 +1376,28 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                     onChange={(e) =>
                       setExperienceForm((prev) => ({ ...prev, startDate: e.target.value }))
                     }
-                    className="custom-date-input w-full border-b border-[#D4D4D4] py-2.5 pr-8 pl-0 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] rounded-none border-t-0 border-l-0 border-r-0 shadow-none"
-                    placeholder={isAr ? "من" : isDe ? "von" : "from"}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0 z-10 [color-scheme:light]"
+                    onClick={(e) => {
+                      try {
+                        e.currentTarget.showPicker();
+                      } catch {}
+                    }}
                   />
-                  <img src="/portfolio/calender.svg" alt="Calendar" className="pointer-events-none absolute end-0 top-1/2 w-[18px] h-[18px] -translate-y-1/2 opacity-70" />
+                  <div className="w-full border-b border-[#D4D4D4] py-2.5 text-sm text-[#525252] flex items-center justify-between pointer-events-none">
+                    <span className={cn(!experienceForm.startDate && "text-[#A3A3A3]")}>
+                      {experienceForm.startDate
+                        ? (() => {
+                            const parts = experienceForm.startDate.split("-")
+                            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : experienceForm.startDate
+                          })()
+                        : (isAr ? "من" : isDe ? "von" : "from")}
+                    </span>
+                    <img
+                      src="/portfolio/calender.svg"
+                      alt="Calendar"
+                      className="w-[18px] h-[18px] opacity-70 shrink-0"
+                    />
+                  </div>
                 </div>
 
                 {/* To Date */}
@@ -1391,10 +1409,30 @@ export default function UserEducationClient({ locale, initialPortfolio }: Props)
                       setExperienceForm((prev) => ({ ...prev, endDate: e.target.value }))
                     }
                     disabled={experienceForm.currentlyWorking}
-                    className="custom-date-input w-full border-b border-[#D4D4D4] py-2.5 pr-8 pl-0 text-sm text-[#525252] bg-transparent outline-none transition-colors focus:border-[#40A0CA] rounded-none border-t-0 border-l-0 border-r-0 shadow-none disabled:opacity-50"
-                    placeholder={isAr ? "إلى" : isDe ? "bis" : "to"}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0 z-10 [color-scheme:light] disabled:cursor-not-allowed"
+                    onClick={(e) => {
+                      try {
+                        e.currentTarget.showPicker();
+                      } catch {}
+                    }}
                   />
-                  <img src="/portfolio/calender.svg" alt="Calendar" className="pointer-events-none absolute end-0 top-1/2 w-[18px] h-[18px] -translate-y-1/2 opacity-70" />
+                  <div className={cn("w-full border-b border-[#D4D4D4] py-2.5 text-sm text-[#525252] flex items-center justify-between pointer-events-none", experienceForm.currentlyWorking && "opacity-50")}>
+                    <span className={cn(!experienceForm.endDate && "text-[#A3A3A3]")}>
+                      {experienceForm.currentlyWorking
+                        ? (isAr ? "حتى الآن" : isDe ? "heute" : "Present")
+                        : experienceForm.endDate
+                          ? (() => {
+                              const parts = experienceForm.endDate.split("-")
+                              return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : experienceForm.endDate
+                            })()
+                          : (isAr ? "إلى" : isDe ? "bis" : "to")}
+                    </span>
+                    <img
+                      src="/portfolio/calender.svg"
+                      alt="Calendar"
+                      className="w-[18px] h-[18px] opacity-70 shrink-0"
+                    />
+                  </div>
                 </div>
               </div>
 

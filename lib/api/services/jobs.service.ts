@@ -1,8 +1,6 @@
 // lib/api/services/jobs.service.ts
 import { api } from "../client"
 import type { ApiResponse, Job, PaginationMeta, PublicJobDetail } from "../types"
-import { getJobTitle } from "@/features/jobs/lib/job-display"
-import { resolveImageUrl } from "@/lib/utils"
 
 export interface JobsFilter {
   per_page?: number
@@ -21,7 +19,7 @@ function pickLocalizedString(value: unknown, locale = "ar"): string {
   if (!value || typeof value !== "object") return ""
 
   const map = value as Record<string, unknown>
-  const priority = [locale, "ar", "en", "de"]
+  const priority = [locale, "en", "ar", "de"]
 
   for (const key of priority) {
     const candidate = map[key]
@@ -63,8 +61,20 @@ function normalizeNestedValue<T extends { name?: string }>(
   raw: unknown,
   locale: string
 ): T | undefined {
-  if (!raw || typeof raw !== "object") return undefined
-  const row = raw as Record<string, unknown>
+  if (!raw) return undefined
+
+  let row: Record<string, unknown> | null = null
+  if (typeof raw === "string") {
+    try {
+      row = JSON.parse(raw) as Record<string, unknown>
+    } catch {
+      return undefined
+    }
+  } else if (typeof raw === "object") {
+    row = raw as Record<string, unknown>
+  }
+
+  if (!row) return undefined
   const name = pickLocalizedField(row, "name", locale) || ""
   return { ...row, name } as T
 }
@@ -108,6 +118,46 @@ function readRange(
   }
 }
 
+/**
+ * Parse a variety of date formats into an ISO string.
+ * - numeric seconds (10-digit) or milliseconds (13+ digit)
+ * - numeric string timestamps
+ * - SQL style 'YYYY-MM-DD HH:MM:SS' (tries with/without 'Z')
+ * - any string parseable by `new Date()`
+ */
+function parseDateLike(value: unknown): string | undefined {
+  if (value == null) return undefined
+
+  if (typeof value === "number") {
+    // treat small numbers as seconds
+    return value > 1e12 ? new Date(value).toISOString() : new Date(value * 1000).toISOString()
+  }
+
+  if (typeof value === "string") {
+    const v = value.trim()
+    if (!v) return undefined
+
+    if (/^\d+$/.test(v)) {
+      const num = Number(v)
+      return num > 1e12 ? new Date(num).toISOString() : new Date(num * 1000).toISOString()
+    }
+
+    // handle common SQL datetime without timezone
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(v)) {
+      const isoLike = v.replace(" ", "T")
+      const d = new Date(isoLike)
+      if (!Number.isNaN(d.getTime())) return d.toISOString()
+      const d2 = new Date(isoLike + "Z")
+      if (!Number.isNaN(d2.getTime())) return d2.toISOString()
+    }
+
+    const parsed = new Date(v)
+    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString()
+  }
+
+  return undefined
+}
+
 function mapStatus(raw: unknown): Job["status"] {
   if (raw === "active") return "approved"
   if (
@@ -121,130 +171,21 @@ function mapStatus(raw: unknown): Job["status"] {
   return "approved"
 }
 
-export function normalizeJob(item: unknown, locale: string): Job | null {
+export function normalizeJob(item: unknown, _locale: string): Job | null {
+  // Minimal, non-mutating pass-through normalizer.
+  // The project owner requested not to modify or enrich server-provided data.
   if (!item || typeof item !== "object") return null
-  const row = item as Record<string, unknown>
+  const row = item as Record<string, any>
   const id = Number(row.id)
   if (!Number.isFinite(id) || id <= 0) return null
 
-  // Always resolve to a localized string – never keep a {ar,en,de} object as-is
-  const title: string | undefined =
-    pickLocalizedField(row, "title", locale) ||
-    pickLocalizedString(row.title, locale) ||
-    pickLocalizedField(row, "name", locale) ||
-    (typeof row.title === "string" ? row.title : undefined) ||
-    (typeof row.name === "string" ? row.name : undefined)
-
-  const description: string | undefined =
-    pickLocalizedField(row, "description", locale) ||
-    pickLocalizedString(row.description, locale) ||
-    pickLocalizedField(row, "content", locale) ||
-    (typeof row.description === "string" ? row.description : undefined)
-
-  const requirements: string | undefined =
-    pickLocalizedField(row, "requirements", locale) ||
-    pickLocalizedString(row.requirements, locale) ||
-    (typeof row.requirements === "string" ? row.requirements : undefined)
-
-  const responsibilities: string | undefined =
-    pickLocalizedField(row, "responsibilities", locale) ||
-    pickLocalizedString(row.responsibilities, locale) ||
-    (typeof row.responsibilities === "string" ? row.responsibilities : undefined)
-
-  const salary = readRange(row, "salary_from", "salary_to", "salary")
-  const age = readRange(row, "age_from", "age_to", "age")
-
-  const employmentType =
-    typeof row.employment_type === "string"
-      ? row.employment_type
-      : typeof row.employmentType === "string"
-        ? row.employmentType
-        : undefined
-
+  // Return the original payload with only a safe numeric id and preserved fields.
   return {
+    ...(row as Record<string, any>),
     id,
-    title: title ?? getJobTitle({ title: String(row.name || "") }, locale),
-    description,
-    requirements,
-    responsibilities,
-    image: typeof row.image === "string" ? row.image : undefined,
-    salary_from: salary.from,
-    salary_to: salary.to,
-    age_from: age.from,
-    age_to: age.to,
-    vacancy: row.vacancy != null ? Number(row.vacancy) : undefined,
-    gender: typeof row.gender === "string" ? row.gender : undefined,
-    employment_type: employmentType,
-    state: typeof row.state === "string" ? row.state : undefined,
-    location: typeof row.location === "string" ? row.location : undefined,
-    city: normalizeNestedValue(row.city, locale) as Job["city"],
-    country: normalizeNestedValue(row.country, locale) as Job["country"],
-    category: normalizeNestedValue(row.category, locale) as Job["category"],
-    sub_category: normalizeNestedValue(row.sub_category ?? row.subCategory, locale) as Job["sub_category"],
-    company: (() => {
-      if (!row.company || typeof row.company !== "object") {
-        return row.company as unknown as Job["company"]
-      }
-      const company = normalizeNestedValue(row.company, locale) as Record<string, any>
-      if (company.company_type && typeof company.company_type === "object") {
-        company.company_type = normalizeNestedValue(company.company_type, locale)
-      }
-      if (company.country && typeof company.country === "object") {
-        company.country = normalizeNestedValue(company.country, locale)
-      }
-      if (company.city && typeof company.city === "object") {
-        company.city = normalizeNestedValue(company.city, locale)
-      }
-      // Extract profile name if available to avoid username showing
-      const profile = company.company_profile || company.companyProfile || company.profile
-      const compName =
-        (profile && typeof profile === "object" ? (profile.company_name || profile.companyName) : null) ||
-        company.company_name ||
-        company.companyName ||
-        company.name
-      if (compName && typeof compName === "string") {
-        company.name = compName
-      }
-      // Resolve company logo/avatar URL if present
-      const logoVal = company.logo || company.logoUrl || company.logo_url || company.avatar || company.avatar_url
-      if (logoVal) {
-        const resolved = resolveImageUrl(logoVal)
-        company.logo = resolved
-        company.logoUrl = resolved
-        company.logo_url = resolved
-      }
-      return company as unknown as Job["company"]
-    })(),
-    status: mapStatus(row.status),
-    application_deadline:
-      (typeof row.application_deadline === "string" && row.application_deadline) ||
-      (typeof row.applicationDeadline === "string" && row.applicationDeadline) ||
-      undefined,
-    created_at:
-      (typeof row.created_at === "string" && row.created_at) ||
-      (typeof row.createdAt === "string" && row.createdAt) ||
-      new Date().toISOString(),
-    created_at_human:
-      (typeof row.created_at_human === "string" && row.created_at_human) ||
-      (typeof row.createdAtHuman === "string" && row.createdAtHuman) ||
-      undefined,
-    applications_count: (() => {
-      const candidates = [
-        row.applications_count,
-        row.applicationsCount,
-        row.applications_total,
-        row.applicationsTotal,
-        row.applied_candidates,
-        row.appliedCandidates,
-        row.candidates_count,
-        row.candidatesCount,
-      ]
-      for (const value of candidates) {
-        if (value != null && !Number.isNaN(Number(value))) return Number(value)
-      }
-      return undefined
-    })(),
-  }
+    // Preserve timestamps as provided by the server; do not synthesize values here.
+    created_at: row.created_at ?? row.createdAt,
+  } as Job
 }
 
 function parseJobsResponse(
@@ -312,6 +253,8 @@ export async function getPublicJobs(
   }
 }
 
+// Note: Removed fetchCompanyById fallback — we now respect server payloads as-is.
+
 export async function getPublicJob(id: number, locale = "ar"): Promise<Job | null> {
   const detail = await getPublicJobDetail(id, locale)
   return detail?.job ?? null
@@ -345,11 +288,14 @@ export async function getPublicJobDetail(
           .map((item) => normalizeJob(item, locale))
           .filter((item): item is Job => item !== null)
 
-        return { job, related }
+        // Return job and related as provided by the server (no enrichment)
+        return { job: job as Job, related }
       }
 
       const normalized = normalizeJob(payload, locale)
-      if (normalized) return { job: normalized, related: [] }
+      if (normalized) {
+        return { job: normalized, related: [] }
+      }
     } catch (err) {
       if (process.env.NODE_ENV !== "production") console.error(err)
       // try next

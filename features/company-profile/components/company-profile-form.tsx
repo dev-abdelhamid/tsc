@@ -962,15 +962,15 @@ export default function CompanyProfileForm({
                   {isAr ? "رقم الهاتف *" : isDe ? "Telefonnummer *" : "Phone *"}
                 </label>
                 <div className="flex items-center border-b border-[#D4D4D4] py-2 focus-within:border-[#40A0CA] transition-colors">
-                  <div className="relative flex items-center shrink-0 pe-2 me-2 border-e border-[#D4D4D4]">
-                    <select className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" {...register("dial_code")}>
+                  <div className="relative flex items-center shrink-0 pe-2 me-2 border-e border-[#D4D4D4] h-6">
+                    <select className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" {...register("dial_code")}>
                       {DIALING_CODES.map((d) => (
                         <option key={d.uniqueKey} value={d.code}>{d.flag} {d.code}</option>
                       ))}
                     </select>
                     <>
                       <span className="text-base me-1">{activeDialObj.flag}</span>
-                      <span className="text-sm text-[#525252] font-medium">{activeDialObj.code}</span>
+                      <span className="text-sm text-[#525252] font-medium" dir="ltr">{activeDialObj.code}</span>
                     </>
                     <Image
                       src="/portfolio/arrow-down.svg"
@@ -980,7 +980,7 @@ export default function CompanyProfileForm({
                       className="h-4 w-4 text-[#A3A3A3] ms-1 pointer-events-none"
                     />
                   </div>
-                  <input type="tel" dir={isAr ? "rtl" : "ltr"} className={`w-full min-w-0 bg-transparent text-sm text-[#525252] outline-none ${isAr ? "text-right" : "text-left"}`} {...register("phone")} />
+                  <input type="tel" dir="ltr" className="w-full min-w-0 bg-transparent text-sm text-[#525252] outline-none text-right" placeholder="1003630088" {...register("phone")} />
                 </div>
               </div>
 
@@ -1146,6 +1146,7 @@ export default function CompanyProfileForm({
                   </button>
                 </div>
                 <input
+                  key={activeSocial}
                   type="url"
                   placeholder={`https://${activeSocial === "twitter" ? "x" : activeSocial}.com/...`}
                   className="w-full rounded-lg border border-[#D4D4D4] px-4 py-2.5 text-sm text-[#525252] bg-white outline-none focus:border-[#40A0CA]"
@@ -1158,16 +1159,6 @@ export default function CompanyProfileForm({
 
         {/* ==================== NOTIFICATIONS & SUBMIT ==================== */}
         <div className="flex flex-col items-center gap-4">
-          {message && (
-            <div className="p-3 w-full rounded-lg bg-green-50 text-green-700 text-center text-sm font-medium border border-green-200">
-              {message}
-            </div>
-          )}
-          {errorMsg && (
-            <div className="p-3 w-full rounded-lg bg-red-50 text-red-700 text-center text-sm font-medium border border-red-200">
-              {errorMsg}
-            </div>
-          )}
           <PrimaryButton type="submit" disabled={loading || isSubmitting} className="max-w-[220px] h-[48px] text-base font-semibold shadow-[0_4px_14px_rgba(0,110,168,0.3)] bg-gradient-to-b from-[#006EA8] to-[#005685] hover:from-[#005685] hover:to-[#004066]">
             {loading || isSubmitting
               ? isAr

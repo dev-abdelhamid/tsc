@@ -8,6 +8,7 @@ import {
   formatGenderForDetail,
   formatJobSalaryRange,
   getLocalizedName,
+  resolveJobApplicationDeadline,
 } from "@/features/jobs/lib/job-display"
 import { RelatedJobCard } from "@/features/jobs/components/related-job-card"
 import ApplyButton from "@/features/jobs/components/apply-button"
@@ -58,10 +59,11 @@ export function JobDetailSidebar({
   isCompanyView = false,
 }: JobDetailSidebarProps) {
   const industry = getLocalizedName(job.company?.company_type?.name || job.category?.name, locale)
-  const employment = formatDetailEmployment(job, locale)
+  const employment = formatDetailEmployment(job)
   const salaryRange = formatJobSalaryRange(job, locale === "ar")
   const ageRange = formatAgeRange(job, locale)
-  const deadline = formatApplicationDeadline(job.application_deadline, locale)
+  const rawDeadline = resolveJobApplicationDeadline(job)
+  const deadline = formatApplicationDeadline(rawDeadline, locale)
   const genderLabel = job.gender ? formatGenderForDetail(job.gender, locale) : null
 
   const showSalary = salaryRange !== "—"
@@ -70,7 +72,7 @@ export function JobDetailSidebar({
   const showVacancy = job.vacancy != null
   const showGender = Boolean(genderLabel)
   const showAge = Boolean(ageRange)
-  const showDeadline = Boolean(job.application_deadline?.trim())
+  const showDeadline = Boolean(rawDeadline && String(rawDeadline).trim())
 
   const hasDetails =
     showIndustry ||

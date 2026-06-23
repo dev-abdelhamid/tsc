@@ -78,7 +78,7 @@ export function CompanyJobActionsMenu({
         </DropdownMenuItem>
         {status === "approved" || status === "active" ? (
           <DropdownMenuItem onClick={runStop}>{t("menu.stop")}</DropdownMenuItem>
-        ) : status === "stopped" ? (
+        ) : status === "stopped" || status === "closed" ? (
           <DropdownMenuItem onClick={runActivate}>{t("menu.activate")}</DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />

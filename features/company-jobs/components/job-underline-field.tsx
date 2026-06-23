@@ -102,13 +102,14 @@ export function JobUnderlineSelect({
         ))}
       </select>
       <svg
-        className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2 text-[#40A0CA] opacity-80"
-        viewBox="0 0 24 24"
+        className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2"
+        viewBox="0 0 20 20"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden
       >
-        <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        <path opacity="0.4" d="M12.9003 11.0247L9.74194 6.81641H5.06695C4.26695 6.81641 3.86695 7.78307 4.43361 8.34974L8.75028 12.6664C9.44195 13.3581 10.5669 13.3581 11.2586 12.6664L12.9003 11.0247Z" fill="#40A0CA" />
+        <path d="M14.9329 6.81641H9.74121L12.8995 11.0247L15.5745 8.34974C16.1329 7.78307 15.7329 6.81641 14.9329 6.81641Z" fill="#40A0CA" />
       </svg>
     </div>
   )
@@ -133,6 +134,14 @@ export function JobUnderlineDate({
     }
   }
 
+  // Format date display (yyyy-mm-dd -> mm/dd/yyyy)
+  const displayValue = value
+    ? (() => {
+        const parts = value.split("-")
+        return parts.length === 3 ? `${parts[1]}/${parts[2]}/${parts[0]}` : value
+      })()
+    : "mm / dd / yyyy"
+
   return (
     <div 
       className={cn("relative w-full cursor-pointer", className)}
@@ -145,12 +154,14 @@ export function JobUnderlineDate({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onClick={(e) => e.stopPropagation()} // Prevent double trigger
-        className={cn(
-          underlineClass,
-          "bg-transparent pe-10 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-        )}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 z-10 [color-scheme:light]"
       />
-      <NewsCalendarIcon className="pointer-events-none absolute end-0 top-1/2 h-5 w-5 -translate-y-1/2 text-[#006EA8]" />
+      <div className={cn(underlineClass, "relative flex justify-between items-center bg-transparent w-full pointer-events-none")}>
+        <span className={cn("text-sm", !value ? "text-[#A3A3A3]" : "text-[#525252]")}>
+          {displayValue}
+        </span>
+        <NewsCalendarIcon className="h-5 w-5 text-[#006EA8] shrink-0" />
+      </div>
     </div>
   )
 }
